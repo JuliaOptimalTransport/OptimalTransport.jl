@@ -1,4 +1,4 @@
-ENV["PYTHON"] = "/home/zsteve/anaconda3/bin/python"
+# ENV["PYTHON"] = "/home/zsteve/anaconda3/bin/python"
 Pkg.build("PyCall")
 using PyCall
 pot = pyimport("ot")
