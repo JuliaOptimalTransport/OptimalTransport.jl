@@ -2,8 +2,11 @@
 ### Optimal transport algorithms for Julia.
 
 Under construction: currently, Earth Mover's Distance (solution to exact problem) is wrapped via PyCall. However, the following algorithms are offered natively:
-	- Sinkhorn algorithm
-	- Unbalanced Sinkhorn algorithm
+
+* Sinkhorn algorithm (`sinkhorn`, `sinkhorn2`, `sinkhorn_impl`)
+* Unbalanced Sinkhorn algorithm (`sinkhorn_unbalanced`)
+
+See `ot.jl` for further documentation. Most calling conventions are analogous to those in the Python OT library.
 
 Example: 
 ```julia
