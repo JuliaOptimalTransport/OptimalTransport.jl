@@ -32,40 +32,50 @@ function sinkhorn_impl(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max
     temp_v = zeros(size(C, 1))
     temp_u = zeros(size(C, 2))
     iter = 0
+    err = 0
     while true
         mul!(temp_v, K, v)
         mul!(u, Diagonal(1 ./temp_v), mu)
         mul!(temp_u, K', u)
         mul!(v, Diagonal(1 ./temp_u), nu)
         # check mu marginal
-        if (iter > max_iter) || ((iter % check_marginal_step == 0) && (maximum(abs.(mu - u.*(K*v))) < tol))
-            if iter > max_iter && verbose
-                println("Warning: sinkhorn_native exited without converging")
+        if (iter % check_marginal_step == 0)
+            err = maximum(abs.(mu - u.*(K*v)))
+            if verbose
+                println(string("Iteration ", iter, ", err = ", err))
             end
-            break
+
+            if iter > max_iter
+                if verbose
+                    println("Warning: sinkhorn_native exited without converging")
+                end
+                break
+            elseif err < tol
+                break
+            end
         end
         iter += 1
     end
     return u, v
 end
 
-function sinkhorn(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000)
+function sinkhorn(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
     """
     Sinkhorn algorithm for entropically regularised optimal transport.
     Return optimal transport coupling γ.
     """
     u, v = sinkhorn_impl(mu, nu, C, eps;
-                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter)
+                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
     return Diagonal(u)*exp.(-C/eps)*Diagonal(v)
 end
 
-function sinkhorn2(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000)
+function sinkhorn2(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
     """
     Sinkhorn algorithm for entropically regularised optimal transport.
     Return optimal transport cost ∫ c dγ + ϵ H(γ | μ ⊗ ν)
     """
     gamma = sinkhorn(mu, nu, C, eps;
-                        tol = tol, check_marginal_step = check_marginal_step2, max_iter = max_iter)
+                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
     return sum(gamma.*C)
 end
 
@@ -104,4 +114,26 @@ function sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ϵ; tol = 1e-6, max_iter = 100
         println("Warning: exited before convergence")
     end
     return Diagonal(a)*K*Diagonal(b)
+end
+
+function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ϵ; tol = 1e-6, max_iter = 1000, verbose = false)
+    return sum(C.*sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ϵ, tol = tol, max_iter = max_iter, verbose = verbose))
+end
+
+
+function _sinkhorn(a, b, M, eps)
+    return pot.sinkhorn(b, a, PyReverseDims(M), eps)'
+end
+
+function _sinkhorn_stabilized(a, b, M, eps)
+    return pot.sinkhorn(b, a, PyReverseDims(M), eps, method = "sinkhorn_stabilized")'
+end
+
+function _sinkhorn_stabilized2(a, b, M, eps)
+    return pot.sinkhorn2(b, a, PyReverseDims(M), eps, method = "sinkhorn_stabilized")[1]
+end
+
+
+function _sinkhorn2(a, b, M, eps)
+    return pot.sinkhorn2(b, a, PyReverseDims(M), eps)[1]
 end
