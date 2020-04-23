@@ -9,22 +9,22 @@ pot = pyimport("ot")
 
 function emd(a, b, M)
     """
-    Exact solution to Kantorovich problem. Return optimal transport coupling \gamma.
+    Exact solution to Kantorovich problem. Return optimal transport coupling γ
     """
     return pot.lp.emd(b, a, PyReverseDims(M))'
 end
 
 function emd2(a, b, M)
     """
-    Exact solution to Kantorovich problem. Retern optimal transport cost \int c d\gamma. 
+    Exact solution to Kantorovich problem. Retern optimal transport cost ∫ c dα.
     """
     return pot.lp.emd2(b, a, PyReverseDims(M))
 end
 
 function sinkhorn_impl(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
     """
-    Sinkhorn algorithm to compute coupling of mu, nu with regularisation eps. 
-    Return dual potentials u, v such that \gamma_ij = u_i K_ij v_j.
+    Sinkhorn algorithm to compute coupling of mu, nu with regularisation eps.
+    Return dual potentials u, v such that γ_ij = u_i K_ij v_j.
     """
     K = exp.(-C/eps)
     v = ones(size(C, 2))
@@ -44,7 +44,7 @@ function sinkhorn_impl(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max
             end
             break
         end
-        count += 1
+        iter += 1
     end
     return u, v
 end
@@ -52,7 +52,7 @@ end
 function sinkhorn(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000)
     """
     Sinkhorn algorithm for entropically regularised optimal transport.
-    Return optimal transport coupling \gamma.
+    Return optimal transport coupling γ.
     """
     u, v = sinkhorn_impl(mu, nu, C, eps;
                         tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter)
@@ -62,7 +62,7 @@ end
 function sinkhorn2(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000)
     """
     Sinkhorn algorithm for entropically regularised optimal transport.
-    Return optimal transport cost \int c d\gamma + \eps H(\gamma | \mu \otimes \nu)
+    Return optimal transport cost ∫ c dγ + ϵ H(γ | μ ⊗ ν)
     """
     gamma = sinkhorn(mu, nu, C, eps;
                         tol = tol, check_marginal_step = check_marginal_step2, max_iter = max_iter)
@@ -71,8 +71,8 @@ end
 
 function sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ϵ; tol = 1e-6, max_iter = 1000, verbose = false)
     """
-    Unbalanced Sinkhorn algorithm with KL (\lambda_1, \lambda_2) marginal terms for marginals 
-    \mu, \nu respectively.
+    Unbalanced Sinkhorn algorithm with KL (λ1, λ2) marginal terms for marginals
+    μ, ν respectively.
     """
     @inline proxdiv_KL(s, ϵ, λ, p) = (s.^(ϵ/(ϵ + λ)) .* p.^(λ/(ϵ + λ)))./s
     a = ones(size(μ, 1))
