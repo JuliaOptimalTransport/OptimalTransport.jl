@@ -126,13 +126,12 @@ function _sinkhorn(a, b, M, eps)
 end
 
 function _sinkhorn_stabilized(a, b, M, eps)
-    return pot.sinkhorn(b, a, PyReverseDims(M), eps, method = "sinkhorn_stabilized")'
+    return pot.sinkhorn(b, a, PyReverseDims(M), eps, method = "sinkhorn_epsilon_scaling")'
 end
 
 function _sinkhorn_stabilized2(a, b, M, eps)
-    return pot.sinkhorn2(b, a, PyReverseDims(M), eps, method = "sinkhorn_stabilized")[1]
+    return pot.sinkhorn2(b, a, PyReverseDims(M), eps, method = "sinkhorn_epsilon_scaling")[1]
 end
-
 
 function _sinkhorn2(a, b, M, eps)
     return pot.sinkhorn2(b, a, PyReverseDims(M), eps)[1]
