@@ -8,7 +8,7 @@ Under construction: currently, Earth Mover's Distance (solution to exact problem
 * Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) [warning: not fully functional yet]
 * Unbalanced Sinkhorn algorithm (`sinkhorn_unbalanced`)
 
-See `ot.jl` for further documentation. Most calling conventions are analogous to those in the Python OT library.
+See `ot.jl` for further documentation. Most calling conventions are analogous to those in the Python OT library. 
 
 Example: 
 ```julia
