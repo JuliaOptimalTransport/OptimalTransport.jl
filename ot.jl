@@ -125,14 +125,71 @@ function _sinkhorn(a, b, M, eps)
     return pot.sinkhorn(b, a, PyReverseDims(M), eps)'
 end
 
-function _sinkhorn_stabilized(a, b, M, eps)
+function _sinkhorn_stabilized_epsscaling(a, b, M, eps)
     return pot.sinkhorn(b, a, PyReverseDims(M), eps, method = "sinkhorn_epsilon_scaling")'
 end
 
-function _sinkhorn_stabilized2(a, b, M, eps)
+function _sinkhorn_stabilized_epsscaling2(a, b, M, eps)
     return pot.sinkhorn2(b, a, PyReverseDims(M), eps, method = "sinkhorn_epsilon_scaling")[1]
 end
 
 function _sinkhorn2(a, b, M, eps)
     return pot.sinkhorn2(b, a, PyReverseDims(M), eps)[1]
+end
+
+function sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ; absorb_tol = 1e3, max_iter = 10000, tol = 1e-6, λ = 0.5, k = 5, verbose = false)
+    ϵ_values = [ϵ*λ^(k-j) for j = 1:k]
+    α = zeros(size(μ)); β = zeros(size(ν))
+    for ϵ in ϵ_values
+        if verbose; println(string("Warm start: ϵ = ", ϵ)); end
+        α, β = sinkhorn_stabilized(μ, ν, C, ϵ, absorb_tol = absorb_tol, max_iter = max_iter, tol = tol, α = α, β = β, return_duals = true, verbose = verbose)
+    end
+    K = exp.(-(C .- α .- β')/ϵ).*μ.*ν'
+    return K
+end
+
+function getK(C, α, β, ϵ, μ, ν)
+    return (exp.(-(C .- α .- β')/ϵ).*μ.*ν')
+end
+
+function sinkhorn_stabilized(μ, ν, C, ϵ; absorb_tol = 1e3, max_iter = 1000, tol = 1e-6, α = nothing, β = nothing, return_duals = false, verbose = false)
+    if isnothing(α) || isnothing(β)
+        α = zeros(size(μ)); β = zeros(size(ν))
+    end
+
+    u = ones(size(μ)); v = ones(size(ν))
+    K = getK(C, α, β, ϵ, μ, ν)
+    i = 0
+    while true
+        u = μ./(K*v .+ 1e-16)
+        v = ν./(K'*u .+ 1e-16)
+        if (max(norm(u, Inf), norm(v, Inf)) > absorb_tol)
+            if verbose; println("Absorbing (u, v) into (α, β)"); end
+            # absorb into α, β
+            α = α + ϵ*log.(u); β = β + ϵ*log.(v)
+            u = ones(size(μ)); v = ones(size(ν))
+            K = getK(C, α, β, ϵ, μ, ν)
+        end
+        if i % 10 == 0
+            # check marginal
+            γ = getK(C, α, β, ϵ, μ, ν).*(u.*v')
+            err_μ = norm(γ*ones(size(ν)) - μ, Inf)
+            err_ν = norm(γ'*ones(size(μ)) - ν, Inf)
+            if verbose; println(string("Iteration ", i, ", err = ", 0.5*(err_μ + err_ν))); end
+            if 0.5*(err_μ + err_ν) < tol
+                break
+            end
+        end
+
+        if i > max_iter
+            if verbose; println("Warning: exited before convergence"); end
+            break
+        end
+        i+=1
+    end
+    α = α + ϵ*log.(u); β = β + ϵ*log.(v)
+    if return_duals
+        return α, β
+    end
+    return getK(C, α, β, ϵ, μ, ν)
 end
