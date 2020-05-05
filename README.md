@@ -1,4 +1,4 @@
-# ot.jl
+# OptimalTransport.jl
 ### Optimal transport algorithms for Julia.
 
 Under construction: currently, Earth Mover's Distance (solution to exact problem) is wrapped via PyCall. However, the following algorithms are offered natively:
