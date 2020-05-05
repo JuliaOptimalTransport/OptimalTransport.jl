@@ -1,4 +1,5 @@
-using ot
+using OptimalTransport
+using Distances
 
 N = 10; M = 10
 μ_spt = rand(N)

@@ -1,10 +1,10 @@
-# Julia optimal transport routines
+# OptimalTransport.jl -- optimal transportation algorithms for Julia
 # Author: Stephen Zhang (syz@math.ubc.ca)
 
-
-# ENV["PYTHON"] = "/home/zsteve/anaconda3/bin/python"
-Pkg.build("PyCall")
+module OptimalTransport
 using PyCall
+using Distances
+using LinearAlgebra
 pot = pyimport("ot")
 
 function emd(a, b, M)
@@ -192,4 +192,6 @@ function sinkhorn_stabilized(μ, ν, C, ϵ; absorb_tol = 1e3, max_iter = 1000, t
         return α, β
     end
     return getK(C, α, β, ϵ, μ, ν)
+end
+
 end
