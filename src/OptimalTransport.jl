@@ -12,7 +12,7 @@ using LinearAlgebra
 const pot = PyNULL()
 
 function __init__()
-	copy!(pot, pyimport_conda("ot", "ot"))
+	copy!(pot, pyimport_conda("ot", "pot"))
 end
 
 function emd(a, b, M)
