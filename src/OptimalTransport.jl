@@ -1,11 +1,19 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
 # Author: Stephen Zhang (syz@math.ubc.ca)
 
+__precompile__()
+
 module OptimalTransport
+
 using PyCall
 using Distances
 using LinearAlgebra
-pot = pyimport("ot")
+
+const pot = PyNULL()
+
+function __init__()
+	copy!(pot, pyimport_conda("ot", "ot"))
+end
 
 function emd(a, b, M)
     """
