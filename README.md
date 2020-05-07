@@ -13,6 +13,7 @@ However, the following algorithms are offered natively:
 * Log-stabilized Sinkhorn algorithm (`sinkhorn_stabilized`)
 * Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) [warning: not fully functional yet]
 * Unbalanced Sinkhorn algorithm (`sinkhorn_unbalanced`)
+* now registered on the general registry!
 
 See `ot.jl` for further documentation. Most calling conventions are analogous to those in the Python OT library.
 
