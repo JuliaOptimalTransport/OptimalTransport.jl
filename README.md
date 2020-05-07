@@ -16,7 +16,8 @@ However, the following algorithms are offered natively:
 
 See `ot.jl` for further documentation. Most calling conventions are analogous to those in the Python OT library.
 
-Example:
+## Examples
+
 ```julia
 
 N = 10; M = 10
@@ -71,3 +72,6 @@ Seaborn.jointplot(x = [μ_spt[i] for i in μ_idx], y = [ν_spt[i] for i in ν_id
 Seaborn.gcf()
 Seaborn.savefig("example.png")
 ```
+
+## References
+TODO. Check the POT documentation for now.
