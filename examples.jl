@@ -1,3 +1,7 @@
+# Examples for OptimalTransport.jl
+#
+# Author: Stephen Zhang (syz@math.ubc.ca)
+
 using OptimalTransport
 using Distances
 
