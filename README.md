@@ -3,7 +3,7 @@
 
 ![example histogram](example.png)
 
-Under construction!
+Read the [documentation](http://zsteve.phatcode.net/OptimalTransportDocs/)!
 
 Currently, Earth Mover's Distance (solution to exact problem) is wrapped via PyCall using the excellent [POT (Python Optimal Transport)](https://github.com/PythonOT/POT) library. The hope is that _gradually_, more and more functionality will be implemented in native Julia.
 
