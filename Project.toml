@@ -12,4 +12,5 @@ Seaborn = "d2ef9438-c967-53ab-8060-373fdd9e13eb"
 [compat]
 Distances = "0.8"
 PyCall = "1.91"
+Seaborn = "0.4"
 julia = "1"
