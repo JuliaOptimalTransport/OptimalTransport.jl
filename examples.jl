@@ -29,8 +29,9 @@ N = 10; M = 20
 
 C = pairwise(Euclidean(), μ_spt', ν_spt').^2
 ϵ = 0.01
-λ = 1
-@benchmark _sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
+λ = 1.0
+
+# @benchmark _sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
 @benchmark sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ)
 
 ϵ = 1e-4
