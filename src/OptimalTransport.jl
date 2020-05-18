@@ -18,7 +18,7 @@ end
 export emd
 
 """
-    emd(a, b, M)
+    emd(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64})
 
 *Wrapper to POT function* Exact solution to Kantorovich problem with marginals `a` and `b` and a cost matrix `M` of dimensions
 `(length(a), length(b))`. 
@@ -32,7 +32,7 @@ end
 export emd2
 
 """
-    emd2(a, b, M)
+    emd2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64})
 
 *Wrapper to POT function* Same as `emd`, but returns instead the cost of the optimal transport, i.e. `sum(M.*γ)`.
 """
@@ -43,18 +43,16 @@ end
 export sinkhorn_impl
 
 """
-    sinkhorn_impl(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float64}, u::Vector{Float64}, v::Vector{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
 
 Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
+`u` and `v` are arrays to be filled with the values for the dual potentials for `mu` and `nu` respectively.
 
 Return dual potentials `u`, `v` such that `γ = Diagonal(u)*K*Diagonal(v)`, where `K = exp.(-C/eps)` is the Gibbs kernel.
 """
-function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    K = exp.(-C/eps)
-    v = ones(size(C, 2))
-    u = ones(size(C, 1))
-    temp_v = zeros(size(C, 1))
-    temp_u = zeros(size(C, 2))
+function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float64}, u::Vector{Float64}, v::Vector{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    temp_v = zeros(size(K, 1))
+    temp_u = zeros(size(K, 2))
     iter = 0
     err = 0
     
@@ -85,27 +83,29 @@ function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float
         end
         iter += 1
     end
-    return u, v
+    nothing
 end
 
 export sinkhorn
 
 """
-    sinkhorn(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
 
 Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
 Return optimal transport coupling `γ`.
 """
 function sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    u, v = sinkhorn_impl(mu, nu, C, eps;
+    u = ones(size(mu)); v = ones(size(nu))
+    K = exp.(-C/eps)
+    sinkhorn_impl(mu, nu, K, u, v, eps;
                         tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
-    return Diagonal(u)*exp.(-C/eps)*Diagonal(v)
+    return Diagonal(u)*K*Diagonal(v)
 end
 
 export sinkhorn2
 
 """
-    sinkhorn2(mu, nu, C, eps; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
 
 Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
 Return optimal transport cost.  
@@ -119,7 +119,7 @@ end
 export sinkhorn_unbalanced
 
 """
-    sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ϵ; tol = 1e-6, max_iter = 1000, verbose = false)
+    sinkhorn_unbalanced(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, λ1::Float64, λ2::Float64, ϵ::Float64; tol = 1e-6, max_iter = 1000, verbose = false)
 
 Unbalanced Sinkhorn algorithm with KL-divergence terms for soft marginal constraints, with weights `(λ1, λ2)` 
 for μ, ν respectively.
@@ -167,7 +167,7 @@ end
 export sinkhorn_unbalanced2
 
 """
-    sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ϵ; tol = 1e-6, max_iter = 1000, verbose = false)
+    sinkhorn_unbalanced2(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, λ1::Float64, λ2::Float64, ϵ::Float64; tol = 1e-6, max_iter = 1000, verbose = false)
 
 Same as `sinkhorn_unbalanced`, except return the corresponding cost.
 """
@@ -178,7 +178,7 @@ end
 export _sinkhorn
 
 """
-    _sinkhorn(a, b, M, eps)
+    _sinkhorn(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
 
 Wrapper to POT function `sinkhorn`
 """
@@ -189,7 +189,7 @@ end
 export _sinkhorn2
 
 """
-    _sinkhorn2(a, b, M, eps)
+    _sinkhorn2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
 
 Wrapper to POT function `sinkhorn2`
 """
@@ -197,10 +197,32 @@ function _sinkhorn2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, 
     return pot.sinkhorn2(b, a, PyReverseDims(M), eps)[1]
 end
 
+export _sinkhorn_unbalanced
+
+"""
+    _sinkhorn_unbalanced(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, reg::Float64, reg_m::Float64)
+
+Wrapper to POT function `sinkhorn_unbalanced`
+"""
+function _sinkhorn_unbalanced(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, reg::Float64, reg_m::Float64)
+    return pot.sinkhorn_unbalanced(b, a, PyReverseDims(M), reg, reg_m)
+end
+
+export _sinkhorn_unbalanced2
+
+"""
+    _sinkhorn_unbalanced2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, reg::Float64, reg_m::Float64)
+
+Wrapper to POT function `sinkhorn_unbalanced2`
+"""
+function _sinkhorn_unbalanced2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, reg::Float64, reg_m::Float64)
+    return pot.sinkhorn_unbalanced2(b, a, PyReverseDims(M), reg, reg_m)
+end
+
 export _sinkhorn_stabilized_epsscaling
 
 """
-    _sinkhorn_stabilized_epsscaling(a, b, M, eps)
+    _sinkhorn_stabilized_epsscaling(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
 
 Wrapper to POT function `sinkhorn` with method set to `sinkhorn_epsilon_scaling`
 """
@@ -211,7 +233,7 @@ end
 export _sinkhorn_stabilized_epsscaling2
 
 """
-    _sinkhorn_stabilized_epsscaling2(a, b, M, eps)
+    _sinkhorn_stabilized_epsscaling2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
 
 Wrapper to POT function `sinkhorn2` with method set to `sinkhorn_epsilon_scaling`
 """
@@ -222,7 +244,7 @@ end
 export sinkhorn_stabilized_epsscaling
 
 """
-    sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ; absorb_tol = 1e3, max_iter = 10000, tol = 1e-6, λ = 0.5, k = 5, verbose = false)
+    sinkhorn_stabilized_epsscaling(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, ϵ::Float64; absorb_tol = 1e3, max_iter = 10000, tol = 1e-6, λ = 0.5, k = 5, verbose = false)
 
 Stabilized Sinkhorn algorithm with epsilon-scaling. 
 """
@@ -244,7 +266,7 @@ end
 export sinkhorn_stabilized
 
 """
-    sinkhorn_stabilized(μ, ν, C, ϵ; absorb_tol = 1e3, max_iter = 1000, tol = 1e-6, α = nothing, β = nothing, return_duals = false, verbose = false)
+    sinkhorn_stabilized(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, ϵ::Float64; absorb_tol = 1e3, max_iter = 1000, tol = 1e-6, α = nothing, β = nothing, return_duals = false, verbose = false)
 
 Stabilized Sinkhorn algorithm.
 """

@@ -4,8 +4,9 @@
 
 using OptimalTransport
 using Distances
+using LinearAlgebra
 
-N = 10; M = 10
+N = 1000; M = 1000
 μ_spt = rand(N)
 ν_spt = rand(M)
 
@@ -17,8 +18,10 @@ C = pairwise(Euclidean(), μ_spt', ν_spt').^2
 
 using BenchmarkTools
 
-@benchmark  _sinkhorn(μ, ν, C, ϵ)
-@benchmark sinkhorn(μ, ν, C, ϵ)
+# Let's compare  
+@benchmark γ_ = OptimalTransport._sinkhorn(μ, ν, C, ϵ)
+
+@benchmark γ = sinkhorn(μ, ν, C, ϵ)
 
 N = 10; M = 20
 μ_spt = rand(N)

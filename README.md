@@ -75,4 +75,6 @@ Seaborn.savefig("example.png")
 ```
 
 ## References
-TODO. Check the POT documentation for now.
+
+Peyré, G. and Cuturi, M., 2019. Computational optimal transport. Foundations and Trends® in Machine Learning, 11(5-6), pp.355-607.
+

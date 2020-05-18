@@ -3,8 +3,8 @@
 
 ## Exact optimal transport (Kantorovich) problem
 ```@docs
-emd(a, b, M)
-emd2(a, b, M)
+emd
+emd2
 ```
 
 ## Entropically regularised optimal transport
