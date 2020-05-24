@@ -21,7 +21,7 @@ export emd
     emd(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64})
 
 *Wrapper to POT function* Exact solution to Kantorovich problem with marginals `a` and `b` and a cost matrix `M` of dimensions
-`(length(a), length(b))`. 
+`(length(a), length(b))`.
 
 Return optimal transport coupling `γ` of the same dimensions as `M`.
 """
@@ -55,19 +55,30 @@ function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float
     temp_u = zeros(size(K, 2))
     iter = 0
     err = 0
-    
+
     if !(sum(mu) ≈ sum(nu))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
     end
 
     while true
         mul!(temp_v, K, v)
-        mul!(u, Diagonal(1 ./temp_v), mu)
+        #mul!(u, Diagonal(1 ./temp_v), mu)
+        for i=1:size(u, 1)
+            u[i] = mu[i]/temp_v[i]
+        end
         mul!(temp_u, K', u)
-        mul!(v, Diagonal(1 ./temp_u), nu)
+        # mul!(v, Diagonal(1 ./temp_u), nu)
+        for i=1:size(v, 1)
+            v[i] = nu[i]/temp_u[i]
+        end
         # check mu marginal
         if (iter % check_marginal_step == 0)
-            err = maximum(abs.(mu - u.*(K*v)))
+            mul!(temp_v, K, v)
+            for i = 1:size(K, 1)
+                temp_u[i] = abs(mu[i] - u[i]*temp_v[i])
+            end
+
+            err = maximum(temp_u)
             if verbose
                 println(string("Iteration ", iter, ", err = ", err))
             end
@@ -96,7 +107,10 @@ Return optimal transport coupling `γ`.
 """
 function sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
     u = ones(size(mu)); v = ones(size(nu))
-    K = exp.(-C/eps)
+    K = zeros(size(C))
+    for i = 1:size(K, 1), j = 1:size(K, 2)
+        K[i, j] = exp(-C[i, j]/eps)
+    end
     sinkhorn_impl(mu, nu, K, u, v, eps;
                         tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
     return Diagonal(u)*K*Diagonal(v)
@@ -108,7 +122,7 @@ export sinkhorn2
     sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
 
 Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-Return optimal transport cost.  
+Return optimal transport cost.
 """
 function sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
     gamma = sinkhorn(mu, nu, C, eps;
@@ -121,20 +135,30 @@ export sinkhorn_unbalanced
 """
     sinkhorn_unbalanced(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, λ1::Float64, λ2::Float64, ϵ::Float64; tol = 1e-6, max_iter = 1000, verbose = false)
 
-Unbalanced Sinkhorn algorithm with KL-divergence terms for soft marginal constraints, with weights `(λ1, λ2)` 
+Unbalanced Sinkhorn algorithm with KL-divergence terms for soft marginal constraints, with weights `(λ1, λ2)`
 for μ, ν respectively.
 
-Returns the optimal transport plan. 
+Returns the optimal transport plan.
 """
 function sinkhorn_unbalanced(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, λ1::Float64, λ2::Float64, ϵ::Float64; tol = 1e-6, max_iter = 1000, verbose = false)
-    @inline proxdiv_KL(s, ϵ, λ, p) = (s.^(ϵ/(ϵ + λ)) .* p.^(λ/(ϵ + λ)))./s
+    function proxdiv_KL(out, s, ϵ, λ, p)
+        for i = 1:size(s, 1)
+            out[i] = (s[i]^(ϵ/(ϵ + λ)) * p[i]^(λ/(ϵ + λ)))/s[i]
+        end
+    end
+
     a = ones(size(μ, 1))
     b = ones(size(ν, 1))
     a_old = a
     b_old = b
     tmp_a = zeros(size(ν, 1))
     tmp_b = zeros(size(μ, 1))
-    K = exp.(-C/ϵ)
+
+    K = zeros(size(C));
+    for i = 1:size(C, 1), j = 1:size(C, 2)
+        K[i, j] = exp(-C[i, j]/ϵ)
+    end
+
     iter = 1
 
     if !(sum(μ) ≈ sum(ν))
@@ -144,8 +168,10 @@ function sinkhorn_unbalanced(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix
     while true
         a_old = a
         b_old = b
-        a = proxdiv_KL(mul!(tmp_b, K, b), ϵ, λ1, μ)
-        b = proxdiv_KL(mul!(tmp_a, K', a), ϵ, λ2, ν)
+        mul!(tmp_b, K, b)
+        proxdiv_KL(a, tmp_b, ϵ, λ1, μ)
+        mul!(tmp_a, K', a)
+        proxdiv_KL(b, tmp_a, ϵ, λ2, ν)
         iter += 1
         if iter % 10 == 0
             err_a = maximum(abs.(a - a_old))/max(maximum(abs.(a)), maximum(abs.(a_old)), 1)
@@ -205,7 +231,7 @@ export _sinkhorn_unbalanced
 Wrapper to POT function `sinkhorn_unbalanced`
 """
 function _sinkhorn_unbalanced(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, reg::Float64, reg_m::Float64)
-    return pot.sinkhorn_unbalanced(b, a, PyReverseDims(M), reg, reg_m)
+    return pot.sinkhorn_unbalanced(b, a, PyReverseDims(M), reg, reg_m)'
 end
 
 export _sinkhorn_unbalanced2
@@ -246,7 +272,7 @@ export sinkhorn_stabilized_epsscaling
 """
     sinkhorn_stabilized_epsscaling(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, ϵ::Float64; absorb_tol = 1e3, max_iter = 10000, tol = 1e-6, λ = 0.5, k = 5, verbose = false)
 
-Stabilized Sinkhorn algorithm with epsilon-scaling. 
+Stabilized Sinkhorn algorithm with epsilon-scaling.
 """
 function sinkhorn_stabilized_epsscaling(μ::Vector{Float64}, ν::Vector{Float64}, C::Matrix{Float64}, ϵ::Float64; absorb_tol = 1e3, max_iter = 10000, tol = 1e-6, λ = 0.5, k = 5, verbose = false)
     ϵ_values = [ϵ*λ^(k-j) for j = 1:k]
