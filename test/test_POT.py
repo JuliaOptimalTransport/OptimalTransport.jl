@@ -7,7 +7,7 @@ nu = np.random.rand(N, 1)
 C = ot.utils.dist(mu, nu)
 eps = 0.01
 
-%timeit ot.sinkhorn(mu, nu, C, eps)
+%timeit ot.sinkhorn(np.ones(N), np.ones(N), C, eps)
 
 
 

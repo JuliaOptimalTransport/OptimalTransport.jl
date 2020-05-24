@@ -6,43 +6,51 @@ using OptimalTransport
 using Distances
 using LinearAlgebra
 
-N = 1000; M = 1000
+## Entropically regularised transport
+
+N = 200; M = 200
 μ_spt = rand(N)
 ν_spt = rand(M)
 
-μ = ones(size(μ_spt, 1))
-ν = ones(size(ν_spt, 1))
+μ = normalize!(ones(size(μ_spt, 1)), 1)
+ν = normalize!(ones(size(ν_spt, 1)), 1)
 
 C = pairwise(Euclidean(), μ_spt', ν_spt').^2
 ϵ = 0.01
 
-using BenchmarkTools
+γ = sinkhorn(μ, ν, C, ϵ)
+γ_ = _sinkhorn(μ, ν, C, ϵ)
 
-# Let's compare  
-@benchmark γ_ = OptimalTransport._sinkhorn(μ, ν, C, ϵ)
+norm(γ - γ_, Inf) # Check that we get the same result as POT
 
-@benchmark γ = sinkhorn(μ, ν, C, ϵ)
+## Unbalanced transport
 
-N = 10; M = 20
+N = 200; M = 200
 μ_spt = rand(N)
 ν_spt = rand(M)
 
-μ = ones(size(μ_spt, 1))/N
-ν = ones(size(ν_spt, 1))/M
+μ = normalize!(ones(size(μ_spt, 1)), 1)
+ν = normalize!(ones(size(ν_spt, 1)), 1)
 
 C = pairwise(Euclidean(), μ_spt', ν_spt').^2
 ϵ = 0.01
 λ = 1.0
 
-# @benchmark _sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
-@benchmark sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ)
+γ_ = _sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
+γ = sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ)
 
-ϵ = 1e-4
-γ = _sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ)
-γ_ = sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ)
+norm(γ - γ_, Inf) # Check that we get the same result as POT
 
-## try and make a pretty plot
+## Example plots 
 using Seaborn
+
+function sample_joint(γ, N)
+    F = DiscreteNonParametric(1:prod(size(γ)), reshape(γ, prod(size(γ))))
+    t = rand(F, N)
+    μ_idx = ((t .- 1) .% size(γ, 1)) .+ 1
+    ν_idx = ((t .- 1) .÷ size(γ, 2)) .+ 1
+    return μ_idx, ν_idx
+end
 
 μ_spt = ν_spt = LinRange(-2, 2, 100)
 C = pairwise(Euclidean(), μ_spt', ν_spt').^2
@@ -50,16 +58,12 @@ C = pairwise(Euclidean(), μ_spt', ν_spt').^2
 μ /= sum(μ)
 ν = ν_spt.^2 .*exp.((-(ν_spt).^2)/0.5^2)
 ν /= sum(ν)
-γ = OptimalTransport.sinkhorn_stabilized(μ, ν, C, 1e-4, max_iter = 5000)
+γ = OptimalTransport.sinkhorn(μ, ν, C, 0.01)
+
 using Random, Distributions
+μ_idx, ν_idx = sample_joint(γ, 10000)
 
-F = DiscreteNonParametric(1:prod(size(γ)), reshape(γ, prod(size(γ))))
-t = rand(F, 5*10^3)
-μ_idx = t .% size(γ, 1)
-ν_idx = t .÷ size(γ, 2)
+Seaborn.jointplot(x = [μ_spt[i] for i in μ_idx], y = [ν_spt[i] for i in ν_idx], kind = "hex", marginal_kws = Dict("bins" => μ_spt))
+Seaborn.axes("equal")
 
-
-Seaborn.figure()
-Seaborn.jointplot(x = [μ_spt[i] for i in μ_idx], y = [ν_spt[i] for i in ν_idx], kind = "kde")
-Seaborn.gcf()
 Seaborn.savefig("example.png")
