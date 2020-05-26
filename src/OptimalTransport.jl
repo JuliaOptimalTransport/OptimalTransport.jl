@@ -75,10 +75,10 @@ function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float
         if (iter % check_marginal_step == 0)
             mul!(temp_v, K, v)
             for i = 1:size(K, 1)
-                temp_u[i] = abs(mu[i] - u[i]*temp_v[i])
+                temp_v[i] = abs(mu[i] - u[i]*temp_v[i])
             end
 
-            err = maximum(temp_u)
+            err = maximum(temp_v)
             if verbose
                 println(string("Iteration ", iter, ", err = ", err))
             end
