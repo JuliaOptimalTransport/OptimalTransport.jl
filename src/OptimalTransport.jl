@@ -192,26 +192,32 @@ function sinkhorn_unbalanced2(μ::Vector{Float64}, ν::Vector{Float64}, C::Matri
     return sum(C.*sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ϵ, tol = tol, max_iter = max_iter, verbose = verbose))
 end
 
-export _sinkhorn
-
 """
-    _sinkhorn(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
+    pot_sinkhorn(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
 
-Wrapper to POT function `sinkhorn`
+Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
+
+This function is a wrapper of the function
+[`sinkhorn`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn) in the
+Python Optimal Transport package.
 """
-function _sinkhorn(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
-    return pot.sinkhorn(b, a, PyReverseDims(M), eps)'
+function pot_sinkhorn(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
+    return pot.sinkhorn(nu, mu, PyReverseDims(C), eps; stopThr = tol)'
 end
 
-export _sinkhorn2
-
 """
-    _sinkhorn2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
+    pot_sinkhorn2(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
 
-Wrapper to POT function `sinkhorn2`
+Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
+
+This function is a wrapper of the function
+[`sinkhorn2`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn2) in the
+Python Optimal Transport package.
 """
-function _sinkhorn2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
-    return pot.sinkhorn2(b, a, PyReverseDims(M), eps)[1]
+function pot_sinkhorn2(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
+    return pot.sinkhorn2(nu, mu, PyReverseDims(C), eps; stopThr = tol)[1]
 end
 
 export _sinkhorn_unbalanced
