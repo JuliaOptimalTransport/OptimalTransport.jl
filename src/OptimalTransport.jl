@@ -6,6 +6,8 @@ using PyCall
 using Distances
 using LinearAlgebra
 
+export sinkhorn, sinkhorn2
+
 const pot = PyNULL()
 
 function __init__()
@@ -37,15 +39,16 @@ function emd2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64})
     return pot.lp.emd2(b, a, PyReverseDims(M))
 end
 
-export sinkhorn_impl
-
 """
-    sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float64}, u::Vector{Float64}, v::Vector{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn_gibbs(mu, nu, K; kwargs...)
 
-Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-`u` and `v` are arrays to be filled with the values for the dual potentials for `mu` and `nu` respectively.
+Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
+the Sinkhorn algorithm.
 
-Return dual potentials `u`, `v` such that `γ = Diagonal(u)*K*Diagonal(v)`, where `K = exp.(-C/eps)` is the Gibbs kernel.
+The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost matrix and
+`eps` the entropic regularization parameter. The optimal transport map for histograms `u`
+and `v` and cost matrix `C` with regularization parameter `eps` can be computed as
+`Diagonal(u) * K * Diagonal(v)`.
 """
 function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
     if !(sum(mu) ≈ sum(nu))
@@ -92,10 +95,10 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
 end
 
 """
-    sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn(mu, nu, C, eps; kwargs...)
 
-Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-Return optimal transport coupling `γ`.
+Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
 """
 function sinkhorn(mu, nu, C, eps; kwargs...)
     # compute Gibbs kernel
@@ -108,10 +111,10 @@ function sinkhorn(mu, nu, C, eps; kwargs...)
 end
 
 """
-    sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn2(mu, nu, C, eps; kwargs...)
 
-Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-Return optimal transport cost.
+Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
 """
 function sinkhorn2(mu, nu, C, eps; kwargs...)
     gamma = sinkhorn(mu, nu, C, eps; kwargs...)
