@@ -1,8 +1,5 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
 # Author: Stephen Zhang (syz@math.ubc.ca)
-
-__precompile__()
-
 module OptimalTransport
 
 using PyCall
