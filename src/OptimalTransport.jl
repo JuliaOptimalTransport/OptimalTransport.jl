@@ -47,54 +47,49 @@ Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisatio
 
 Return dual potentials `u`, `v` such that `γ = Diagonal(u)*K*Diagonal(v)`, where `K = exp.(-C/eps)` is the Gibbs kernel.
 """
-function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float64}, u::Vector{Float64}, v::Vector{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    temp_v = zeros(size(K, 1))
-    temp_u = zeros(size(K, 2))
-    iter = 0
-    err = 0
-
+function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
     if !(sum(mu) ≈ sum(nu))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
     end
 
-    while true
-        mul!(temp_v, K, v)
-        #mul!(u, Diagonal(1 ./temp_v), mu)
-        for i=1:size(u, 1)
-            u[i] = mu[i]/temp_v[i]
-        end
-        mul!(temp_u, K', u)
-        # mul!(v, Diagonal(1 ./temp_u), nu)
-        for i=1:size(v, 1)
-            v[i] = nu[i]/temp_u[i]
-        end
+    # initial iteration
+    temp_v = vec(sum(K; dims = 2))
+    u = mu ./ temp_v
+    temp_u = vec(sum(K; dims = 1))
+    v = nu ./ temp_u
+
+    isconverged = false
+    for iter in 0:maxiter
         # check mu marginal
-        if (iter % check_marginal_step == 0)
+        if iter % check_marginal_step == 0
             mul!(temp_v, K, v)
-            for i = 1:size(K, 1)
-                temp_v[i] = abs(mu[i] - u[i]*temp_v[i])
-            end
+            @. temp_v = abs(mu - u * temp_v)
 
             err = maximum(temp_v)
-            if verbose
-                println(string("Iteration ", iter, ", err = ", err))
-            end
+            @debug "Sinkhorn algoritm: iteration $iter" err
 
-            if iter > max_iter
-                if verbose
-                    println("Warning: sinkhorn_native exited without converging")
-                end
-                break
-            elseif err < tol
+            # check stopping criterion
+            if err < tol
+                isconverged = true
                 break
             end
         end
-        iter += 1
-    end
-    nothing
-end
 
-export sinkhorn
+        # perform next iteration
+        if iter < maxiter
+            mul!(temp_v, K, v)
+            @. u = mu / temp_v
+            mul!(temp_u, K', u)
+            @. v = nu / temp_u
+        end
+    end
+
+    if !isconverged
+        @debug "Warning: Sinkhorn algorithm did not converge"
+    end
+
+    return u, v
+end
 
 """
     sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
@@ -102,18 +97,15 @@ export sinkhorn
 Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
 Return optimal transport coupling `γ`.
 """
-function sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    u = ones(size(mu)); v = ones(size(nu))
-    K = zeros(size(C))
-    for i = 1:size(K, 1), j = 1:size(K, 2)
-        K[i, j] = exp(-C[i, j]/eps)
-    end
-    sinkhorn_impl(mu, nu, K, u, v, eps;
-                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
-    return Diagonal(u)*K*Diagonal(v)
-end
+function sinkhorn(mu, nu, C, eps; kwargs...)
+    # compute Gibbs kernel
+    K = @. exp(-C / eps)
 
-export sinkhorn2
+    # compute dual potentials
+    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
+
+    return Diagonal(u) * K * Diagonal(v)
+end
 
 """
     sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
@@ -121,10 +113,9 @@ export sinkhorn2
 Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
 Return optimal transport cost.
 """
-function sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    gamma = sinkhorn(mu, nu, C, eps;
-                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
-    return sum(gamma.*C)
+function sinkhorn2(mu, nu, C, eps; kwargs...)
+    gamma = sinkhorn(mu, nu, C, eps; kwargs...)
+    return dot(gamma, C)
 end
 
 export sinkhorn_unbalanced
