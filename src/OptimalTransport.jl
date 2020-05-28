@@ -88,7 +88,7 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
     end
 
     if !isconverged
-        @debug "Warning: Sinkhorn algorithm did not converge"
+        @warn "Sinkhorn algorithm did not converge"
     end
 
     return u, v
