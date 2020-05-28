@@ -58,7 +58,7 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
     # initial iteration
     temp_v = vec(sum(K; dims = 2))
     u = mu ./ temp_v
-    temp_u = vec(sum(K; dims = 1))
+    temp_u = K' * u
     v = nu ./ temp_u
 
     isconverged = false
