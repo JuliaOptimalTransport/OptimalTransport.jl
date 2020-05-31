@@ -1,13 +1,12 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
 # Author: Stephen Zhang (syz@math.ubc.ca)
-
-__precompile__()
-
 module OptimalTransport
 
 using PyCall
 using Distances
 using LinearAlgebra
+
+export sinkhorn, sinkhorn2
 
 const pot = PyNULL()
 
@@ -40,94 +39,86 @@ function emd2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64})
     return pot.lp.emd2(b, a, PyReverseDims(M))
 end
 
-export sinkhorn_impl
-
 """
-    sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float64}, u::Vector{Float64}, v::Vector{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn_gibbs(mu, nu, K; kwargs...)
 
-Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-`u` and `v` are arrays to be filled with the values for the dual potentials for `mu` and `nu` respectively.
+Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
+the Sinkhorn algorithm.
 
-Return dual potentials `u`, `v` such that `γ = Diagonal(u)*K*Diagonal(v)`, where `K = exp.(-C/eps)` is the Gibbs kernel.
+The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost matrix and
+`eps` the entropic regularization parameter. The optimal transport map for histograms `u`
+and `v` and cost matrix `C` with regularization parameter `eps` can be computed as
+`Diagonal(u) * K * Diagonal(v)`.
 """
-function sinkhorn_impl(mu::Vector{Float64}, nu::Vector{Float64}, K::Matrix{Float64}, u::Vector{Float64}, v::Vector{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    temp_v = zeros(size(K, 1))
-    temp_u = zeros(size(K, 2))
-    iter = 0
-    err = 0
-
+function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
     if !(sum(mu) ≈ sum(nu))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
     end
 
-    while true
-        mul!(temp_v, K, v)
-        #mul!(u, Diagonal(1 ./temp_v), mu)
-        for i=1:size(u, 1)
-            u[i] = mu[i]/temp_v[i]
-        end
-        mul!(temp_u, K', u)
-        # mul!(v, Diagonal(1 ./temp_u), nu)
-        for i=1:size(v, 1)
-            v[i] = nu[i]/temp_u[i]
-        end
+    # initial iteration
+    temp_v = vec(sum(K; dims = 2))
+    u = mu ./ temp_v
+    temp_u = K' * u
+    v = nu ./ temp_u
+
+    isconverged = false
+    for iter in 0:maxiter
         # check mu marginal
-        if (iter % check_marginal_step == 0)
+        if iter % check_marginal_step == 0
             mul!(temp_v, K, v)
-            for i = 1:size(K, 1)
-                temp_v[i] = abs(mu[i] - u[i]*temp_v[i])
-            end
+            @. temp_v = abs(mu - u * temp_v)
 
             err = maximum(temp_v)
-            if verbose
-                println(string("Iteration ", iter, ", err = ", err))
-            end
+            @debug "Sinkhorn algoritm: iteration $iter" err
 
-            if iter > max_iter
-                if verbose
-                    println("Warning: sinkhorn_native exited without converging")
-                end
-                break
-            elseif err < tol
+            # check stopping criterion
+            if err < tol
+                isconverged = true
                 break
             end
         end
-        iter += 1
+
+        # perform next iteration
+        if iter < maxiter
+            mul!(temp_v, K, v)
+            @. u = mu / temp_v
+            mul!(temp_u, K', u)
+            @. v = nu / temp_u
+        end
     end
-    nothing
+
+    if !isconverged
+        @warn "Sinkhorn algorithm did not converge"
+    end
+
+    return u, v
 end
 
-export sinkhorn
-
 """
-    sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn(mu, nu, C, eps; kwargs...)
 
-Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-Return optimal transport coupling `γ`.
+Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
 """
-function sinkhorn(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    u = ones(size(mu)); v = ones(size(nu))
-    K = zeros(size(C))
-    for i = 1:size(K, 1), j = 1:size(K, 2)
-        K[i, j] = exp(-C[i, j]/eps)
-    end
-    sinkhorn_impl(mu, nu, K, u, v, eps;
-                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
-    return Diagonal(u)*K*Diagonal(v)
+function sinkhorn(mu, nu, C, eps; kwargs...)
+    # compute Gibbs kernel
+    K = @. exp(-C / eps)
+
+    # compute dual potentials
+    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
+
+    return Diagonal(u) * K * Diagonal(v)
 end
 
-export sinkhorn2
-
 """
-    sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
+    sinkhorn2(mu, nu, C, eps; kwargs...)
 
-Sinkhorn algorithm to compute coupling of `mu`, `nu` with entropic regularisation parameter `eps`.
-Return optimal transport cost.
+Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
 """
-function sinkhorn2(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64}, eps::Float64; tol = 1e-6, check_marginal_step = 10, max_iter = 1000, verbose = false)
-    gamma = sinkhorn(mu, nu, C, eps;
-                        tol = tol, check_marginal_step = check_marginal_step, max_iter = max_iter, verbose = verbose)
-    return sum(gamma.*C)
+function sinkhorn2(mu, nu, C, eps; kwargs...)
+    gamma = sinkhorn(mu, nu, C, eps; kwargs...)
+    return dot(gamma, C)
 end
 
 export sinkhorn_unbalanced
@@ -201,26 +192,32 @@ function sinkhorn_unbalanced2(μ::Vector{Float64}, ν::Vector{Float64}, C::Matri
     return sum(C.*sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ϵ, tol = tol, max_iter = max_iter, verbose = verbose))
 end
 
-export _sinkhorn
-
 """
-    _sinkhorn(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
+    pot_sinkhorn(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
 
-Wrapper to POT function `sinkhorn`
+Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
+
+This function is a wrapper of the function
+[`sinkhorn`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn) in the
+Python Optimal Transport package.
 """
-function _sinkhorn(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
-    return pot.sinkhorn(b, a, PyReverseDims(M), eps)'
+function pot_sinkhorn(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
+    return pot.sinkhorn(nu, mu, PyReverseDims(C), eps; stopThr = tol)'
 end
 
-export _sinkhorn2
-
 """
-    _sinkhorn2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
+    pot_sinkhorn2(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
 
-Wrapper to POT function `sinkhorn2`
+Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`.
+
+This function is a wrapper of the function
+[`sinkhorn2`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn2) in the
+Python Optimal Transport package.
 """
-function _sinkhorn2(a::Vector{Float64}, b::Vector{Float64}, M::Matrix{Float64}, eps::Float64)
-    return pot.sinkhorn2(b, a, PyReverseDims(M), eps)[1]
+function pot_sinkhorn2(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9)
+    return pot.sinkhorn2(nu, mu, PyReverseDims(C), eps; stopThr = tol)[1]
 end
 
 export _sinkhorn_unbalanced
