@@ -143,20 +143,14 @@ Reference:
 Chizat, L., Peyré, G., Schmitzer, B. and Vialard, F.X., 2016. Scaling algorithms for unbalanced transport problems. arXiv preprint arXiv:1607.05816.
 """
 function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false)
-    function proxdiv_KL(out, s, eps, lambda, p)
-        for i = 1:size(s, 1)
-            out[i] = (s[i]^(eps/(eps + lambda)) * p[i]^(lambda/(eps + lambda)))/s[i]
-        end
+    function proxdiv_KL(s, eps, lambda, p)
+        return @. (s^(eps/(eps + lambda)) * p^(lambda/(eps + lambda)))/s
     end
 
     a = ones(size(mu, 1)); b = ones(size(nu, 1))
     a_old = a; b_old = b
     tmp_a = zeros(size(nu, 1)); tmp_b = zeros(size(mu, 1))
 
-    #K = zeros(size(C));
-    #for i = 1:size(C, 1), j = 1:size(C, 2)
-    #    K[i, j] = exp(-C[i, j]/eps)
-    #end
     K = @. exp(-C/eps)
 
     iter = 1
@@ -165,15 +159,15 @@ function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_i
         a_old = a
         b_old = b
         tmp_b = K*b
-        proxdiv_KL(a, tmp_b, eps, lambda1, mu)
+        a = proxdiv_KL(tmp_b, eps, lambda1, mu)
         tmp_a = K'*a
-        proxdiv_KL(b, tmp_a, eps, lambda2, nu)
+        b = proxdiv_KL(tmp_a, eps, lambda2, nu)
         iter += 1
         if iter % 10 == 0
             err_a = maximum(abs.(a - a_old))/max(maximum(abs.(a)), maximum(abs.(a_old)), 1)
             err_b = maximum(abs.(b - b_old))/max(maximum(abs.(b)), maximum(abs.(b_old)), 1)
             if verbose
-                @debug "Iteration $iter, err = ", 0.5*(err_a + err_b)
+                println("Iteration $iter, err = ", 0.5*(err_a + err_b))
             end
             if (0.5*(err_a + err_b) < tol) || iter > max_iter
                 break
@@ -181,7 +175,7 @@ function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_i
         end
     end
     if iter > max_iter && verbose
-        @warn "Warning: exited before convergence"
+        println( "Warning: exited before convergence")
     end
     return Diagonal(a)*K*Diagonal(b)
 end

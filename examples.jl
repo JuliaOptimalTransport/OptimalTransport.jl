@@ -33,25 +33,25 @@ N = 100; M = 200
 ν = normalize!(ones(size(ν_spt, 1)), 1)
 
 C = pairwise(Euclidean(), μ_spt', ν_spt').^2
-ϵ = 0.01
+ϵ = 0.05
 λ = 1.0
 
 γ_ = pot_sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
-γ = sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ)
+γ = sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ, verbose = true)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
 ## Stabilized Sinkhorn
-ϵ = 1e-3
-γ =  OptimalTransport.sinkhorn_stabilized(μ, ν, C, ϵ)
-γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_stabilized")
+ϵ = 0.005
+γ =  OptimalTransport.sinkhorn_stabilized(μ, ν, C, ϵ, max_iter = 5000)
+γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_stabilized", max_iter = 5000)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
 ## Stabilized Sinkhorn eps-scaling
 
-γ =  OptimalTransport.sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ)
-γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_epsilon_scaling")
+γ =  OptimalTransport.sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ, max_iter = 5000)
+γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_epsilon_scaling", max_iter = 5000)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
