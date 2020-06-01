@@ -60,23 +60,41 @@ Random.seed!(100)
     end
 
     # computation on the GPU
-    if CUDA.functional()
-        @testset "CUDA" begin
-            # create two uniform histograms
-            μ = CUDA.fill(Float32(1/M), M)
-            ν = CUDA.fill(Float32(1/N), N)
+    #if CUDA.functional()
+    #    @testset "CUDA" begin
+    #        # create two uniform histograms
+    #        μ = CUDA.fill(Float32(1/M), M)
+    #        ν = CUDA.fill(Float32(1/N), N)
 
-            # create random cost matrix
-            C = abs2.(CUDA.rand(M) .- CUDA.rand(1, N))
+    #        # create random cost matrix
+    #        C = abs2.(CUDA.rand(M) .- CUDA.rand(1, N))
 
-            # compute optimal transport map
-            eps = 0.01f0
-            γ = sinkhorn(μ, ν, C, eps)
-            @test γ isa CuArray{Float32}
+    #        # compute optimal transport map
+    #        eps = 0.01f0
+    #        γ = sinkhorn(μ, ν, C, eps)
+    #        @test γ isa CuArray{Float32}
 
-            # compute optimal transport cost
-            c = sinkhorn2(μ, ν, C, eps)
-            @test c isa Float32
-        end
+    #        # compute optimal transport cost
+    #        c = sinkhorn2(μ, ν, C, eps)
+    #        @test c isa Float32
+    #    end
+    #end
+end
+
+@testset "unbalanced transport" begin
+    M = 250
+    N = 200
+    @testset "example" begin
+        μ = fill(1, M)
+        ν = fill(1, N)
+        
+        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
+
+        eps = 0.01
+        lambda = 1
+        γ = sinkhorn_unbalanced(μ, ν, C, lambda, lambda, eps)
+        γ_pot = pot_sinkhorn_unbalanced(μ, ν, C, eps, lambda)
+
+        @test norm(γ - γ_pot, Inf) < 1e-9
     end
 end

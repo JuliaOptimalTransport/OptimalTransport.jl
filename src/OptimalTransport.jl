@@ -161,10 +161,6 @@ function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_i
 
     iter = 1
 
-    if !(sum(mu) ≈ sum(nu))
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
-    end
-
     while true
         a_old = a
         b_old = b
