@@ -1,5 +1,8 @@
 # OptimalTransport.jl
-### Optimal transport algorithms for Julia.
+---
+Optimal transport algorithms for Julia.
+
+[![Build Status](https://travis-ci.com/zsteve/OptimalTransport.jl.svg?branch=master)](https://travis-ci.com/zsteve/OptimalTransport.jl.svg?branch=master)
 
 ![example histogram](example.png)
 

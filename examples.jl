@@ -36,8 +36,8 @@ C = pairwise(Euclidean(), μ_spt', ν_spt').^2
 ϵ = 0.05
 λ = 1.0
 
-γ_ = pot_sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
-γ = sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ, verbose = true)
+γ_ = pot_sinkhorn_unbalanced2(μ, ν, C, ϵ, λ)
+γ = sinkhorn_unbalanced2(μ, ν, C, λ, λ, ϵ)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
