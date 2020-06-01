@@ -12,14 +12,28 @@ N = 200; M = 200
 μ_spt = rand(N)
 ν_spt = rand(M)
 
-μ = normalize!(ones(size(μ_spt, 1)), 1)
-ν = normalize!(ones(size(ν_spt, 1)), 1)
-
-C = pairwise(Euclidean(), μ_spt', ν_spt').^2
+μ = fill(1/N, N)
+ν = fill(1/M, M) 
+C = pairwise(SqEuclidean(), μ_spt', ν_spt')
 ϵ = 0.01
 
-γ = OptimalTransport.sinkhorn(μ, ν, C, ϵ)
-γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ)
+γ = sinkhorn(μ, ν, C, ϵ)
+γ_ = pot_sinkhorn(μ, ν, C, ϵ)
+
+norm(γ - γ_, Inf) # Check that we get the same result as POT
+
+
+## Stabilized Sinkhorn
+ϵ = 0.005
+γ =  sinkhorn_stabilized(μ, ν, C, ϵ, max_iter = 5000)
+γ_ = pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_stabilized", max_iter = 5000)
+
+norm(γ - γ_, Inf) # Check that we get the same result as POT
+
+## Stabilized Sinkhorn eps-scaling
+
+γ =  sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ, max_iter = 5000)
+γ_ = pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_epsilon_scaling", max_iter = 5000)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
@@ -29,31 +43,17 @@ N = 100; M = 200
 μ_spt = rand(N)
 ν_spt = rand(M)
 
-μ = normalize!(ones(size(μ_spt, 1)), 1)
-ν = normalize!(ones(size(ν_spt, 1)), 1)
-
-C = pairwise(Euclidean(), μ_spt', ν_spt').^2
-ϵ = 0.05
+μ = fill(1/N, N)
+ν = fill(1/N, M)
+C = pairwise(SqEuclidean(), μ_spt', ν_spt')
+ϵ = 0.01
 λ = 1.0
 
-γ_ = pot_sinkhorn_unbalanced2(μ, ν, C, ϵ, λ)
-γ = sinkhorn_unbalanced2(μ, ν, C, λ, λ, ϵ)
+γ_ = pot_sinkhorn_unbalanced(μ, ν, C, ϵ, λ)
+γ = sinkhorn_unbalanced(μ, ν, C, λ, λ, ϵ)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
-## Stabilized Sinkhorn
-ϵ = 0.005
-γ =  OptimalTransport.sinkhorn_stabilized(μ, ν, C, ϵ, max_iter = 5000)
-γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_stabilized", max_iter = 5000)
-
-norm(γ - γ_, Inf) # Check that we get the same result as POT
-
-## Stabilized Sinkhorn eps-scaling
-
-γ =  OptimalTransport.sinkhorn_stabilized_epsscaling(μ, ν, C, ϵ, max_iter = 5000)
-γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ, method = "sinkhorn_epsilon_scaling", max_iter = 5000)
-
-norm(γ - γ_, Inf) # Check that we get the same result as POT
 
 ## Example plots 
 using Seaborn

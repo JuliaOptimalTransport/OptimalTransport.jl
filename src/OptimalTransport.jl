@@ -21,7 +21,7 @@ end
 
 
 """
-    emd(mu::Vector{Float64}, nu::Vector{Float64}, C::Matrix{Float64})
+    emd(mu, nu, C)
 
 Compute exact transport map for Kantorovich problem with marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
@@ -31,13 +31,13 @@ Return optimal transport coupling of the same dimensions as `C`.
 This function is a wrapper of the function
 [`emd`](https://pythonot.github.io/all.html#ot.emd) in the Python Optimal Tranpsort package.
 """
-function emd(mu::Vector, nu::Vector, C::Matrix)
+function emd(mu, nu, C)
     return pot.lp.emd(nu, mu, PyReverseDims(C))'
 end
 
 
 """
-    emd2(mu::Vector, nu::Vector, C::Matrix)
+    emd2(mu, nu, C)
 
 Compute exact transport cost for Kantorovich problem with marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
@@ -45,7 +45,7 @@ Compute exact transport cost for Kantorovich problem with marginals `mu` and `nu
 This function is a wrapper of the function
 [`emd2`](https://pythonot.github.io/all.html#ot.emd2) in the Python Optimal Transport package.
 """
-function emd2(mu::Vector, nu::Vector, C::Matrix)
+function emd2(mu, nu, C)
     return pot.lp.emd2(nu, mu, PyReverseDims(C))[1]
 end
 
@@ -193,23 +193,23 @@ function sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
 end
 
 """
-    pot_sinkhorn(mu::Vector, nu::Vector, C::Matrix, eps; kwargs...)
+    pot_sinkhorn(mu, nu, C, eps; kwargs...)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`. 
 
-Method can be a choice of "sinkhorn", "greenkhorn", "sinkhorn_stabilized", or "sinkhorn_epsilon_scaling".
+Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"`.
 
 This function is a wrapper of the function
 [`sinkhorn`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn) in the
 Python Optimal Transport package.
 """
-function pot_sinkhorn(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
+function pot_sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
     return pot.sinkhorn(nu, mu, PyReverseDims(C), eps; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)'
 end
 
 """
-    pot_sinkhorn2(mu::Vector, nu::Vector, C::Matrix, eps; kwargs...)
+    pot_sinkhorn2(mu, nu, C, eps; kwargs...)
 
 Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
@@ -220,32 +220,32 @@ This function is a wrapper of the function
 [`sinkhorn2`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn2) in the
 Python Optimal Transport package.
 """
-function pot_sinkhorn2(mu::Vector, nu::Vector, C::Matrix, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
+function pot_sinkhorn2(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
     return pot.sinkhorn2(nu, mu, PyReverseDims(C), eps; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)[1]
 end
 
 """
-    pot_sinkhorn_unbalanced(mu::Vector, nu::Vector, C::Matrix, eps, lambda; kwargs...)
+    pot_sinkhorn_unbalanced(mu, nu, C, eps, lambda; kwargs...)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C`, using entropic regularisation parameter `eps` and marginal weighting functions `lambda`.
 
 This function is a wrapper of the function
 [`sinkhorn_unbalanced`](https://pythonot.github.io/all.html?highlight=sinkhorn_unbalanced#ot.sinkhorn_unbalanced) in the Python Optimal Transport package.
 """
-function pot_sinkhorn_unbalanced(mu::Vector, nu::Vector, C::Matrix, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
+function pot_sinkhorn_unbalanced(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
     return pot.sinkhorn_unbalanced(nu, mu, PyReverseDims(C), eps, lambda; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)'
 end
 
 
 """
-    pot_sinkhorn_unbalanced2(mu::Vector, nu::Vector, C::Matrix, eps, lambda; kwargs...)
+    pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; kwargs...)
 
 Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C`, using entropic regularisation parameter `eps` and marginal weighting functions `lambda`.
 
 This function is a wrapper of the function
 [`sinkhorn_unbalanced2`](https://pythonot.github.io/all.html#ot.sinkhorn_unbalanced2) in the Python Optimal Transport package.
 """
-function pot_sinkhorn_unbalanced2(mu::Vector, nu::Vector, C::Matrix, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
+function pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
 
     return pot.sinkhorn_unbalanced2(nu, mu, PyReverseDims(C), eps, lambda; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)[1]
 end
