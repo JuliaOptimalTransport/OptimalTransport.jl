@@ -30,6 +30,7 @@ before_install:
 install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - conda activate test
+  - conda install -c conda-forge pot
 
 matrix:
   allow_failures:
