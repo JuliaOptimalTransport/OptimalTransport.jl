@@ -18,7 +18,7 @@ C = pairwise(SqEuclidean(), μ_spt', ν_spt')
 ϵ = 0.01
 
 γ = sinkhorn(μ, ν, C, ϵ)
-γ_ = pot_sinkhorn(μ, ν, C, ϵ)
+γ_ = OptimalTransport.pot_sinkhorn(μ, ν, C, ϵ)
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
