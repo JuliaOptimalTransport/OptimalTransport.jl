@@ -478,16 +478,14 @@ function quadreg(mu, nu, C, ϵ;
         
         if err1 <= tol && err2 <= tol
             converged = true
-            print("Converged @ i = $i with marginal errors: \n
-            err1 = $err1, err2 = $err2 \n")
+            @warn "Converged @ i = $i with marginal errors: \n err1 = $err1, err2 = $err2 \n"
             break
         elseif i == maxiter
-            print("Not Converged with errors:\n err1 = $err1, err2 = $err2 \n")
+            @warn "Not Converged with errors:\n err1 = $err1, err2 = $err2 \n"
         end
         
-        # println(DualObjective(a, b))
-        println(" t = $t")
-        println("marginal @ i = $i: err1 = $err1, err2 = $err2 ")
+        @debug " t = $t"
+        @debug "marginal @ i = $i: err1 = $err1, err2 = $err2 "
         
     end
 
