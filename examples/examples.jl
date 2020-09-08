@@ -22,6 +22,8 @@ C = pairwise(SqEuclidean(), μ_spt', ν_spt')
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
+## Quadratically regularised transport
+γ = OptimalTransport.quadreg(μ, ν, C, ϵ)
 
 ## Stabilized Sinkhorn
 ϵ = 0.005
