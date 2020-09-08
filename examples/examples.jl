@@ -22,7 +22,10 @@ C = pairwise(SqEuclidean(), μ_spt', ν_spt')
 
 norm(γ - γ_, Inf) # Check that we get the same result as POT
 
-## Quadratically regularised transport
+## Quadratically regularised transport.
+# There is not an implementation of this method in the Python OT library, 
+# so we don't have an output to compare to.
+
 γ = OptimalTransport.quadreg(μ, ν, C, ϵ)
 
 ## Stabilized Sinkhorn
@@ -83,3 +86,11 @@ Seaborn.jointplot(x = [μ_spt[i] for i in μ_idx], y = [ν_spt[i] for i in ν_id
 Seaborn.axes("equal")
 
 Seaborn.savefig("example.png")
+
+
+γ_quad = Matrix(OptimalTransport.quadreg(μ, ν, C, 5, maxiter = 500))
+μ_idx, ν_idx = sample_joint(γ_quad/sum(γ_quad), 10000)
+
+Seaborn.jointplot(x = [μ_spt[i] for i in μ_idx], y = [ν_spt[i] for i in ν_idx], kind = "hex", marginal_kws = Dict("bins" => μ_spt))
+Seaborn.axes("equal")
+Seaborn.savefig("example_quad.png")
