@@ -52,7 +52,7 @@ function emd2(mu, nu, C)
 end
 
 """
-    sinkhorn_gibbs(mu, nu, K; kwargs...)
+    sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
 Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
 the Sinkhorn algorithm.
@@ -107,7 +107,7 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
 end
 
 """
-    sinkhorn(mu, nu, C, eps; kwargs...)
+    sinkhorn(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
@@ -123,7 +123,7 @@ function sinkhorn(mu, nu, C, eps; kwargs...)
 end
 
 """
-    sinkhorn2(mu, nu, C, eps; kwargs...)
+    sinkhorn2(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
 Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
@@ -135,16 +135,23 @@ end
 
 
 """
-    sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; kwargs...)
+    sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
 
 Computes the optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
 for the marginals mu, nu respectively.
 
+In general, the user can specify the marginal constraints (F1, F2) to the problem
+```
+min_γ ϵ KL(γ | exp(-C/ϵ)) + F1(γ_1 | μ) + F2(γ_2 | ν)
+```
+via `proxdiv_F1(s, p)` and `proxdiv_F2(s, p)` (see Chizat 2016 for details on this). If specified, the algorithm will use user-specified F1, F2 rather than 
+the default (KL-divergence).
+
 Reference:
 Chizat, L., Peyré, G., Schmitzer, B. and Vialard, F.X., 2016. Scaling algorithms for unbalanced transport problems. arXiv preprint arXiv:1607.05816.
 """
-function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false)
+function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
     function proxdiv_KL(s, eps, lambda, p)
         return @. (s^(eps/(eps + lambda)) * p^(lambda/(eps + lambda)))/s
     end
@@ -161,9 +168,17 @@ function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_i
         a_old = a
         b_old = b
         tmp_b = K*b
-        a = proxdiv_KL(tmp_b, eps, lambda1, mu)
+        if proxdiv_F1 == nothing
+            a = proxdiv_KL(tmp_b, eps, lambda1, mu)
+        else
+            a = proxdiv_F1(tmp_b, mu)
+        end
         tmp_a = K'*a
-        b = proxdiv_KL(tmp_a, eps, lambda2, nu)
+        if proxdiv_F2 == nothing
+            b = proxdiv_KL(tmp_a, eps, lambda2, nu)
+        else
+            b = proxdiv_F2(tmp_a, nu)
+        end
         iter += 1
         if iter % 10 == 0
             err_a = maximum(abs.(a - a_old))/max(maximum(abs.(a)), maximum(abs.(a_old)), 1)
@@ -184,7 +199,7 @@ end
 
 
 """
-    sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
+    sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
 
 Computes the optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
@@ -195,7 +210,7 @@ function sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
 end
 
 """
-    pot_sinkhorn(mu, nu, C, eps; kwargs...)
+    pot_sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`. 
@@ -211,7 +226,7 @@ function pot_sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkh
 end
 
 """
-    pot_sinkhorn2(mu, nu, C, eps; kwargs...)
+    pot_sinkhorn2(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
 
 Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
@@ -227,7 +242,7 @@ function pot_sinkhorn2(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sink
 end
 
 """
-    pot_sinkhorn_unbalanced(mu, nu, C, eps, lambda; kwargs...)
+    pot_sinkhorn_unbalanced(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C`, using entropic regularisation parameter `eps` and marginal weighting functions `lambda`.
 
@@ -240,7 +255,7 @@ end
 
 
 """
-    pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; kwargs...)
+    pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
 
 Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C`, using entropic regularisation parameter `eps` and marginal weighting functions `lambda`.
 
@@ -253,7 +268,7 @@ function pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter =
 end
 
 """
-    sinkhorn_stabilized_epsscaling(mu, nu, C, eps; kwargs...) 
+    sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm with epsilon-scaling [Schmitzer 2019]. 
@@ -281,7 +296,7 @@ function getK(C, alpha, beta, eps, mu, nu)
 end
 
 """
-    sinkhorn_stabilized(mu, nu, C, eps; kwargs...) 
+    sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm [Schmitzer 2019].
 
@@ -338,7 +353,7 @@ end
 
 
 """
-quadreg(mu, nu, C, ϵ; kwargs...)
+    quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
 
 Computes the optimal transport map of histograms `mu` and `nu` with cost matrix `C` and quadratic regularization parameter `ϵ`, 
 using the semismooth Newton algorithm [Lorenz 2016].
@@ -358,16 +373,7 @@ If the algorithm does not converge, try some different values of θ.
 Reference:
 Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. arXiv preprint arXiv:1903.01112v4.
 """
-function quadreg(mu, nu, C, ϵ;        
-    θ = 0.1,
-    tol = 1e-5,
-    maxiter = 50,
-    κ = 0.5,
-    δ = 1e-5
-    )
-        
-    
-
+function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
     if !(sum(mu) ≈ sum(nu))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
     end
