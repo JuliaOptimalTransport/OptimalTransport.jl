@@ -11,7 +11,7 @@ PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-Distances = "0.8.2"
+Distances = "0.9.0"
 IterativeSolvers = "0.8.4"
 PyCall = "1.91"
 julia = "1"
