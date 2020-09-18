@@ -11,7 +11,7 @@ using IterativeSolvers, SparseArrays
 
 export sinkhorn, sinkhorn2, pot_sinkhorn, pot_sinkhorn2
 export emd, emd2
-export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling
+export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2, pot_sinkhorn_unbalanced, pot_sinkhorn_unbalanced2
 export quadreg
 
@@ -350,6 +350,53 @@ function sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, 
     return getK(C, alpha, beta, eps, mu, nu)
 end
 
+
+"""
+    sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
+
+Compute entropically regularised barycenter of histograms `mu_all` with cost matrices `C_all` and entropic regularisation parameter `eps`.
+
+    - `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
+    - `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
+    - `eps` is the regularisation parameter
+Returns the entropically regularised barycenter of the `mu_all`.
+"""
+function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
+    sums = sum(mu_all, dims = 2)
+    if !(maximum(sums) - minimum(sums) ≈ 0)
+        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
+    end
+    K_all = [exp.(-C_all[i]/eps) for i = 1:length(C_all)]
+    converged = false
+    v_all = ones(size(mu_all))
+    u_all = ones(size(mu_all))
+    N = size(mu_all, 1)
+    for n = 1:max_iter
+        for i = 1:N
+            v_all[i, :] = mu_all[i, :]./(K_all[i]' * u_all[i, :])
+        end
+        a = ones(size(u_all, 2))
+        for i = 1:N
+            a = a.*((K_all[i]*v_all[i, :]).^(lambda_all[i]))
+        end
+        for i = 1:N
+            u_all[i, :] = a./(K_all[i]*v_all[i, :])
+        end
+        if n % check_marginal_step == 0
+            # check marginal errors
+            err = maximum([maximum(abs.(mu_all[i, :] .- v_all[i, :] .* (K_all[i]' * u_all[i, :]))) for i = 1:N])
+            @debug "Sinkhorn algorithm: iteration $n" err
+            if err < tol
+                converged = true
+                break
+            end
+        end
+    end
+    if !converged
+        @warn "Sinkhorn did not converge"    
+    end
+    return u_all[1, :] .* (K_all[1] * v_all[1, :])
+end
 
 
 """

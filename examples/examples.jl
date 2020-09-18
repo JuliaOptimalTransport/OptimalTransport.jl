@@ -94,3 +94,19 @@ Seaborn.savefig("example.png")
 Seaborn.jointplot(x = [μ_spt[i] for i in μ_idx], y = [ν_spt[i] for i in ν_idx], kind = "hex", marginal_kws = Dict("bins" => μ_spt))
 Seaborn.axes("equal")
 Seaborn.savefig("example_quad.png")
+
+## Sinkhorn barycenters
+
+using PyPlot
+spt = LinRange(-1, 1, 100)
+f(x, σ) = exp.(-x.^2/σ^2)
+normalize(x) = x./sum(x)
+mu_all = hcat([normalize(f(spt .- z, 0.1)) for z in [-0.5, 0.5]]...)'
+C_all = [pairwise(SqEuclidean(), spt', spt') for i = 1:size(mu_all, 1)]
+
+a = sinkhorn_barycenter(mu_all, C_all, 0.05, [0.75, 0.25]; max_iter = 1000);
+figure()
+for i = 1:size(mu_all, 1)
+    plot(spt, mu_all[i, :])
+end
+plot(spt, a)
