@@ -18,8 +18,10 @@ However, the following algorithms are offered natively:
 * Log-stabilized Sinkhorn algorithm (`sinkhorn_stabilized`)
 * Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) 
 * Unbalanced Sinkhorn algorithm (`sinkhorn_unbalanced`)
+* Sinkhorn barycenter algorithm (`sinkhorn_barycenter`)
+* Quadratically regularised optimal transport (`quadreg`)
 
-See the documentation pages for further documentation. Most calling conventions are analogous to those in the Python Optimal Transport library.
+See the documentation pages for further information. Most calling conventions are analogous to those in the Python Optimal Transport library.
 
 ## Documentation
 

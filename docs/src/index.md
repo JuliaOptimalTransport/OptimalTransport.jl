@@ -32,4 +32,6 @@ pot_sinkhorn_unbalanced2
 ```
 
 ## Quadratically regularised optimal transport
+```@docs
 quadreg
+```
