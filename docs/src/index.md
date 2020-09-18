@@ -14,6 +14,7 @@ sinkhorn
 sinkhorn2
 sinkhorn_stabilized_epsscaling
 sinkhorn_stabilized
+sinkhorn_barycenter
 ```
 
 Wrapper functions to POT library:

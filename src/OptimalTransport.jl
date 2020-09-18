@@ -356,9 +356,9 @@ end
 
 Compute entropically regularised barycenter of histograms `mu_all` with cost matrices `C_all` and entropic regularisation parameter `eps`.
 
-    - `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
-    - `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
-    - `eps` is the regularisation parameter
+`mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
+`C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
+`eps` is the regularisation parameter
 Returns the entropically regularised barycenter of the `mu_all`.
 """
 function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
