@@ -1,4 +1,4 @@
-<img src="images/optimal_transport.png"><br>
+<img src="images/optimaltransport_logo.png"><br>
 # OptimalTransport.jl
 ---
 Optimal transport algorithms for Julia.
