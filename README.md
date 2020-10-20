@@ -1,6 +1,11 @@
-<img src="images/optimaltransport_logo.png"><br>
-# OptimalTransport.jl
+<a href="http://zsteve.phatcode.net/OptimalTransportDocs/">
+<img src="images/optimaltransport_logo.png" height="300"><br>
+  </a>
+  
 ---
+
+# OptimalTransport.jl
+
 Optimal transport algorithms for Julia.
 
 [![Build Status](https://travis-ci.com/zsteve/OptimalTransport.jl.svg?branch=master)](https://travis-ci.com/zsteve/OptimalTransport.jl.svg?branch=master)
