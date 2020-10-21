@@ -31,7 +31,7 @@ Compute transport map for Monge-Kantorovich problem with source and target margi
 Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
 
 ```math
-\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
 ```
 
 This function is a wrapper of the function
@@ -51,7 +51,7 @@ Compute exact transport cost for Monge-Kantorovich problem with source and targe
 Returns optimal transport cost (a scalar), i.e. the optimal value
 
 ```math
-\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
 ```
 
 This function is a wrapper of the function
@@ -125,10 +125,10 @@ regularization parameter `eps`.
 Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
 
 ```math
-\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle - \epsilon H(\gamma)
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle - \\epsilon H(\\gamma)
 ```
 
-where ``H`` is the entropic regulariser, ``H(\gamma) = -\sum_{i, j} \gamma_{ij} \log(\gamma_{ij})``.
+where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
 
 """
 function sinkhorn(mu, nu, C, eps; kwargs...)
@@ -150,10 +150,10 @@ regularization parameter `eps`.
 Return optimal value of
 
 ```math
-\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle - \epsilon H(\gamma)
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle - \\epsilon H(\\gamma)
 ```
 
-where ``H`` is the entropic regulariser, ``H(\gamma) = -\sum_{i, j} \gamma_{ij} \log(\gamma_{ij})``.
+where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
 """
 function sinkhorn2(mu, nu, C, eps; kwargs...)
     gamma = sinkhorn(mu, nu, C, eps; kwargs...)
@@ -168,13 +168,13 @@ Computes the optimal transport map of histograms `mu` and `nu` with cost matrix 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
 for the marginals mu, nu respectively.
 
-In general, the user can specify the soft marginal constraints ``(F_1(\cdot | \mu), F_2(\cdot | \nu))`` to the problem
+In general, the user can specify the soft marginal constraints ``(F_1(\\cdot | \\mu), F_2(\\cdot | \\nu))`` to the problem
 
 ```math
-min_\gamma \epsilon \mathrm{KL}(\gamma | \exp(-C/\epsilon)) + F_1(\gamma_1 | \mu) + F_2(\gamma_2 | \nu)
+min_\\gamma \\epsilon \\mathrm{KL}(\\gamma | \\exp(-C/\\epsilon)) + F_1(\\gamma_1 | \\mu) + F_2(\\gamma_2 | \\nu)
 ```
 
-via `\mathrm{proxdiv}_{F_1}(s, p)` and `\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
+via `\\mathrm{proxdiv}_{F_1}(s, p)` and `\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
 """
 function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
     function proxdiv_KL(s, eps, lambda, p)
@@ -384,10 +384,10 @@ end
 Returns the entropically regularised barycenter of the `mu_all`, i.e. the distribution that minimises
 
 ```math
-\min_{\gamma \in \Sigma} \sum_{i = 1}^N \lambda_i \mathrm{entropicOT}^{\epsilon}_{C_i}(\mu, \mu_i)
+\\min_{\\gamma \\in \\Sigma} \\sum_{i = 1}^N \\lambda_i \\mathrm{entropicOT}^{\\epsilon}_{C_i}(\\mu, \\mu_i)
 ```
 
-where ``\mathrm{entropicOT}^{\epsilon}_{C}`` denotes the entropic optimal transport cost with cost ``C`` and entropic regularisation level ``\epsilon``.
+where ``\\mathrm{entropicOT}^{\\epsilon}_{C}`` denotes the entropic optimal transport cost with cost ``C`` and entropic regularisation level ``\\epsilon``.
 """
 function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
     sums = sum(mu_all, dims = 2)
