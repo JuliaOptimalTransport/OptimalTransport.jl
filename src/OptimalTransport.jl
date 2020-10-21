@@ -1,6 +1,6 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
-# Author: Stephen Zhang (syz@math.ubc.ca)
-# Contributors: David Widmann (@devmotion), Tim Matsumoto
+# See prettyprinted documentation at http://zsteve.phatcode.net/OptimalTransportDocs
+#
 
 module OptimalTransport
 
@@ -25,13 +25,15 @@ end
 """
     emd(mu, nu, C)
 
-Compute exact transport map for Kantorovich problem with marginals `mu` and `nu` and a cost matrix `C` of dimensions
+Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
 
-Return optimal transport coupling of the same dimensions as `C`.
+Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
+
+$\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle$
 
 This function is a wrapper of the function
-[`emd`](https://pythonot.github.io/all.html#ot.emd) in the Python Optimal Tranpsort package.
+[`emd`](https://pythonot.github.io/all.html#ot.emd) in the Python Optimal Transport package.
 """
 function emd(mu, nu, C)
     return pot.lp.emd(nu, mu, PyReverseDims(C))'
@@ -41,8 +43,12 @@ end
 """
     emd2(mu, nu, C)
 
-Compute exact transport cost for Kantorovich problem with marginals `mu` and `nu` and a cost matrix `C` of dimensions
+Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
+
+Returns optimal transport cost (a scalar), i.e. the optimal value
+
+$\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle$
 
 This function is a wrapper of the function
 [`emd2`](https://pythonot.github.io/all.html#ot.emd2) in the Python Optimal Transport package.
@@ -55,7 +61,7 @@ end
     sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
 Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
-the Sinkhorn algorithm.
+the Sinkhorn algorithm (Peyre et al., 2019)
 
 The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost matrix and
 `eps` the entropic regularization parameter. The optimal transport map for histograms `u`
@@ -109,8 +115,15 @@ end
 """
     sinkhorn(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
-Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`.
+Compute entropically regularised transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
+regularization parameter `eps`. 
+
+Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
+
+$\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle - \epsilon H(\gamma)$
+
+where $H$ is the entropic regulariser, $H(\gamma) = -\sum_{i, j} \gamma_{ij} \log(\gamma_{ij})$.
+
 """
 function sinkhorn(mu, nu, C, eps; kwargs...)
     # compute Gibbs kernel
@@ -125,8 +138,14 @@ end
 """
     sinkhorn2(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
-Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
+Compute entropically regularised transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
+
+Return optimal value of
+
+$\inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle - \epsilon H(\gamma)$
+
+where $H$ is the entropic regulariser, $H(\gamma) = -\sum_{i, j} \gamma_{ij} \log(\gamma_{ij})$.
 """
 function sinkhorn2(mu, nu, C, eps; kwargs...)
     gamma = sinkhorn(mu, nu, C, eps; kwargs...)
@@ -141,15 +160,11 @@ Computes the optimal transport map of histograms `mu` and `nu` with cost matrix 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
 for the marginals mu, nu respectively.
 
-In general, the user can specify the marginal constraints (F1, F2) to the problem
-```
-min_γ ϵ KL(γ | exp(-C/ϵ)) + F1(γ_1 | μ) + F2(γ_2 | ν)
-```
-via `proxdiv_F1(s, p)` and `proxdiv_F2(s, p)` (see Chizat 2016 for details on this). If specified, the algorithm will use user-specified F1, F2 rather than 
-the default (KL-divergence).
+In general, the user can specify the soft marginal constraints $(F_1(\cdot | \mu), F_2(\cdot | \nu))$ to the problem
 
-Reference:
-Chizat, L., Peyré, G., Schmitzer, B. and Vialard, F.X., 2016. Scaling algorithms for unbalanced transport problems. arXiv preprint arXiv:1607.05816.
+$min_\gamma \epsilon \mathrm{KL}(\gamma | \exp(-C/\epsilon)) + F_1(\gamma_1 | \mu) + F_2(\gamma_2 | \nu)$
+
+via `\mathrm{proxdiv}_{F_1}(s, p)` and `\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
 """
 function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
     function proxdiv_KL(s, eps, lambda, p)
@@ -204,6 +219,8 @@ end
 Computes the optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
 for the marginals mu, nu respectively.
+
+See documentation for `sinkhorn_unbalanced` for additional details.
 """
 function sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
     return dot(C, sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; kwargs...))
@@ -215,7 +232,7 @@ end
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`. 
 
-Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"`.
+Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"` (Flamary et al., 2017)
 
 This function is a wrapper of the function
 [`sinkhorn`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn) in the
@@ -231,7 +248,7 @@ end
 Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
 
-Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"`.
+Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"` (Flamary et al., 2017)
 
 This function is a wrapper of the function
 [`sinkhorn2`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn2) in the
@@ -271,14 +288,10 @@ end
     sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
-Uses stabilized Sinkhorn algorithm with epsilon-scaling [Schmitzer 2019]. 
+Uses stabilized Sinkhorn algorithm with epsilon-scaling (Schmitzer et al., 2019). 
 
 `k` epsilon-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn with regularisation parameters 
 `[lambda^(1-k), ..., lambda^(-1), 1]*eps`. 
-
-
-Reference: 
-Schmitzer, B., 2019. Stabilized sparse scaling algorithms for entropy regularized transport problems. SIAM Journal on Scientific Computing, 41(3), pp.A1443-A1481.
 """
 function sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
     eps_values = [eps*lambda^(k-j) for j = 1:k]
@@ -298,10 +311,7 @@ end
 """
     sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
-Uses stabilized Sinkhorn algorithm [Schmitzer 2019].
-
-Reference: 
-Schmitzer, B., 2019. Stabilized sparse scaling algorithms for entropy regularized transport problems. SIAM Journal on Scientific Computing, 41(3), pp.A1443-A1481.
+Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
 """
 function sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
     if isnothing(alpha) || isnothing(beta)
@@ -354,12 +364,18 @@ end
 """
     sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
 
-Compute entropically regularised barycenter of histograms `mu_all` with cost matrices `C_all` and entropic regularisation parameter `eps`.
+    Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N` histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`, and entropic regularisation parameter `eps`. 
 
 `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
 `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
-`eps` is the regularisation parameter
-Returns the entropically regularised barycenter of the `mu_all`.
+`eps` is the scalar regularisation parameter
+`lambda_all` are positive weights.
+
+Returns the entropically regularised barycenter of the `mu_all`, i.e. the distribution that minimises
+
+$\min_{\gamma \in \Sigma} \sum_{i = 1}^N \lambda_i \mathrm{entropicOT}^{\epsilon}_{C_i}(\mu, \mu_i)$
+
+where $\mathrm{entropicOT}^{\epsilon}_{C}$ denotes the entropic optimal transport cost with cost $C$ and entropic regularisation level $\epsilon$.
 """
 function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
     sums = sum(mu_all, dims = 2)
