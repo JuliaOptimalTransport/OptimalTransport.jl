@@ -1,5 +1,5 @@
 <a href="http://zsteve.phatcode.net/OptimalTransportDocs/">
-<img src="images/optimaltransport_logo.png" height="300"><br>
+<img src="images/optimaltransport_logo.png" height="250"><br>
   </a>
   
 ---
