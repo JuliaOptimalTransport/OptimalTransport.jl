@@ -30,21 +30,7 @@ Read the [documentation](http://zsteve.phatcode.net/OptimalTransportDocs/)
 
 ## Basic usage and examples
 
-Example: Sinkhorn algorithm via `sinkhorn`
-```julia
-N = 200; M = 200
-μ_spt = rand(N)
-ν_spt = rand(M)
-
-μ = fill(1/N, N)
-ν = fill(1/M, M) 
-C = pairwise(SqEuclidean(), μ_spt', ν_spt')
-ϵ = 0.01
-
-γ = sinkhorn(μ, ν, C, ϵ)
-```
-
-See `examples/examples.jl` for a small collection of optimal transport examples using OptimalTransport.jl.
+Click [here](http://zsteve.phatcode.net/OptimalTransportDocs/examples/examples.html) for a small collection of optimal transport examples using OptimalTransport.jl.
 
 ## Acknowledgements
 
