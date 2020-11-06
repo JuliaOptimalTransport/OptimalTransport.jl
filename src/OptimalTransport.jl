@@ -459,10 +459,6 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
     # initialize dual potentials as uniforms
     a = ones(M)./M
     b = ones(N)./N
-
-    # a = median(C)*ones(M)./4
-    # b = median(C)*ones(N)./4
-
     γ = spzeros(M, N)
 
     da = spzeros(M)
@@ -471,7 +467,7 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
     converged = false
 
     function DualObjective(a, b)
-        A = a.*ones(N)' + ones(M).*b' - C
+        A = a.*ones(N)' + ones(M).*b' - C'
 
         return 0.5 * norm(A[A.>0], 2)^2 - ϵ*(dot(nu, a)+ dot(mu, b))
     end
@@ -479,7 +475,7 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
     # computes minimizing directions, update γ
     function search_dir!(a, b, da, db)
         
-        P  = a*ones(N)' .+ ones(M)*b' .- C
+        P  = a*ones(N)' .+ ones(M)*b' .- C'
         
         σ = 1.0*sparse(P .>= 0)
         γ = sparse(max.(P, 0)./ ϵ)
@@ -503,7 +499,7 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
 
     function search_dir(a, b)
         
-        P  = a*ones(N)' .+ ones(M)*b' .- C
+        P  = a*ones(N)' .+ ones(M)*b' .- C'
         
         σ = 1.0*sparse(P .>= 0)
         γ = sparse(max.(P, 0)./ ϵ)
