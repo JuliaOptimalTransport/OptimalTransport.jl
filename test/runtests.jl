@@ -20,12 +20,17 @@ Random.seed!(100)
         C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
         cost = emd2(μ,ν,C,"IPM")
         cost_clp = emd2(μ,ν,C,"Simplex")
+        P_ipm = emd(μ,ν,C,"IPM")
+        P_sim = emd(μ,ν,C,"Simplex")
 
         μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
         C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
         pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
         @test cost ≈ pot_cost atol=1e-7
         @test cost_clp ≈ pot_cost atol=1e-7
+
+        @test C ⋅ P_ipm ≈ cost atol=1e-7
+        @test C ⋅ P_sim ≈ cost atol=1e-7
     end
     @testset "Native implementation" begin
         N = 20
@@ -37,11 +42,13 @@ Random.seed!(100)
 
         C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
         cost = emd2(μ,ν,C,"Native")
+        P = emd(μ,ν,C,"Native")
         # create random cost matrix
         μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
         C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
         pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
         @test cost ≈ pot_cost atol=1e-7
+        @test C ⋅ P ≈ cost atol=1e-7
     end
 end
 

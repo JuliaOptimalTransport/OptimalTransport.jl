@@ -60,8 +60,8 @@ function emd(mu, nu, C,method="IPM")
     else
         throw(ArgumentError("Error: this method is not valid."))
     end
-
-    return p
+    n = max(size(μ)[1],size(ν)[1])
+    return reshape(p,n,n)
 end
 
 """
