@@ -10,10 +10,12 @@ using LinearAlgebra
 using IterativeSolvers, SparseArrays
 
 export sinkhorn, sinkhorn2, pot_sinkhorn, pot_sinkhorn2
-export emd, emd2
+export pot_emd, pot_emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2, pot_sinkhorn_unbalanced, pot_sinkhorn_unbalanced2
 export quadreg
+
+export SimplexClp, ToSimplexFormat, InteriorPointMethod
 
 const pot = PyNULL()
 
@@ -22,8 +24,40 @@ function __init__()
 end
 
 
+include("SimplexOT.jl")
+
+# """
+#     emd(mu, nu, C,method="Simplex")
+
+# Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
+# `(length(mu), length(nu))`.
+
+# Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
+
+# ```math
+# \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+# ```
+
+# The variable "method" can have the values "Simplex", "IPM"
+# and "Native".
+# * "Simplex" - This uses the Clp optimizer, which solves using the Simplex;
+# * "IPM" - This uses the Tulip optimizer, which solves using the Interior Point Method;
+# * "Native" - Uses the Simplex algorithm implemented in this package, which is not advised for use in large problems.
+
+# """
+# function emd(mu, nu, C,method="Simplex")
+#     if method == "Simplex"
+
+#     elseif method == "IPM"
+#     elseif method == "Native"
+#     else
+#         throw(ArgumentError("Error: this method is not valid."))
+#     end
+
+# end
+
 """
-    emd(mu, nu, C)
+    pot_emd(mu, nu, C)
 
 Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
@@ -37,13 +71,13 @@ Return optimal transport coupling `γ` of the same dimensions as `C` which solve
 This function is a wrapper of the function
 [`emd`](https://pythonot.github.io/all.html#ot.emd) in the Python Optimal Transport package.
 """
-function emd(mu, nu, C)
+function pot_emd(mu, nu, C)
     return pot.lp.emd(nu, mu, PyReverseDims(C))'
 end
 
 
 """
-    emd2(mu, nu, C)
+    pot_emd2(mu, nu, C)
 
 Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
@@ -57,7 +91,7 @@ Returns optimal transport cost (a scalar), i.e. the optimal value
 This function is a wrapper of the function
 [`emd2`](https://pythonot.github.io/all.html#ot.emd2) in the Python Optimal Transport package.
 """
-function emd2(mu, nu, C)
+function pot_emd2(mu, nu, C)
     return pot.lp.emd2(nu, mu, PyReverseDims(C))[1]
 end
 
