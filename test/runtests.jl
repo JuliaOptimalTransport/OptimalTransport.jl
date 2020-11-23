@@ -7,25 +7,42 @@ using Random
 using Test
 
 Random.seed!(100)
-@testset "emd transport" begin
-    N = 200
-    M = 250
-    μ = rand(N)
-    ν = rand(M)
-    μ = μ/sum(μ)
-    ν = ν/sum(ν)
+@testset "Earth-Movers Distances transport" begin
+    @testset "Clp and Tulip" begin
+        N = 200
+        M = 250
+        μ = rand(N)
+        ν = rand(M)
+        μ = μ/sum(μ)
+        ν = ν/sum(ν)
 
-    # create random cost matrix
-    C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
-    c,A,b, extra_bfs = ToSimplexFormat(μ,ν,C)
-    p = InteriorPointMethod(c,A,b)
-    cost = c'*p
+        # create random cost matrix
+        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
+        cost = emd2(μ,ν,C,"IPM")
+        cost_clp = emd2(μ,ν,C,"Simplex")
 
-    μ = vcat(μ,zeros(M-N))
-    C = hcat(C,zeros(M,M-N))
-    pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
-    println(cost,pot_cost)
-    @test cost ≈ pot_cost atol=1e-5
+        μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
+        C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
+        pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
+        @test cost ≈ pot_cost atol=1e-7
+        @test cost_clp ≈ pot_cost atol=1e-7
+    end
+    @testset "Native implementation" begin
+        N = 20
+        M = 25
+        μ = rand(N)
+        ν = rand(M)
+        μ = μ/sum(μ)
+        ν = ν/sum(ν)
+
+        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
+        cost = emd2(μ,ν,C,"Native")
+        # create random cost matrix
+        μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
+        C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
+        pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
+        @test cost ≈ pot_cost atol=1e-7
+    end
 end
 
 

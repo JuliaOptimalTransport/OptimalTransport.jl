@@ -57,7 +57,7 @@ function ToSimplexFormat(μ,ν,C)
 	A = [kron(ones(n)',1.0*Matrix(I,m,m))
      	 kron(1.0*Matrix(I,n,n),ones(m)')]
 
-   	return c,A,b,extra_bfs
+   	return c,A,b,μ,ν,extra_bfs
 end
 
 

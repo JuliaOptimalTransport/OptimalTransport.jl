@@ -10,7 +10,7 @@ using LinearAlgebra
 using IterativeSolvers, SparseArrays
 
 export sinkhorn, sinkhorn2, pot_sinkhorn, pot_sinkhorn2
-export pot_emd, pot_emd2
+export emd, emd2, pot_emd, pot_emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2, pot_sinkhorn_unbalanced, pot_sinkhorn_unbalanced2
 export quadreg
@@ -26,35 +26,81 @@ end
 
 include("SimplexOT.jl")
 
-# """
-#     emd(mu, nu, C,method="Simplex")
+"""
+    emd(mu, nu, C,method="Simplex")
 
-# Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-# `(length(mu), length(nu))`.
+Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
+`(length(mu), length(nu))`.
 
-# Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
+Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
 
-# ```math
-# \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
-# ```
+```math
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+```
 
-# The variable "method" can have the values "Simplex", "IPM"
-# and "Native".
-# * "Simplex" - This uses the Clp optimizer, which solves using the Simplex;
-# * "IPM" - This uses the Tulip optimizer, which solves using the Interior Point Method;
-# * "Native" - Uses the Simplex algorithm implemented in this package, which is not advised for use in large problems.
+The variable "method" can have the values "Simplex", "IPM"
+and "Native".
+* "Simplex" - This uses the Clp optimizer, which solves using the Simplex;
+* "IPM" - This uses the Tulip optimizer, which solves using the Interior Point Method;
+* "Native" - Uses the Simplex algorithm implemented in this package, which is not advised for use in large problems.
+"""
+function emd(mu, nu, C,method="IPM")
+    c,A,b,μ,ν, extra_bfs = ToSimplexFormat(mu,nu,C)
 
-# """
-# function emd(mu, nu, C,method="Simplex")
-#     if method == "Simplex"
+    if method == "Simplex"
+        p = SimplexClp(c,A,b)
+    elseif method == "IPM"
+        p = InteriorPointMethod(c,A,b)
+    elseif method == "Native"
+        P  = NorthWest_Rule(μ,ν)
+        p  = reshape(P,length(P),1)[:];
+        ai = collect(1:size(A)[2])
+        ai = sort(vcat(ai[p.>0],extra_bfs))
+        p  = SimplexNative(c,A[2:end,:],b[2:end],p,index_bfs=ai)
+    else
+        throw(ArgumentError("Error: this method is not valid."))
+    end
 
-#     elseif method == "IPM"
-#     elseif method == "Native"
-#     else
-#         throw(ArgumentError("Error: this method is not valid."))
-#     end
+    return p
+end
 
-# end
+"""
+    emd2(mu, nu, C)
+
+Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
+`(length(mu), length(nu))`.
+
+Returns optimal transport cost (a scalar), i.e. the optimal value
+
+```math
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+```
+
+The variable "method" can have the values "Simplex", "IPM"
+and "Native".
+* "Simplex" - This uses the Clp optimizer, which solves using the Simplex;
+* "IPM" - This uses the Tulip optimizer, which solves using the Interior Point Method;
+* "Native" - Uses the Simplex algorithm implemented in this package, which is not advised for use in large problems.
+"""
+function emd2(mu, nu, C, method="IPM")
+    c,A,b,μ,ν, extra_bfs = ToSimplexFormat(mu,nu,C)
+
+    if method == "Simplex"
+        p = SimplexClp(c,A,b)
+    elseif method == "IPM"
+        p = InteriorPointMethod(c,A,b)
+    elseif method == "Native"
+        P  = NorthWest_Rule(μ,ν)
+        p  = reshape(P,length(P),1)[:];
+        ai = collect(1:size(A)[2])
+        ai = sort(vcat(ai[p.>0],extra_bfs))
+        p  = SimplexNative(c,A[2:end,:],b[2:end],p,index_bfs=ai)
+    else
+        throw(ArgumentError("Error: this method is not valid."))
+    end
+    return c'*p
+end
+
 
 """
     pot_emd(mu, nu, C)
