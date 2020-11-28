@@ -15,8 +15,6 @@ export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2, pot_sinkhorn_unbalanced, pot_sinkhorn_unbalanced2
 export quadreg
 
-export SimplexClp, ToSimplexFormat, InteriorPointMethod
-
 const pot = PyNULL()
 
 function __init__()
@@ -38,28 +36,17 @@ Return optimal transport coupling `γ` of the same dimensions as `C` which solve
 \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
 ```
 
-The variable "method" can have the values "Simplex", "IPM"
-and "Native".
-* "Simplex" - This uses the Clp optimizer, which solves using the Simplex;
-* "IPM" - This uses the Tulip optimizer, which solves using the Interior Point Method;
-* "Native" - Uses the Simplex algorithm implemented in this package, which is not advised for use in large problems.
+The variable "optimizer" consists in the optimizer of choice by the user.
+For example, if one wants to use Interior Point Method, one can use 
+```julia
+using Tulip
+optimizer = Tulip.Optimizer()
+```
 """
-function emd(mu, nu, C,method="IPM")
-    c,A,b,μ,ν, extra_bfs = ToSimplexFormat(mu,nu,C)
+function emd(mu, nu, C, optimizer)
+    c,A,b,μ,ν = ToSimplexFormat(mu,nu,C)
 
-    if method == "Simplex"
-        p = SimplexClp(c,A,b)
-    elseif method == "IPM"
-        p = InteriorPointMethod(c,A,b)
-    elseif method == "Native"
-        P  = NorthWest_Rule(μ,ν)
-        p  = reshape(P,length(P),1)[:];
-        ai = collect(1:size(A)[2])
-        ai = sort(vcat(ai[p.>0],extra_bfs))
-        p  = SimplexNative(c,A[2:end,:],b[2:end],p,index_bfs=ai)
-    else
-        throw(ArgumentError("Error: this method is not valid."))
-    end
+    p = SolveLP(c,A,b,optimizer)
     n = max(size(μ)[1],size(ν)[1])
     return reshape(p,n,n)
 end
@@ -76,28 +63,18 @@ Returns optimal transport cost (a scalar), i.e. the optimal value
 \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
 ```
 
-The variable "method" can have the values "Simplex", "IPM"
-and "Native".
-* "Simplex" - This uses the Clp optimizer, which solves using the Simplex;
-* "IPM" - This uses the Tulip optimizer, which solves using the Interior Point Method;
-* "Native" - Uses the Simplex algorithm implemented in this package, which is not advised for use in large problems.
+The variable "optimizer" consists in the optimizer of choice by the user.
+For example, if one wants to use Interior Point Method, one can use 
+```julia
+using Tulip
+optimizer = Tulip.Optimizer()
+```
 """
-function emd2(mu, nu, C, method="IPM")
-    c,A,b,μ,ν, extra_bfs = ToSimplexFormat(mu,nu,C)
+function emd2(mu, nu, C, optimizer)
+    c,A,b,μ,ν = ToSimplexFormat(mu,nu,C)
 
-    if method == "Simplex"
-        p = SimplexClp(c,A,b)
-    elseif method == "IPM"
-        p = InteriorPointMethod(c,A,b)
-    elseif method == "Native"
-        P  = NorthWest_Rule(μ,ν)
-        p  = reshape(P,length(P),1)[:];
-        ai = collect(1:size(A)[2])
-        ai = sort(vcat(ai[p.>0],extra_bfs))
-        p  = SimplexNative(c,A[2:end,:],b[2:end],p,index_bfs=ai)
-    else
-        throw(ArgumentError("Error: this method is not valid."))
-    end
+    p = SolveLP(c,A,b,optimizer)
+
     return c'*p
 end
 
