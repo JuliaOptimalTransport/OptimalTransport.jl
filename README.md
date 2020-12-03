@@ -3,7 +3,11 @@
 
 ## Optimal transport algorithms for Julia
 
-[![Build Status](https://travis-ci.com/zsteve/OptimalTransport.jl.svg?branch=master)](https://travis-ci.com/zsteve/OptimalTransport.jl.svg?branch=master)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/dev)
+![CI](https://github.com/zsteve/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)
+[![Codecov](https://codecov.io/gh/zsteve/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/zsteve/OptimalTransport.jl)
+[![Coveralls](https://coveralls.io/repos/github/zsteve/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/zsteve/OptimalTransport.jl?branch=master)
 
 ![example histogram](example.png)
 
