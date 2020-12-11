@@ -25,7 +25,7 @@ end
 include("SimplexOT.jl")
 
 """
-    emd(mu, nu, C,method="Simplex")
+    emd(mu, nu, C, optimizer)
 
 Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
@@ -52,7 +52,7 @@ function emd(mu, nu, C, optimizer)
 end
 
 """
-    emd2(mu, nu, C)
+    emd2(mu, nu, C, optimizer)
 
 Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
 `(length(mu), length(nu))`.
