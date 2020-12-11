@@ -5,6 +5,8 @@
 ```@docs
 emd
 emd2
+pot_emd
+pot_emd2
 ```
 
 ## Entropically regularised optimal transport
