@@ -15,10 +15,7 @@ This package provides some implementations of optimal transport algorithms, incl
 
 ## Supported algorithms
 
-Currently, Earth Mover's Distance (solution to exact Monge-Kantorovich problem) is wrapped via PyCall using the excellent [POT (Python Optimal Transport)](https://pythonot.github.io/) library. The hope is that _gradually_, more and more functionality will be implemented in native Julia.
-
-However, the following algorithms are offered in pure Julia:
-
+* Earth-Mover's distance (`emd`, `emd2`)
 * Sinkhorn algorithm (`sinkhorn`, `sinkhorn2`)
 * Log-stabilized Sinkhorn algorithm (`sinkhorn_stabilized`)
 * Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) 
