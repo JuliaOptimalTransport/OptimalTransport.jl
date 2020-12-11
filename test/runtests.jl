@@ -5,8 +5,30 @@ using Distances
 using LinearAlgebra
 using Random
 using Test
+using Tulip
 
 Random.seed!(100)
+@testset "Earth-Movers Distances transport" begin
+        N = 200
+        M = 250
+        μ = rand(N)
+        ν = rand(M)
+        μ = μ/sum(μ)
+        ν = ν/sum(ν)
+
+        # create random cost matrix
+        model = Tulip.Optimizer()
+        C    = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
+        cost = emd2(μ,ν,C,model)
+        P    = emd(μ,ν,C,model)
+
+        μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
+        C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
+        pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
+        @test cost ≈ pot_cost atol=1e-5
+        @test C ⋅ P ≈ cost atol=1e-5
+end
+
 
 @testset "entropically regularized transport" begin
     M = 250
