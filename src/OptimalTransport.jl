@@ -25,8 +25,7 @@ function __init__()
 	copy!(pot, pyimport_conda("ot", "pot", "conda-forge"))
 end
 
-
-include("SimplexOT.jl")
+include("simplex.jl")
 
 """
     emd(μ, ν, C, optimizer)
