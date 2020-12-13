@@ -4,118 +4,78 @@
 
 module OptimalTransport
 
-using PyCall
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
+using Requires
+using FillArrays
+using LazyArrays
+using MathOptInterface
 
-export sinkhorn, sinkhorn2, pot_sinkhorn, pot_sinkhorn2
-export emd, emd2, pot_emd, pot_emd2
+export sinkhorn, sinkhorn2
+export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
-export sinkhorn_unbalanced, sinkhorn_unbalanced2, pot_sinkhorn_unbalanced, pot_sinkhorn_unbalanced2
+export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
 
-const pot = PyNULL()
+const MOI = MathOptInterface
 
 function __init__()
-	copy!(pot, pyimport_conda("ot", "pot", "conda-forge"))
+    @require PyCall="438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
+        export POT
+        include("pot.jl")
+    end
 end
 
-
-include("SimplexOT.jl")
+include("simplex.jl")
 
 """
-    emd(mu, nu, C, optimizer)
+    emd(μ, ν, C, optimizer)
 
-Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-`(length(mu), length(nu))`.
-
-Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
-
+Compute the optimal transport map `γ` for the Monge-Kantorovich problem with source
+histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
+which solves
 ```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
 ```
 
-The variable "optimizer" consists in the optimizer of choice by the user.
-For example, if one wants to use Interior Point Method, one can use 
-```julia
-using Tulip
-optimizer = Tulip.Optimizer()
-```
+The corresponding linear programming problem is solved with the user-provided `optimizer`.
+Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
+packages, respectively.
 """
-function emd(mu, nu, C, optimizer)
-    c,A,b,μ,ν = ToSimplexFormat(mu,nu,C)
+function emd(μ, ν, C, optimizer)
+    # check size of cost matrix
+    m = length(μ)
+    n = length(ν)
+    size(C) == (m, n) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
 
-    p = SolveLP(c,A,b,optimizer)
-    n = max(size(μ)[1],size(ν)[1])
-    return reshape(p,n,n)
+    # solve linear programming problem
+    c, A, b = toSimplexFormat(μ, ν, C)
+    p = solveLP(c, A, b, optimizer)
+    γ = reshape(p, m, n)
+
+    return γ
 end
 
 """
-    emd2(mu, nu, C, optimizer)
+    emd2(μ, ν, C, optimizer)
 
-Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-`(length(mu), length(nu))`.
-
-Returns optimal transport cost (a scalar), i.e. the optimal value
-
+Compute the optimal transport cost (a scalar) for the Monge-Kantorovich problem with source
+histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
+which is given by
 ```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
 ```
 
-The variable "optimizer" consists in the optimizer of choice by the user.
-For example, if one wants to use Interior Point Method, one can use 
-```julia
-using Tulip
-optimizer = Tulip.Optimizer()
-```
+The corresponding linear programming problem is solved with the user-provided `optimizer`.
+Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
+packages, respectively.
 """
-function emd2(mu, nu, C, optimizer)
-    c,A,b,μ,ν = ToSimplexFormat(mu,nu,C)
+function emd2(μ, ν, C, optimizer)
+    # compute optimal transport map
+    γ = emd(μ, ν, C, optimizer)
 
-    p = SolveLP(c,A,b,optimizer)
-
-    return c'*p
-end
-
-
-"""
-    pot_emd(mu, nu, C)
-
-Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-`(length(mu), length(nu))`.
-
-Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
-
-```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
-```
-
-This function is a wrapper of the function
-[`emd`](https://pythonot.github.io/all.html#ot.emd) in the Python Optimal Transport package.
-"""
-function pot_emd(mu, nu, C)
-    return pot.lp.emd(nu, mu, PyReverseDims(C))'
-end
-
-
-"""
-    pot_emd2(mu, nu, C)
-
-Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-`(length(mu), length(nu))`.
-
-Returns optimal transport cost (a scalar), i.e. the optimal value
-
-```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
-```
-
-This function is a wrapper of the function
-[`emd2`](https://pythonot.github.io/all.html#ot.emd2) in the Python Optimal Transport package.
-"""
-function pot_emd2(mu, nu, C)
-    return pot.lp.emd2(nu, mu, PyReverseDims(C))[1]
+    return dot(γ, C)
 end
 
 """
@@ -294,64 +254,6 @@ function sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
 end
 
 """
-    pot_sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-
-Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`. 
-
-Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"` (Flamary et al., 2017)
-
-This function is a wrapper of the function
-[`sinkhorn`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn) in the
-Python Optimal Transport package.
-"""
-function pot_sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn(nu, mu, PyReverseDims(C), eps; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)'
-end
-
-"""
-    pot_sinkhorn2(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-
-Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`.
-
-Method can be a choice of `"sinkhorn"`, `"greenkhorn"`, `"sinkhorn_stabilized"`, or `"sinkhorn_epsilon_scaling"` (Flamary et al., 2017)
-
-This function is a wrapper of the function
-[`sinkhorn2`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn2) in the
-Python Optimal Transport package.
-"""
-function pot_sinkhorn2(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn2(nu, mu, PyReverseDims(C), eps; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)[1]
-end
-
-"""
-    pot_sinkhorn_unbalanced(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-
-Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C`, using entropic regularisation parameter `eps` and marginal weighting functions `lambda`.
-
-This function is a wrapper of the function
-[`sinkhorn_unbalanced`](https://pythonot.github.io/all.html?highlight=sinkhorn_unbalanced#ot.sinkhorn_unbalanced) in the Python Optimal Transport package.
-"""
-function pot_sinkhorn_unbalanced(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn_unbalanced(nu, mu, PyReverseDims(C), eps, lambda; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)'
-end
-
-
-"""
-    pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-
-Compute optimal transport cost of histograms `mu` and `nu` with cost matrix `C`, using entropic regularisation parameter `eps` and marginal weighting functions `lambda`.
-
-This function is a wrapper of the function
-[`sinkhorn_unbalanced2`](https://pythonot.github.io/all.html#ot.sinkhorn_unbalanced2) in the Python Optimal Transport package.
-"""
-function pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-
-    return pot.sinkhorn_unbalanced2(nu, mu, PyReverseDims(C), eps, lambda; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)[1]
-end
-
-"""
     sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
@@ -377,6 +279,7 @@ end
 
 """
     sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
+
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
 """
@@ -431,7 +334,9 @@ end
 """
     sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
 
-    Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N` histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`, and entropic regularisation parameter `eps`. 
+Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N`
+histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
+and entropic regularisation parameter `eps`. 
 
 `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
 `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
