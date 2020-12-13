@@ -27,7 +27,8 @@ See the documentation pages for further information. Most calling conventions ar
 
 ## Documentation
 
-Read the [documentation](http://zsteve.phatcode.net/OptimalTransportDocs/)
+ - [Stable](https://zsteve.github.io/OptimalTransport.jl/stable)
+ - [Dev](https://zsteve.github.io/OptimalTransport.jl/dev)
 
 ## Basic usage and examples
 
