@@ -26,8 +26,8 @@ Random.seed!(100)
     C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
 
     # compute optimal transport map and cost with POT
-    pot_P = pot_emd(μ, ν, C)
-    pot_cost = pot_emd2(μ, ν, C)
+    pot_P = POT.emd(μ, ν, C)
+    pot_cost = POT.emd2(μ, ν, C)
 
     # compute optimal transport map and cost with Tulip
     lp = Tulip.Optimizer()
