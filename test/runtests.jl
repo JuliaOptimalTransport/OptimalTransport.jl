@@ -1,35 +1,47 @@
 using OptimalTransport
+
 using CUDA
 using Distances
 using PyCall
+using Tulip
+using MathOptInterface
 
 using LinearAlgebra
 using Random
 using Test
-using Tulip
+
+const MOI = MathOptInterface
 
 Random.seed!(100)
-@testset "Earth-Movers Distances transport" begin
-        N = 200
-        M = 250
-        μ = rand(N)
-        ν = rand(M)
-        μ = μ/sum(μ)
-        ν = ν/sum(ν)
 
-        # create random cost matrix
-        model = Tulip.Optimizer()
-        C    = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
-        cost = emd2(μ,ν,C,model)
-        P    = emd(μ,ν,C,model)
+@testset "Earth-Movers Distance" begin
+    M = 200
+    N = 250
+    μ = rand(M)
+    ν = rand(N)
+    μ ./= sum(μ)
+    ν ./= sum(ν)
 
-        μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
-        C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
-        pot_cost = POT.emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
-        @test cost ≈ pot_cost atol=1e-5
-        @test C ⋅ P ≈ cost atol=1e-5
+    # create random cost matrix
+    C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
+
+    # compute optimal transport map and cost with POT
+    pot_P = pot_emd(μ, ν, C)
+    pot_cost = pot_emd2(μ, ν, C)
+
+    # compute optimal transport map and cost with Tulip
+    lp = Tulip.Optimizer()
+    P = emd(μ, ν, C, lp)
+    @test size(C) == size(P)
+    @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
+    @test maximum(abs, P .- pot_P) < 1e-2
+
+    lp = Tulip.Optimizer()
+    cost = emd2(μ, ν, C, lp)
+    @test dot(C, P) ≈ cost atol=1e-5
+    @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
+    @test cost ≈ pot_cost atol=1e-5
 end
-
 
 @testset "entropically regularized transport" begin
     M = 250
