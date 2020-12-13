@@ -8,6 +8,9 @@ using PyCall
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
+using FillArrays
+using LazyArrays
+using MathOptInterface
 
 export sinkhorn, sinkhorn2, pot_sinkhorn, pot_sinkhorn2
 export emd, emd2, pot_emd, pot_emd2
@@ -15,69 +18,63 @@ export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2, pot_sinkhorn_unbalanced, pot_sinkhorn_unbalanced2
 export quadreg
 
+const MOI = MathOptInterface
 const pot = PyNULL()
 
 function __init__()
 	copy!(pot, pyimport_conda("ot", "pot", "conda-forge"))
 end
 
-
-include("SimplexOT.jl")
+include("simplex.jl")
 
 """
-    emd(mu, nu, C, optimizer)
+    emd(μ, ν, C, optimizer)
 
-Compute transport map for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-`(length(mu), length(nu))`.
-
-Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
-
+Compute the optimal transport map `γ` for the Monge-Kantorovich problem with source
+histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
+which solves
 ```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
 ```
 
-The variable "optimizer" consists in the optimizer of choice by the user.
-For example, if one wants to use Interior Point Method, one can use 
-```julia
-using Tulip
-optimizer = Tulip.Optimizer()
-```
+The corresponding linear programming problem is solved with the user-provided `optimizer`.
+Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
+packages, respectively.
 """
-function emd(mu, nu, C, optimizer)
-    c,A,b,μ,ν = ToSimplexFormat(mu,nu,C)
+function emd(μ, ν, C, optimizer)
+    # check size of cost matrix
+    m = length(μ)
+    n = length(ν)
+    size(C) == (m, n) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
 
-    p = SolveLP(c,A,b,optimizer)
-    n = max(size(μ)[1],size(ν)[1])
-    return reshape(p,n,n)
+    # solve linear programming problem
+    c, A, b = toSimplexFormat(μ, ν, C)
+    p = solveLP(c, A, b, optimizer)
+    γ = reshape(p, m, n)
+
+    return γ
 end
 
 """
-    emd2(mu, nu, C, optimizer)
+    emd2(μ, ν, C, optimizer)
 
-Compute exact transport cost for Monge-Kantorovich problem with source and target marginals `mu` and `nu` and a cost matrix `C` of dimensions
-`(length(mu), length(nu))`.
-
-Returns optimal transport cost (a scalar), i.e. the optimal value
-
+Compute the optimal transport cost (a scalar) for the Monge-Kantorovich problem with source
+histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
+which is given by
 ```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
 ```
 
-The variable "optimizer" consists in the optimizer of choice by the user.
-For example, if one wants to use Interior Point Method, one can use 
-```julia
-using Tulip
-optimizer = Tulip.Optimizer()
-```
+The corresponding linear programming problem is solved with the user-provided `optimizer`.
+Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
+packages, respectively.
 """
-function emd2(mu, nu, C, optimizer)
-    c,A,b,μ,ν = ToSimplexFormat(mu,nu,C)
+function emd2(μ, ν, C, optimizer)
+    # compute optimal transport map
+    γ = emd(μ, ν, C, optimizer)
 
-    p = SolveLP(c,A,b,optimizer)
-
-    return c'*p
+    return dot(γ, C)
 end
-
 
 """
     pot_emd(mu, nu, C)
