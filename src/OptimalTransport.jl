@@ -4,6 +4,7 @@
 
 module OptimalTransport
 
+<<<<<<< HEAD
 using PyCall
 using Distances
 using LinearAlgebra
@@ -116,6 +117,80 @@ This function is a wrapper of the function
 """
 function pot_emd2(mu, nu, C)
     return pot.lp.emd2(nu, mu, PyReverseDims(C))[1]
+=======
+using Distances
+using LinearAlgebra
+using IterativeSolvers, SparseArrays
+using Requires
+using FillArrays
+using LazyArrays
+using MathOptInterface
+
+export sinkhorn, sinkhorn2
+export emd, emd2
+export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
+export sinkhorn_unbalanced, sinkhorn_unbalanced2
+export quadreg
+
+const MOI = MathOptInterface
+
+function __init__()
+    @require PyCall="438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
+        export POT
+        include("pot.jl")
+    end
+end
+
+include("simplex.jl")
+
+"""
+    emd(μ, ν, C, optimizer)
+
+Compute the optimal transport map `γ` for the Monge-Kantorovich problem with source
+histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
+which solves
+```math
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
+```
+
+The corresponding linear programming problem is solved with the user-provided `optimizer`.
+Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
+packages, respectively.
+"""
+function emd(μ, ν, C, optimizer)
+    # check size of cost matrix
+    m = length(μ)
+    n = length(ν)
+    size(C) == (m, n) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+
+    # solve linear programming problem
+    c, A, b = toSimplexFormat(μ, ν, C)
+    p = solveLP(c, A, b, optimizer)
+    γ = reshape(p, m, n)
+
+    return γ
+end
+
+"""
+    emd2(μ, ν, C, optimizer)
+
+Compute the optimal transport cost (a scalar) for the Monge-Kantorovich problem with source
+histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
+which is given by
+```math
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
+```
+
+The corresponding linear programming problem is solved with the user-provided `optimizer`.
+Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
+packages, respectively.
+"""
+function emd2(μ, ν, C, optimizer)
+    # compute optimal transport map
+    γ = emd(μ, ν, C, optimizer)
+
+    return dot(γ, C)
+>>>>>>> upstream/master
 end
 
 """
@@ -294,6 +369,7 @@ function sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
 end
 
 """
+<<<<<<< HEAD
     pot_sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
@@ -352,6 +428,8 @@ function pot_sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter =
 end
 
 """
+=======
+>>>>>>> upstream/master
     sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
 
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
@@ -377,6 +455,10 @@ end
 
 """
     sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
 """
@@ -431,7 +513,13 @@ end
 """
     sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
 
+<<<<<<< HEAD
     Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N` histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`, and entropic regularisation parameter `eps`. 
+=======
+Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N`
+histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
+and entropic regularisation parameter `eps`. 
+>>>>>>> upstream/master
 
 `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
 `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`

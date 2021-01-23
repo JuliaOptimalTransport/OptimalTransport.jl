@@ -17,18 +17,24 @@ sinkhorn_stabilized
 sinkhorn_barycenter
 ```
 
+<<<<<<< HEAD
 Wrapper functions to POT library:
 ```@docs
 pot_sinkhorn
 pot_sinkhorn2
 ```
 
+=======
+>>>>>>> upstream/master
 ## Unbalanced optimal transport
 ```@docs
 sinkhorn_unbalanced
 sinkhorn_unbalanced2
+<<<<<<< HEAD
 pot_sinkhorn_unbalanced
 pot_sinkhorn_unbalanced2
+=======
+>>>>>>> upstream/master
 ```
 
 ## Quadratically regularised optimal transport

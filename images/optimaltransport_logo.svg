@@ -6788,6 +6788,7 @@
          width="318.19214"
          height="323.06" />
     </clipPath>
+<<<<<<< HEAD
     <clipPath
        id="p92032bd352-7-7-0-36-3-3">
       <rect
@@ -7364,6 +7365,8 @@
          width="318.19214"
          height="323.06" />
     </clipPath>
+=======
+>>>>>>> upstream/master
   </defs>
   <sodipodi:namedview
      id="base"
@@ -7372,9 +7375,15 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
+<<<<<<< HEAD
      inkscape:zoom="2.8284271"
      inkscape:cx="81.869567"
      inkscape:cy="-1059.4617"
+=======
+     inkscape:zoom="1"
+     inkscape:cx="172.79605"
+     inkscape:cy="348.36583"
+>>>>>>> upstream/master
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -7401,6 +7410,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+<<<<<<< HEAD
     <rect
        style="opacity:1;fill:#cccccc;fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:2;stroke-dasharray:none;stroke-opacity:0.98039216;paint-order:normal"
        id="rect1772"
@@ -7408,6 +7418,8 @@
        height="2.6458395"
        x="50.799999"
        y="341.9791" />
+=======
+>>>>>>> upstream/master
     <g
        style="stroke-linecap:butt;stroke-linejoin:round"
        id="patch_1"
@@ -7931,6 +7943,7 @@
        clip-path="url(#p92032bd352-7-7-0-36-3)"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccc" />
+<<<<<<< HEAD
     <g
        id="g5214-7-3"
        transform="matrix(0.65192902,0,0,0.66566325,-9.0835762,177.34612)"
@@ -8693,5 +8706,7 @@
    id="tspan2714-7">RANSPORT</tspan>.<tspan
    style="font-size:14.11111069px;stroke-width:0.08723277;stroke-linecap:butt;stroke-linejoin:round"
    id="tspan2716-1">JL</tspan></tspan></text>
+=======
+>>>>>>> upstream/master
   </g>
 </svg>

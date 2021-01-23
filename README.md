@@ -1,7 +1,13 @@
 <a href="http://zsteve.phatcode.net/OptimalTransportDocs/">
+<<<<<<< HEAD
 <img src="images/optimaltransport_logo2.png" height="125"><br></a>
 
 ## Optimal Transport algorithms for Julia
+=======
+<img src="images/optimaltransport_logo.png" height="125"><br></a>
+
+## Optimal transport algorithms for Julia
+>>>>>>> upstream/master
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/dev)
@@ -15,10 +21,14 @@ This package provides some implementations of optimal transport algorithms, incl
 
 ## Supported algorithms
 
+<<<<<<< HEAD
 Currently, Earth Mover's Distance (solution to exact Monge-Kantorovich problem) is wrapped via PyCall using the excellent [POT (Python Optimal Transport)](https://pythonot.github.io/) library. The hope is that _gradually_, more and more functionality will be implemented in native Julia.
 
 However, the following algorithms are offered in pure Julia:
 
+=======
+* Earth-Mover's distance (`emd`, `emd2`)
+>>>>>>> upstream/master
 * Sinkhorn algorithm (`sinkhorn`, `sinkhorn2`)
 * Log-stabilized Sinkhorn algorithm (`sinkhorn_stabilized`)
 * Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) 
@@ -30,7 +40,12 @@ See the documentation pages for further information. Most calling conventions ar
 
 ## Documentation
 
+<<<<<<< HEAD
 Read the [documentation](http://zsteve.phatcode.net/OptimalTransportDocs/)
+=======
+ - [Stable](https://zsteve.github.io/OptimalTransport.jl/stable)
+ - [Dev](https://zsteve.github.io/OptimalTransport.jl/dev)
+>>>>>>> upstream/master
 
 ## Basic usage and examples
 
