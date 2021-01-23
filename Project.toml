@@ -1,16 +1,6 @@
 name = "OptimalTransport"
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 authors = ["zsteve <stephenz@student.unimelb.edu.au>"]
-<<<<<<< HEAD
-version = "0.1.9"
-
-[deps]
-Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
-PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
-=======
 version = "0.2.0"
 
 [deps]
@@ -21,25 +11,10 @@ LazyArrays = "5078a376-72f3-5289-bfd5-ec5146d43c02"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
->>>>>>> upstream/master
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 Distances = "0.9.0, 0.10"
-<<<<<<< HEAD
-IterativeSolvers = "0.8.4"
-PyCall = "1.91"
-julia = "1"
-
-[extras]
-Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Tulip","CUDA", "Random", "Test"]
-=======
 FillArrays = "0.9, 0.10"
 IterativeSolvers = "0.8.4, 0.9"
 LazyArrays = "0.18, 0.19"
@@ -56,4 +31,3 @@ Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
 
 [targets]
 test = ["Tulip", "CUDA", "PyCall", "Random", "Test"]
->>>>>>> upstream/master

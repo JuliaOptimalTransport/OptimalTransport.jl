@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-using Documenter, OptimalTransport
-
-makedocs(sitename="OptimalTransport.jl")
-=======
 using OptimalTransport
 
 using Documenter
@@ -26,4 +21,3 @@ makedocs(;
 deploydocs(;
     repo="github.com/zsteve/OptimalTransport.jl",
 )
->>>>>>> upstream/master

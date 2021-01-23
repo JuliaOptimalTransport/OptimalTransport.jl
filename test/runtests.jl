@@ -1,46 +1,14 @@
 using OptimalTransport
-<<<<<<< HEAD
-using CUDA
-using Distances
-=======
 
 using CUDA
 using Distances
 using PyCall
 using Tulip
 using MathOptInterface
->>>>>>> upstream/master
 
 using LinearAlgebra
 using Random
 using Test
-<<<<<<< HEAD
-using Tulip
-
-Random.seed!(100)
-@testset "Earth-Movers Distances transport" begin
-        N = 200
-        M = 250
-        μ = rand(N)
-        ν = rand(M)
-        μ = μ/sum(μ)
-        ν = ν/sum(ν)
-
-        # create random cost matrix
-        model = Tulip.Optimizer()
-        C    = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims = 2)
-        cost = emd2(μ,ν,C,model)
-        P    = emd(μ,ν,C,model)
-
-        μ = vcat(μ,zeros(M-N))       # Requires dims(mu) == dims(nu)
-        C = hcat(C,zeros(M,M-N))     # Add columns so that C is MxM
-        pot_cost = pot_emd2(μ, ν, C) # Requires dims(mu) == dims(nu)
-        @test cost ≈ pot_cost atol=1e-5
-        @test C ⋅ P ≈ cost atol=1e-5
-end
-
-
-=======
 
 const MOI = MathOptInterface
 
@@ -75,7 +43,6 @@ Random.seed!(100)
     @test cost ≈ pot_cost atol=1e-5
 end
 
->>>>>>> upstream/master
 @testset "entropically regularized transport" begin
     M = 250
     N = 200
@@ -91,20 +58,12 @@ end
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
         γ = sinkhorn(μ, ν, C, eps)
-<<<<<<< HEAD
-        γ_pot = OptimalTransport.pot_sinkhorn(μ, ν, C, eps)
-=======
         γ_pot = POT.sinkhorn(μ, ν, C, eps)
->>>>>>> upstream/master
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         # compute optimal transport cost (Julia implementation + POT)
         c = sinkhorn2(μ, ν, C, eps)
-<<<<<<< HEAD
-        c_pot = OptimalTransport.pot_sinkhorn2(μ, ν, C, eps)
-=======
         c_pot = POT.sinkhorn2(μ, ν, C, eps)
->>>>>>> upstream/master
         @test c ≈ c_pot atol=1e-9
     end
 
@@ -122,11 +81,7 @@ end
         γ = sinkhorn(μ, ν, C, eps)
         @test eltype(γ) === Float32
 
-<<<<<<< HEAD
-        γ_pot = OptimalTransport.pot_sinkhorn(μ, ν, C, eps)
-=======
         γ_pot = POT.sinkhorn(μ, ν, C, eps)
->>>>>>> upstream/master
         @test eltype(γ_pot) === Float64 # POT does not respect input type
         @test norm(γ - γ_pot, Inf) < Base.eps(Float32)
 
@@ -134,11 +89,7 @@ end
         c = sinkhorn2(μ, ν, C, eps)
         @test c isa Float32
 
-<<<<<<< HEAD
-        c_pot = OptimalTransport.pot_sinkhorn2(μ, ν, C, eps)
-=======
         c_pot = POT.sinkhorn2(μ, ν, C, eps)
->>>>>>> upstream/master
         @test c_pot isa Float64 # POT does not respect input types
         @test c ≈ c_pot atol=Base.eps(Float32)
     end
@@ -177,21 +128,13 @@ end
         eps = 0.01
         lambda = 1
         γ = sinkhorn_unbalanced(μ, ν, C, lambda, lambda, eps)
-<<<<<<< HEAD
-        γ_pot = pot_sinkhorn_unbalanced(μ, ν, C, eps, lambda)
-=======
         γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda)
->>>>>>> upstream/master
 
         # compute optimal transport map
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps)
-<<<<<<< HEAD
-        c_pot = pot_sinkhorn_unbalanced2(μ, ν, C, eps, lambda)
-=======
         c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda)
->>>>>>> upstream/master
 
         @test c ≈ c_pot atol=1e-9
     end
@@ -213,11 +156,7 @@ end
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
         γ = sinkhorn_stabilized(μ, ν, C, eps)
-<<<<<<< HEAD
-        γ_pot = OptimalTransport.pot_sinkhorn(μ, ν, C, eps, method = "sinkhorn_stabilized")
-=======
         γ_pot = POT.sinkhorn(μ, ν, C, eps, method = "sinkhorn_stabilized")
->>>>>>> upstream/master
         @test norm(γ - γ_pot, Inf) < 1e-9
     end
 end
