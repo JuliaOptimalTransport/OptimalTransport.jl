@@ -9,7 +9,7 @@
 [![Codecov](https://codecov.io/gh/zsteve/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/zsteve/OptimalTransport.jl)
 [![Coveralls](https://coveralls.io/repos/github/zsteve/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/zsteve/OptimalTransport.jl?branch=master)
 
-This package provides some implementations of optimal transport algorithms, including the Sinkhorn scaling algorithm and its variants or extensions. 
+This package provides some [Julia](https://julialang.org/) implementations of algorithms for computational [optimal transport](https://optimaltransport.github.io/), including the Earth-Mover's (Wasserstein) distance, Sinkhorn scaling algorithm for entropy-regularised transport as well as some variants or extensions. 
 
 ## Overview of supported functionality
 
@@ -40,9 +40,9 @@ Contributions are more than welcome! Please feel free to submit an issue or pull
 
 Contributors include:
 
-- Tim Matsumoto
-- David Widmann
-- Davi Barreira
+- Tim Matsumoto (UBC)
+- David Widmann (FGV)
+- Davi Barreira (Uppsala)
 
 ## References
 
