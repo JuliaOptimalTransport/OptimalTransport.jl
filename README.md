@@ -9,21 +9,19 @@
 [![Codecov](https://codecov.io/gh/zsteve/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/zsteve/OptimalTransport.jl)
 [![Coveralls](https://coveralls.io/repos/github/zsteve/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/zsteve/OptimalTransport.jl?branch=master)
 
-![example histogram](example.png)
-
 This package provides some implementations of optimal transport algorithms, including the Sinkhorn scaling algorithm and its variants or extensions. 
 
-## Supported algorithms
+## Overview of supported functionality
 
-* Earth-Mover's distance (`emd`, `emd2`)
-* Sinkhorn algorithm (`sinkhorn`, `sinkhorn2`)
+* Monge-Kantorovich (Earth-Mover's) distance (`emd`, `emd2`)
+* Sinkhorn algorithm for entropy-regularised optimal transport (`sinkhorn`, `sinkhorn2`)
 * Log-stabilized Sinkhorn algorithm (`sinkhorn_stabilized`)
 * Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) 
 * Unbalanced Sinkhorn algorithm (`sinkhorn_unbalanced`)
-* Sinkhorn barycenter algorithm (`sinkhorn_barycenter`)
-* Quadratically regularised optimal transport (`quadreg`)
+* Entropy-regularised barycenters (Sinkhorn barycenters) (`sinkhorn_barycenter`)
+* Quadratically regularised optimal transport via semismooth Newton scheme [Lorenz, 2019] (`quadreg`) 
 
-See the documentation pages for further information. Most calling conventions are analogous to those in the Python Optimal Transport library.
+See the documentation pages linked below for further information. Most calling conventions are analogous to those in the [Python Optimal Transport](https://optimaltransport.github.io/) library, which formed the inspiration for this library. 
 
 ## Documentation
 
@@ -32,28 +30,24 @@ See the documentation pages for further information. Most calling conventions ar
 
 ## Basic usage and examples
 
-Click [here](http://zsteve.phatcode.net/OptimalTransportDocs/examples/examples.html) for a small collection of optimal transport examples using OptimalTransport.jl.
+Click [here](http://zsteve.phatcode.net/OptimalTransportDocs/examples/examples.html) for a small collection of optimal transport examples using OptimalTransport.jl. See the `examples/` directory for the source. 
+
+## Contributing 
+
+Contributions are more than welcome! Please feel free to submit an issue or pull request in this repository. 
 
 ## Acknowledgements
 
 Contributors include:
 
 - Tim Matsumoto
-
 - David Widmann
-
 - Davi Barreira
-
-
 
 ## References
 
-Peyré, G. and Cuturi, M., 2019. Computational optimal transport. Foundations and Trends® in Machine Learning, 11(5-6), pp.355-607.
-
-Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. Applied Mathematics & Optimization, pp.1-31.
-
-Rémi Flamary and Nicolas Courty, POT Python Optimal Transport library, https://pythonot.github.io/, 2017
-
-Chizat, L., Peyré, G., Schmitzer, B. and Vialard, F.X., 2016. Scaling algorithms for unbalanced transport problems. arXiv preprint arXiv:1607.05816.
-
-Schmitzer, B., 2019. Stabilized sparse scaling algorithms for entropy regularized transport problems. SIAM Journal on Scientific Computing, 41(3), pp.A1443-A1481.
+- Peyré, G. and Cuturi, M., 2019. Computational optimal transport. Foundations and Trends® in Machine Learning, 11(5-6), pp.355-607.
+- Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. Applied Mathematics & Optimization, pp.1-31.
+- Rémi Flamary and Nicolas Courty, POT Python Optimal Transport library, https://pythonot.github.io/, 2017
+- Chizat, L., Peyré, G., Schmitzer, B. and Vialard, F.X., 2016. Scaling algorithms for unbalanced transport problems. arXiv preprint arXiv:1607.05816.
+- Schmitzer, B., 2019. Stabilized sparse scaling algorithms for entropy regularized transport problems. SIAM Journal on Scientific Computing, 41(3), pp.A1443-A1481.

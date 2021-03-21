@@ -1,5 +1,5 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
-# See prettyprinted documentation at http://zsteve.phatcode.net/OptimalTransportDocs
+# See prettyprinted documentation at https://zsteve.github.io/OptimalTransport.jl/dev/
 #
 
 module OptimalTransport
@@ -183,15 +183,15 @@ end
 
 Computes the optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
-for the marginals mu, nu respectively.
+for the marginals `mu`, `nu` respectively.
 
-In general, the user can specify the soft marginal constraints ``(F_1(\\cdot | \\mu), F_2(\\cdot | \\nu))`` to the problem
+For full generality, the user can specify the soft marginal constraints ``(F_1(\\cdot | \\mu), F_2(\\cdot | \\nu))`` to the problem
 
 ```math
-min_\\gamma \\epsilon \\mathrm{KL}(\\gamma | \\exp(-C/\\epsilon)) + F_1(\\gamma_1 | \\mu) + F_2(\\gamma_2 | \\nu)
+\\min_\\gamma \\epsilon \\mathrm{KL}(\\gamma | \\exp(-C/\\epsilon)) + F_1(\\gamma_1 | \\mu) + F_2(\\gamma_2 | \\nu)
 ```
 
-via `\\mathrm{proxdiv}_{F_1}(s, p)` and `\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
+via `math\\mathrm{proxdiv}_{F_1}(s, p)` and `math\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
 """
 function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
     function proxdiv_KL(s, eps, lambda, p)
@@ -338,10 +338,10 @@ Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection
 histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
 and entropic regularisation parameter `eps`. 
 
-`mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
-`C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
-`eps` is the scalar regularisation parameter
-`lambda_all` are positive weights.
+ - `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `math i = 1, \\ldots, N`.
+ - `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`.
+ - `eps` is the scalar regularisation parameter.
+ - `lambda_all` are positive weights.
 
 Returns the entropically regularised barycenter of the `mu_all`, i.e. the distribution that minimises
 
