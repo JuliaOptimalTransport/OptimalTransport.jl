@@ -41,8 +41,8 @@ Contributions are more than welcome! Please feel free to submit an issue or pull
 Contributors include:
 
 - Tim Matsumoto (UBC)
-- David Widmann (FGV)
-- Davi Barreira (Uppsala)
+- David Widmann (Uppsala)
+- Davi Barreira (FGV)
 
 ## References
 
