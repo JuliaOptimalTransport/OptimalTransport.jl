@@ -8,8 +8,6 @@ using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
 using Requires
-using FillArrays
-using LazyArrays
 using MathOptInterface
 
 export sinkhorn, sinkhorn2
@@ -27,8 +25,6 @@ function __init__()
     end
 end
 
-include("simplex.jl")
-
 """
     emd(μ, ν, C, optimizer)
 
@@ -43,16 +39,54 @@ The corresponding linear programming problem is solved with the user-provided `o
 Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
 packages, respectively.
 """
-function emd(μ, ν, C, optimizer)
+function emd(μ, ν, C, model::MOI.ModelLike)
     # check size of cost matrix
-    m = length(μ)
-    n = length(ν)
-    size(C) == (m, n) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+    nμ = length(μ)
+    nν = length(ν)
+    size(C) == (nμ, nν) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+    nC = length(C)
 
-    # solve linear programming problem
-    c, A, b = toSimplexFormat(μ, ν, C)
-    p = solveLP(c, A, b, optimizer)
-    γ = reshape(p, m, n)
+    # define variables
+    x = MOI.add_variables(model, nC)
+    xmat = reshape(x, nμ, nν)
+
+    # define objective function
+    T = eltype(C)
+    zero_T = zero(T)
+    MOI.set(
+        model,
+        MOI.ObjectiveFunction{MOI.ScalarAffineFunction{T}}(),
+        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(vec(C), x), zero_T),
+    )
+    MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+
+    # add non-negativity constraints
+    for xi in x
+        MOI.add_constraint(model, MOI.SingleVariable(xi), MOI.GreaterThan(zero_T))
+    end
+
+    # add constraints for source
+    for (xs, μi) in zip(eachrow(xmat), μ)
+        f = MOI.ScalarAffineFunction(
+            [MOI.ScalarAffineTerm(one(μi), xi) for xi in xs], zero(μi)
+        )
+        MOI.add_constraint(model, f, MOI.EqualTo(μi))
+    end
+
+    # add constraints for target
+    for (xs, νi) in zip(eachcol(xmat), ν)
+        f = MOI.ScalarAffineFunction(
+            [MOI.ScalarAffineTerm(one(νi), xi) for xi in xs], zero(νi)
+        )
+        MOI.add_constraint(model, f, MOI.EqualTo(νi))
+    end
+
+    # compute optimal solution
+    MOI.optimize!(model)
+    status = MOI.get(model, MOI.TerminationStatus())
+    status === MOI.OPTIMAL || error("failed to compute optimal transport map: ", status)
+    p = MOI.get(model, MOI.VariablePrimal(), x)
+    γ = reshape(p, nμ, nν)
 
     return γ
 end
