@@ -5,6 +5,7 @@ using Distances
 using PyCall
 using Tulip
 using MathOptInterface
+using Distributions
 
 using LinearAlgebra
 using Random
@@ -42,6 +43,57 @@ Random.seed!(100)
     @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
     @test cost ≈ pot_cost atol=1e-5
 end
+
+@testset "1D Optimal Transport for Convex Cost" begin
+    # Continuous Case
+    μ = Normal(0,2)
+    ν = Normal(10,2)
+    c(x,y) = abs(x-y)
+
+    @test otCost1d(c,μ,ν) ≈ 10 atol=1e-5
+
+    # Discrete Case
+    n,m = 100, 150
+
+    μ = rand(n)
+    ν = rand(m) .+ 0.5;
+    μ_n = rand(n)
+    ν_m = rand(m)
+    μ_n = μ_n/sum(μ_n)
+    ν_m = ν_m/sum(ν_m);
+
+    c(x,y) = (x-y)^2
+    C = Distances.pairwise(Distances.SqEuclidean(), μ', ν');
+
+    lp = Tulip.Optimizer()
+    cost = emd2(μ_n, ν_m, C, lp)
+    cost1 = otCost1d(c,μ,μ_n,ν,ν_m)
+
+    P = emd(μ_n, ν_m, C, lp)
+    γ = otPlan1d(c,μ,μ_n,ν,ν_m)
+
+    @test cost ≈ cost1 atol=1e-5
+    @test sum(γ .>=0) == n*m
+    @test dot(C,γ) ≈ dot(C,P) atol=1e-5
+
+    μ = DiscreteNonParametric(μ, μ_n);
+    ν = DiscreteNonParametric(ν, ν_m);
+
+    u = μ.support
+    u_n = μ.p
+    v = ν.support
+    v_m = ν.p
+
+    γ1 = otPlan1d(c,u,u_n,v,v_m)
+    γ2 = otPlan1d(c,μ,ν)
+    cost2 = otCost1d(c,μ,ν)
+
+    @test sum(γ2 .>=0) == n*m
+    @test γ2 ≈ γ1 atol = 1e-5
+    @test cost2 ≈ cost1
+
+end
+
 
 @testset "entropically regularized transport" begin
     M = 250

@@ -81,11 +81,20 @@ they are 1-Dimensional distributions and the cost
 function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
+For the first case we have parameters:\n
 c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where ``h`` is a convex function.\n
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
+where ``h`` is a convex function. \n
+u        : Vector of point mass location    (e.g. `u = collect(1:10)`)\n
+u_weights: Vector of weights for each point (e.g. `u_weights = ones(10)*0.1`)\n
+v        : Vector of point mass location    (e.g. `v = collect(10:20)`)\n
+v_weights: Vector of weights for each point (e.g. `v_weights = ones(10)*0.1`)\n
+
+
+For the second case we have parameters:\n
+c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
+where ``h`` is a convex function. \n
+μ: Finite Discrete Distribution (e.g. `μ = DiscreteNonParametric(u, u_n)`)\n
+ν: Finite Discrete Distribution (e.g. `ν = DiscreteNonParametric(v, v_n)`)\n
 """
 function otCost1d(c,u::Vector,u_weights::Vector,v::Vector,v_weights::Vector)
 
@@ -137,11 +146,21 @@ they are 1-Dimensional distributions and the cost
 function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
+For the first case we have parameters:\n
 c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where ``h`` is a convex function.\n
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
+where ``h`` is a convex function. \n
+u        : Vector of point mass location    (e.g. `u = collect(1:10)`)\n
+u_weights: Vector of weights for each point (e.g. `u_weights = ones(10)*0.1`)\n
+v        : Vector of point mass location    (e.g. `v = collect(10:20)`)\n
+v_weights: Vector of weights for each point (e.g. `v_weights = ones(10)*0.1`)\n
+
+
+For the second case we have parameters:\n
+c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
+where ``h`` is a convex function. \n
+μ: Finite Discrete Distribution (e.g. `μ = DiscreteNonParametric(u, u_n)`)\n
+ν: Finite Discrete Distribution (e.g. `ν = DiscreteNonParametric(v, v_n)`)\n
+
 
 Returns the Optimal Transport Plan γ as a matrix.
 """
@@ -189,11 +208,24 @@ they are 1-Dimensional distributions and the cost
 function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
+Note that when you declar `μ = DiscreteNonParametric(u,u_n)`, the
+distribution is sorted, hence, `otPlan1d(c,u,u_n,v,v_n)` will
+not be equal to `otPlan1d(c,μ,ν)` is `u` and/or `v` are not sorted.
+
+For the first case we have parameters:\n
 c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where ``h`` is a convex function.
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
+where ``h`` is a convex function. \n
+u        : Vector of point mass location    (e.g. `u = collect(1:10)`)\n
+u_weights: Vector of weights for each point (e.g. `u_weights = ones(10)*0.1`)\n
+v        : Vector of point mass location    (e.g. `v = collect(10:20)`)\n
+v_weights: Vector of weights for each point (e.g. `v_weights = ones(10)*0.1`)\n
+
+
+For the second case we have parameters:\n
+c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
+where ``h`` is a convex function. \n
+μ: Finite Discrete Distribution (e.g. `μ = DiscreteNonParametric(u, u_n)`)\n
+ν: Finite Discrete Distribution (e.g. `ν = DiscreteNonParametric(v, v_n)`)\n
 
 Returns the Optimal Transport Cost and the Plan as a matrix γ.
 """
