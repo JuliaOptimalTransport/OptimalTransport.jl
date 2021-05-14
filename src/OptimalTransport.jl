@@ -1,5 +1,5 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
-# See prettyprinted documentation at http://zsteve.phatcode.net/OptimalTransportDocs
+# See prettyprinted documentation at https://zsteve.github.io/OptimalTransport.jl/dev/
 #
 
 module OptimalTransport
@@ -8,8 +8,6 @@ using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
 using Requires
-using FillArrays
-using LazyArrays
 using MathOptInterface
 using Distributions, QuadGK
 
@@ -29,7 +27,6 @@ function __init__()
     end
 end
 
-include("simplex.jl")
 include("ot1d.jl")
 
 """
@@ -46,16 +43,54 @@ The corresponding linear programming problem is solved with the user-provided `o
 Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
 packages, respectively.
 """
-function emd(μ, ν, C, optimizer)
+function emd(μ, ν, C, model::MOI.ModelLike)
     # check size of cost matrix
-    m = length(μ)
-    n = length(ν)
-    size(C) == (m, n) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+    nμ = length(μ)
+    nν = length(ν)
+    size(C) == (nμ, nν) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+    nC = length(C)
 
-    # solve linear programming problem
-    c, A, b = toSimplexFormat(μ, ν, C)
-    p = solveLP(c, A, b, optimizer)
-    γ = reshape(p, m, n)
+    # define variables
+    x = MOI.add_variables(model, nC)
+    xmat = reshape(x, nμ, nν)
+
+    # define objective function
+    T = eltype(C)
+    zero_T = zero(T)
+    MOI.set(
+        model,
+        MOI.ObjectiveFunction{MOI.ScalarAffineFunction{T}}(),
+        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(vec(C), x), zero_T),
+    )
+    MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+
+    # add non-negativity constraints
+    for xi in x
+        MOI.add_constraint(model, MOI.SingleVariable(xi), MOI.GreaterThan(zero_T))
+    end
+
+    # add constraints for source
+    for (xs, μi) in zip(eachrow(xmat), μ)
+        f = MOI.ScalarAffineFunction(
+            [MOI.ScalarAffineTerm(one(μi), xi) for xi in xs], zero(μi)
+        )
+        MOI.add_constraint(model, f, MOI.EqualTo(μi))
+    end
+
+    # add constraints for target
+    for (xs, νi) in zip(eachcol(xmat), ν)
+        f = MOI.ScalarAffineFunction(
+            [MOI.ScalarAffineTerm(one(νi), xi) for xi in xs], zero(νi)
+        )
+        MOI.add_constraint(model, f, MOI.EqualTo(νi))
+    end
+
+    # compute optimal solution
+    MOI.optimize!(model)
+    status = MOI.get(model, MOI.TerminationStatus())
+    status === MOI.OPTIMAL || error("failed to compute optimal transport map: ", status)
+    p = MOI.get(model, MOI.VariablePrimal(), x)
+    γ = reshape(p, nμ, nν)
 
     return γ
 end
@@ -186,15 +221,15 @@ end
 
 Computes the optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
-for the marginals mu, nu respectively.
+for the marginals `mu`, `nu` respectively.
 
-In general, the user can specify the soft marginal constraints ``(F_1(\\cdot | \\mu), F_2(\\cdot | \\nu))`` to the problem
+For full generality, the user can specify the soft marginal constraints ``(F_1(\\cdot | \\mu), F_2(\\cdot | \\nu))`` to the problem
 
 ```math
-min_\\gamma \\epsilon \\mathrm{KL}(\\gamma | \\exp(-C/\\epsilon)) + F_1(\\gamma_1 | \\mu) + F_2(\\gamma_2 | \\nu)
+\\min_\\gamma \\epsilon \\mathrm{KL}(\\gamma | \\exp(-C/\\epsilon)) + F_1(\\gamma_1 | \\mu) + F_2(\\gamma_2 | \\nu)
 ```
 
-via `\\mathrm{proxdiv}_{F_1}(s, p)` and `\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
+via `math\\mathrm{proxdiv}_{F_1}(s, p)` and `math\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
 """
 function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
     function proxdiv_KL(s, eps, lambda, p)
@@ -341,10 +376,10 @@ Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection
 histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
 and entropic regularisation parameter `eps`. 
 
-`mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `i = 1, ..., N`
-`C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`
-`eps` is the scalar regularisation parameter
-`lambda_all` are positive weights.
+ - `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `math i = 1, \\ldots, N`.
+ - `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`.
+ - `eps` is the scalar regularisation parameter.
+ - `lambda_all` are positive weights.
 
 Returns the entropically regularised barycenter of the `mu_all`, i.e. the distribution that minimises
 
