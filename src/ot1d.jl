@@ -1,10 +1,10 @@
 """
     otCost1d(c, μ::UnivariateDistribution, ν::UnivariateDistribution)
 
-Calculates the Optimal Transport Cost between μ to ν, where
-they are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
-``h`` is a convex function.
+Calculate the optimal transport cost of the Monge-Kantorovich problem with univariate distributions `μ` and `ν` as source and target marginals and cost function `c`.
+
+Cost function `c` has to be of the form ``c(x, y) = h(|x - y|)`` where ``h`` is a
+convex function.
 
 Parameters:\n
 c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
