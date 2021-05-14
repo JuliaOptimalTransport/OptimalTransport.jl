@@ -7,9 +7,10 @@ Cost function `c` has to be of the form ``c(x, y) = h(|x - y|)`` where ``h`` is 
 convex function.
 """
 function otCost1d(c, μ::UnivariateDistribution, ν::UnivariateDistribution)
-    g(μ,ν,x) = c(quantile(μ,x),quantile(ν,x))
-    f(x) = g(μ,ν,x)
-    return quadgk(f,0,1)[1]
+    integral, _ = quadgk(0, 1) do x
+        return c(quantile(μ, x), quantile(ν, x))
+    end
+    return integral
 end
 
 """
