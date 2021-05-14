@@ -7,7 +7,7 @@ emd
 emd2
 ```
 
-### Exact optimal transport for 1D.
+### Exact optimal transport for 1D
 
 ```@docs
 otCost1D
