@@ -1,6 +1,5 @@
 """
-otCost1d(c,μ::Distributions.UnivariateDistribution,
-           ν::Distributions.UnivariateDistribution)
+    otCost1d(c, μ::UnivariateDistribution, ν::UnivariateDistribution)
 
 Calculates the Optimal Transport Cost between μ to ν, where
 they are 1-Dimensional distributions and the cost
