@@ -27,7 +27,7 @@ T(x) = F_{\\nu}^{-1}(F_{\\mu}(x)),
 where ``F_{\\mu}`` and ``F_{\\nu}`` are the cumulative distribution functions of
 distributions ``\\mu`` and ``\\nu``, respectively.
 """
-function otPlan1d(c,μ::Distributions.UnivariateDistribution,ν::Distributions.UnivariateDistribution)
+function otPlan1d(c, μ::UnivariateDistribution, ν::UnivariateDistribution)
   T(x) = Distributions.quantile(ν,Distributions.cdf(μ,x))
   return T
 end
