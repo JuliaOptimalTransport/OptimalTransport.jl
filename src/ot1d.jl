@@ -20,12 +20,6 @@ Calculate the optimal transport map of the Monge-Kantorovich problem with univar
 Cost function `c` has to be of the form ``c(x, y) = h(|x - y|)`` where ``h`` is a
 convex function.
 
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(|x-y|)``
-where ``h`` is a convex function.
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-
 Returns the Optimal Transport Plan as a function
   ```math
   T(x)=F_\\nu^{-1}(F_\\mu(x)).
