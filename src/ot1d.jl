@@ -33,32 +33,6 @@ function otPlan1d(c, μ::UnivariateDistribution, ν::UnivariateDistribution)
 end
 
 
-"""
-otCostPlan1d(c,μ::Distributions.UnivariateDistribution,
-            ν::Distributions.UnivariateDistribution)`
-
-Calculates the Optimal Transport Cost between μ to ν, where
-they are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
-``h`` is a convex function.
-
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where ``h`` is a convex function.
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-
-Returns the Optimal Transport Cost and the Plan as a function
-  ```math
-  T(x)=F_\\nu^{-1}(F_\\mu(x)).
-  ```
-"""
-function otCostPlan1d(c,μ::Distributions.UnivariateDistribution,ν::Distributions.UnivariateDistribution)
-    g(μ,ν,x) = c(quantile(μ,x),quantile(ν,x))
-    f(x) = g(μ,ν,x)
-    T(x) = Distributions.quantile(ν,Distributions.cdf(μ,x))
-    return quadgk(f,0,1)[1], T
-end
 
 """
 otCost1d(c,u::Vector,u_weights::Vector,v::Vector,v_weights::Vector)
