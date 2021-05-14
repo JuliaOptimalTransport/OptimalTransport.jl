@@ -28,7 +28,7 @@ where ``F_{\\mu}`` and ``F_{\\nu}`` are the cumulative distribution functions of
 distributions ``\\mu`` and ``\\nu``, respectively.
 """
 function otPlan1d(c, μ::UnivariateDistribution, ν::UnivariateDistribution)
-  T(x) = Distributions.quantile(ν,Distributions.cdf(μ,x))
+  T(x) = quantile(ν, cdf(μ, x))
   return T
 end
 
