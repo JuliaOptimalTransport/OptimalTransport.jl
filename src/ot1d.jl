@@ -5,12 +5,6 @@ Calculate the optimal transport cost of the Monge-Kantorovich problem with univa
 
 Cost function `c` has to be of the form ``c(x, y) = h(|x - y|)`` where ``h`` is a
 convex function.
-
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where `h` is a convex function.
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
 """
 function otCost1d(c,μ::Distributions.UnivariateDistribution,ν::Distributions.UnivariateDistribution)
     g(μ,ν,x) = c(quantile(μ,x),quantile(ν,x))
