@@ -63,7 +63,7 @@ end
     ν_m = ν_m/sum(ν_m);
 
     c(x,y) = (x-y)^2
-    C = Distances.pairwise(Distances.SqEuclidean(), μ', ν');
+    C = pairwise(SqEuclidean(), μ', ν');
 
     lp = Tulip.Optimizer()
     cost = emd2(μ_n, ν_m, C, lp)
