@@ -5,6 +5,9 @@
 ```@docs
 emd
 emd2
+w2mvncost
+w2mvnplan
+w2mvncostplan
 ```
 
 ### Exact optimal transport for 1D.
