@@ -116,6 +116,109 @@ function emd2(μ, ν, C, optimizer)
     return dot(γ, C)
 end
 
+
+"""
+w2mvncost(μ::MvNormal, ν::MvNormal)
+
+Compute the 2-Wassertein distance between Multivariate Normal distributions.
+Note that for two Normal distributions
+``\\mu \\in N({m}_\\mu,{\\Sigma}_\\mu)`` and
+``\\nu \\in N({m}_\\nu,{\\Sigma}_\\nu)``
+the 2-Wassertein distance has a closed form given by:
+```math
+  W_2(\\mu,\\nu) = \\left[|m_\\mu - m_\\nu|^2 + tr\\left(
+  \\Sigma_\\mu +
+  \\Sigma_\\nu -
+  2 \\left(
+    \\Sigma_\\mu^{1/2} \\Sigma_\\nu
+    \\Sigma_\\mu^{1/2}
+    \\right)^{1/2}
+  \\right) \\right]^{1/2}
+```
+where,
+```math
+  A =
+  \\Sigma_\\mu^{-1/2}\\left(
+  \\Sigma_\\mu^{1/2} \\Sigma_\\nu
+  \\Sigma_\\mu^{1/2}
+  \\right)^{1/2}
+  \\Sigma_\\mu^{-1/2}.
+```
+"""
+function w2mvncost(X::MvNormal, Y::MvNormal)
+    XΣsqrt = X.Σ^(1/2)
+    w2     = sqrt(norm(X.μ - Y.μ)^2 + tr(X.Σ + Y.Σ - 2*(XΣsqrt*Y.Σ*XΣsqrt)^(1/2)))
+    return w2
+end
+
+"""
+w2mvnplan(μ::MvNormal, ν::MvNormal)
+
+Compute the optimal transport plan for te 2-Wassertein distance between Multivariate Normal distributions.
+Note that for two Normal distributions
+``\\mu \\in N({m}_\\mu,{\\Sigma}_\\mu)`` and
+``\\nu \\in N({m}_\\nu,{\\Sigma}_\\nu)``
+the 2-Wassertein optimal plan is actually a map with the a closed form given by:
+```math
+  T: x \\to m_\\nu +A(x - m_\\mu)
+```
+where,
+```math
+  A =
+  \\Sigma_\\mu^{-1/2}\\left(
+  \\Sigma_\\mu^{1/2} \\Sigma_\\nu
+  \\Sigma_\\mu^{1/2}
+  \\right)^{1/2}
+  \\Sigma_\\mu^{-1/2}.
+```
+"""
+function w2mvnplan(X::MvNormal, Y::MvNormal)
+    XΣsqrt = X.Σ^(1/2)
+    T(x)   = Y.μ + XΣsqrt*(XΣsqrt*Y.Σ*XΣsqrt)^(1/2)*XΣsqrt*(x - X.μ)
+    return T
+end
+
+"""
+w2mvncostplan(μ::MvNormal, ν::MvNormal)
+
+Compute the optimal transport plan for te 2-Wassertein distance between Multivariate Normal distributions.
+Note that for two Normal distributions
+``\\mu \\in N({m}_\\mu,{\\Sigma}_\\mu)`` and
+``\\nu \\in N({m}_\\nu,{\\Sigma}_\\nu)``
+the 2-Wassertein distance has a closed form given by:
+```math
+  W_2(\\mu,\\nu) = \\left[|m_\\mu - m_\\nu|^2 + tr\\left(
+  \\Sigma_\\mu +
+  \\Sigma_\\nu -
+  2 \\left(
+    \\Sigma_\\mu^{1/2} \\Sigma_\\nu
+    \\Sigma_\\mu^{1/2}
+    \\right)^{1/2}
+  \\right) \\right]^{1/2}
+```
+where,
+```math
+  A =
+  \\Sigma_\\mu^{-1/2}\\left(
+  \\Sigma_\\mu^{1/2} \\Sigma_\\nu
+  \\Sigma_\\mu^{1/2}
+  \\right)^{1/2}
+  \\Sigma_\\mu^{-1/2}.
+```
+
+The 2-Wassertein optimal plan is actually a map with the a closed form given by:
+```math
+  T: x \\to m_\\nu +A(x - m_\\mu)
+```
+"""
+function w2mvncostplan(X::MvNormal, Y::MvNormal)
+    XΣsqrt = X.Σ^(1/2)
+    dΣsqrt  = (XΣsqrt*Y.Σ*XΣsqrt)^(1/2)
+    T(x)   = Y.μ + XΣsqrt*dΣsqrt*XΣsqrt*(x - X.μ)
+    w2     = sqrt(norm(X.μ - Y.μ)^2 + tr(X.Σ + Y.Σ - 2*dΣsqrt))
+    return w2, T
+end
+
 """
     sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
