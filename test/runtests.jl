@@ -44,6 +44,33 @@ Random.seed!(100)
     @test cost ≈ pot_cost atol=1e-5
 end
 
+@testset "2-Wassertein Normal Distributions" begin
+    μa = [2,1]
+    νb = [3,3]
+    Σa = [1 0;
+        0 1]
+    Σb = [1 0;
+        0 1]
+    μ = MvNormal(μa,Σa)
+    ν = MvNormal(νb,Σb)
+
+    # Checking if the 2-Wassertein squared is equal to the
+    # Euclidean distance of the means of the Multivariate Normals
+    # in case they have the same co-variance.
+    @test w2mvncost(μ,ν)^2 ≈ 5 atol = 1e-5
+
+    # Checking if the optimal transport map is indeed
+    # transporting μ exactly to ν
+    T = w2mvnplan(μ,ν)
+    x = [i for i in eachrow(rand(10,2))]
+    @test pdf(μ,[0,0]) ≈ pdf(ν,T([0,0])) atol = 1e-5
+
+    #Checking if the function with both together is correct
+    cost, T2 = w2mvncostplan(μ,ν)
+    @test cost^2 ≈ 5 atol = 1e-5
+    @test pdf(μ,[0,0]) ≈ pdf(ν,T2([0,0])) atol = 1e-5
+
+end
 @testset "1D Optimal Transport for Convex Cost" begin
     # Continuous Case
     μ = Normal(0,2)
