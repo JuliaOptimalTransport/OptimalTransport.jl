@@ -1,5 +1,7 @@
+<br>
 <a href="https://zsteve.github.io/OptimalTransport.jl/dev">
-<img src="images/optimaltransport_logo.png" height="125"><br></a>
+<img src="images/optimaltransport_logo.svg" height="180"><br></a>
+<br>
 
 ## Optimal transport algorithms for Julia
 
