@@ -19,7 +19,7 @@ export quadreg
 const MOI = MathOptInterface
 
 function __init__()
-    @require PyCall="438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
+    @require PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
         export POT
         include("pot.jl")
     end
@@ -129,7 +129,7 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
     end
 
     # initial iteration
-    temp_v = vec(sum(K; dims = 2))
+    temp_v = vec(sum(K; dims=2))
     u = mu ./ temp_v
     temp_u = K' * u
     v = nu ./ temp_u
@@ -211,7 +211,6 @@ function sinkhorn2(mu, nu, C, eps; kwargs...)
     return dot(gamma, C)
 end
 
-
 """
     sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
 
@@ -227,29 +226,44 @@ For full generality, the user can specify the soft marginal constraints ``(F_1(\
 
 via `math\\mathrm{proxdiv}_{F_1}(s, p)` and `math\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
 """
-function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
+function sinkhorn_unbalanced(
+    mu,
+    nu,
+    C,
+    lambda1,
+    lambda2,
+    eps;
+    tol=1e-9,
+    max_iter=1000,
+    verbose=false,
+    proxdiv_F1=nothing,
+    proxdiv_F2=nothing,
+)
     function proxdiv_KL(s, eps, lambda, p)
-        return @. (s^(eps/(eps + lambda)) * p^(lambda/(eps + lambda)))/s
+        return @. (s^(eps / (eps + lambda)) * p^(lambda / (eps + lambda))) / s
     end
 
-    a = ones(size(mu, 1)); b = ones(size(nu, 1))
-    a_old = a; b_old = b
-    tmp_a = zeros(size(nu, 1)); tmp_b = zeros(size(mu, 1))
+    a = ones(size(mu, 1))
+    b = ones(size(nu, 1))
+    a_old = a
+    b_old = b
+    tmp_a = zeros(size(nu, 1))
+    tmp_b = zeros(size(mu, 1))
 
-    K = @. exp(-C/eps)
+    K = @. exp(-C / eps)
 
     iter = 1
 
     while true
         a_old = a
         b_old = b
-        tmp_b = K*b
+        tmp_b = K * b
         if proxdiv_F1 == nothing
             a = proxdiv_KL(tmp_b, eps, lambda1, mu)
         else
             a = proxdiv_F1(tmp_b, mu)
         end
-        tmp_a = K'*a
+        tmp_a = K' * a
         if proxdiv_F2 == nothing
             b = proxdiv_KL(tmp_a, eps, lambda2, nu)
         else
@@ -257,22 +271,23 @@ function sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_i
         end
         iter += 1
         if iter % 10 == 0
-            err_a = maximum(abs.(a - a_old))/max(maximum(abs.(a)), maximum(abs.(a_old)), 1)
-            err_b = maximum(abs.(b - b_old))/max(maximum(abs.(b)), maximum(abs.(b_old)), 1)
+            err_a =
+                maximum(abs.(a - a_old)) / max(maximum(abs.(a)), maximum(abs.(a_old)), 1)
+            err_b =
+                maximum(abs.(b - b_old)) / max(maximum(abs.(b)), maximum(abs.(b_old)), 1)
             if verbose
-                println("Iteration $iter, err = ", 0.5*(err_a + err_b))
+                println("Iteration $iter, err = ", 0.5 * (err_a + err_b))
             end
-            if (0.5*(err_a + err_b) < tol) || iter > max_iter
+            if (0.5 * (err_a + err_b) < tol) || iter > max_iter
                 break
             end
         end
     end
     if iter > max_iter && verbose
-        println( "Warning: exited before convergence")
+        println("Warning: exited before convergence")
     end
-    return Diagonal(a)*K*Diagonal(b)
+    return Diagonal(a) * K * Diagonal(b)
 end
-
 
 """
     sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
@@ -296,19 +311,36 @@ Uses stabilized Sinkhorn algorithm with epsilon-scaling (Schmitzer et al., 2019)
 `k` epsilon-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn with regularisation parameters 
 `[lambda^(1-k), ..., lambda^(-1), 1]*eps`. 
 """
-function sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
-    eps_values = [eps*lambda^(k-j) for j = 1:k]
-    alpha = zeros(size(mu)); beta = zeros(size(nu))
+function sinkhorn_stabilized_epsscaling(
+    mu, nu, C, eps; absorb_tol=1e3, max_iter=1000, tol=1e-9, lambda=0.5, k=5, verbose=false
+)
+    eps_values = [eps * lambda^(k - j) for j in 1:k]
+    alpha = zeros(size(mu))
+    beta = zeros(size(nu))
     for eps in eps_values
-        if verbose; println(string("Warm start: eps = ", eps)); end
-        alpha, beta = sinkhorn_stabilized(mu, nu, C, eps, absorb_tol = absorb_tol, max_iter = max_iter, tol = tol, alpha = alpha, beta = beta, return_duals = true, verbose = verbose)
+        if verbose
+            println(string("Warm start: eps = ", eps))
+        end
+        alpha, beta = sinkhorn_stabilized(
+            mu,
+            nu,
+            C,
+            eps;
+            absorb_tol=absorb_tol,
+            max_iter=max_iter,
+            tol=tol,
+            alpha=alpha,
+            beta=beta,
+            return_duals=true,
+            verbose=verbose,
+        )
     end
-    K = exp.(-(C .- alpha .- beta')/eps).*mu.*nu'
+    K = exp.(-(C .- alpha .- beta') / eps) .* mu .* nu'
     return K
 end
 
 function getK(C, alpha, beta, eps, mu, nu)
-    return (exp.(-(C .- alpha .- beta')/eps).*mu.*nu')
+    return (exp.(-(C .- alpha .- beta') / eps) .* mu .* nu')
 end
 
 """
@@ -317,12 +349,26 @@ end
 Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
 """
-function sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
+function sinkhorn_stabilized(
+    mu,
+    nu,
+    C,
+    eps;
+    absorb_tol=1e3,
+    max_iter=1000,
+    tol=1e-9,
+    alpha=nothing,
+    beta=nothing,
+    return_duals=false,
+    verbose=false,
+)
     if isnothing(alpha) || isnothing(beta)
-        alpha = zeros(size(mu)); beta = zeros(size(nu))
+        alpha = zeros(size(mu))
+        beta = zeros(size(nu))
     end
 
-    u = ones(size(mu)); v = ones(size(nu))
+    u = ones(size(mu))
+    v = ones(size(nu))
     K = getK(C, alpha, beta, eps, mu, nu)
     i = 0
 
@@ -331,39 +377,47 @@ function sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, 
     end
 
     while true
-        u = mu./(K*v .+ 1e-16)
-        v = nu./(K'*u .+ 1e-16)
+        u = mu ./ (K * v .+ 1e-16)
+        v = nu ./ (K' * u .+ 1e-16)
         if (max(norm(u, Inf), norm(v, Inf)) > absorb_tol)
-            if verbose; println("Absorbing (u, v) into (alpha, beta)"); end
+            if verbose
+                println("Absorbing (u, v) into (alpha, beta)")
+            end
             # absorb into α, β
-            alpha = alpha + eps*log.(u); beta = beta + eps*log.(v)
-            u = ones(size(mu)); v = ones(size(nu))
+            alpha = alpha + eps * log.(u)
+            beta = beta + eps * log.(v)
+            u = ones(size(mu))
+            v = ones(size(nu))
             K = getK(C, alpha, beta, eps, mu, nu)
         end
         if i % 10 == 0
             # check marginal
-            gamma = getK(C, alpha, beta, eps, mu, nu).*(u.*v')
-            err_mu = norm(gamma*ones(size(nu)) - mu, Inf)
-            err_nu = norm(gamma'*ones(size(mu)) - nu, Inf)
-            if verbose; println(string("Iteration ", i, ", err = ", 0.5*(err_mu + err_nu))); end
-            if 0.5*(err_mu + err_nu) < tol
+            gamma = getK(C, alpha, beta, eps, mu, nu) .* (u .* v')
+            err_mu = norm(gamma * ones(size(nu)) - mu, Inf)
+            err_nu = norm(gamma' * ones(size(mu)) - nu, Inf)
+            if verbose
+                println(string("Iteration ", i, ", err = ", 0.5 * (err_mu + err_nu)))
+            end
+            if 0.5 * (err_mu + err_nu) < tol
                 break
             end
         end
 
         if i > max_iter
-            if verbose; println("Warning: exited before convergence"); end
+            if verbose
+                println("Warning: exited before convergence")
+            end
             break
         end
-        i+=1
+        i += 1
     end
-    alpha = alpha + eps*log.(u); beta = beta + eps*log.(v)
+    alpha = alpha + eps * log.(u)
+    beta = beta + eps * log.(v)
     if return_duals
         return alpha, beta
     end
     return getK(C, alpha, beta, eps, mu, nu)
 end
-
 
 """
     sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
@@ -385,30 +439,35 @@ Returns the entropically regularised barycenter of the `mu_all`, i.e. the distri
 
 where ``\\mathrm{entropicOT}^{\\epsilon}_{C}`` denotes the entropic optimal transport cost with cost ``C`` and entropic regularisation level ``\\epsilon``.
 """
-function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
-    sums = sum(mu_all, dims = 2)
+function sinkhorn_barycenter(
+    mu_all, C_all, eps, lambda_all; tol=1e-9, check_marginal_step=10, max_iter=1000
+)
+    sums = sum(mu_all; dims=2)
     if !isapprox(extrema(sums)...)
         throw(ArgumentError("Error: marginals are unbalanced"))
     end
-    K_all = [exp.(-C_all[i]/eps) for i = 1:length(C_all)]
+    K_all = [exp.(-C_all[i] / eps) for i in 1:length(C_all)]
     converged = false
     v_all = ones(size(mu_all))
     u_all = ones(size(mu_all))
     N = size(mu_all, 1)
-    for n = 1:max_iter
-        for i = 1:N
-            v_all[i, :] = mu_all[i, :]./(K_all[i]' * u_all[i, :])
+    for n in 1:max_iter
+        for i in 1:N
+            v_all[i, :] = mu_all[i, :] ./ (K_all[i]' * u_all[i, :])
         end
         a = ones(size(u_all, 2))
-        for i = 1:N
-            a = a.*((K_all[i]*v_all[i, :]).^(lambda_all[i]))
+        for i in 1:N
+            a = a .* ((K_all[i] * v_all[i, :]) .^ (lambda_all[i]))
         end
-        for i = 1:N
-            u_all[i, :] = a./(K_all[i]*v_all[i, :])
+        for i in 1:N
+            u_all[i, :] = a ./ (K_all[i] * v_all[i, :])
         end
         if n % check_marginal_step == 0
             # check marginal errors
-            err = maximum([maximum(abs.(mu_all[i, :] .- v_all[i, :] .* (K_all[i]' * u_all[i, :]))) for i = 1:N])
+            err = maximum([
+                maximum(abs.(mu_all[i, :] .- v_all[i, :] .* (K_all[i]' * u_all[i, :]))) for
+                i in 1:N
+            ])
             @debug "Sinkhorn algorithm: iteration $n" err
             if err < tol
                 converged = true
@@ -417,11 +476,10 @@ function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_m
         end
     end
     if !converged
-        @warn "Sinkhorn did not converge"    
+        @warn "Sinkhorn did not converge"
     end
     return u_all[1, :] .* (K_all[1] * v_all[1, :])
 end
-
 
 """
     quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
@@ -444,7 +502,7 @@ If the algorithm does not converge, try some different values of θ.
 Reference:
 Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. arXiv preprint arXiv:1903.01112v4.
 """
-function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
+function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
     if !(sum(mu) ≈ sum(nu))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
     end
@@ -453,8 +511,8 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
     M = length(nu)
 
     # initialize dual potentials as uniforms
-    a = ones(M)./M
-    b = ones(N)./N
+    a = ones(M) ./ M
+    b = ones(N) ./ N
     γ = spzeros(M, N)
 
     da = spzeros(M)
@@ -463,92 +521,80 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
     converged = false
 
     function DualObjective(a, b)
-        A = a.*ones(N)' + ones(M).*b' - C'
+        A = a .* ones(N)' + ones(M) .* b' - C'
 
-        return 0.5 * norm(A[A.>0], 2)^2 - ϵ*(dot(nu, a)+ dot(mu, b))
+        return 0.5 * norm(A[A .> 0], 2)^2 - ϵ * (dot(nu, a) + dot(mu, b))
     end
-    
+
     # computes minimizing directions, update γ
     function search_dir!(a, b, da, db)
-        
-        P  = a*ones(N)' .+ ones(M)*b' .- C'
-        
-        σ = 1.0*sparse(P .>= 0)
-        γ = sparse(max.(P, 0)./ ϵ)
-        
+        P = a * ones(N)' .+ ones(M) * b' .- C'
+
+        σ = 1.0 * sparse(P .>= 0)
+        γ = sparse(max.(P, 0) ./ ϵ)
+
         G = vcat(
-            hcat(spdiagm(0 => σ*ones(N)), σ), 
-            hcat(sparse(σ'), 
-            spdiagm(0 => sparse(σ')*ones(M) ))
-            )
-        
-        h = vcat(
-            γ*ones(N) - nu, 
-            sparse(γ')*ones(M) - mu
-            )
-                    
-        x = cg(G + δ*I, -ϵ * h)
-        
+            hcat(spdiagm(0 => σ * ones(N)), σ),
+            hcat(sparse(σ'), spdiagm(0 => sparse(σ') * ones(M))),
+        )
+
+        h = vcat(γ * ones(N) - nu, sparse(γ') * ones(M) - mu)
+
+        x = cg(G + δ * I, -ϵ * h)
+
         da = x[1:M]
-        db = x[M+1:end]
+        return db = x[(M + 1):end]
     end
 
     function search_dir(a, b)
-        
-        P  = a*ones(N)' .+ ones(M)*b' .- C'
-        
-        σ = 1.0*sparse(P .>= 0)
-        γ = sparse(max.(P, 0)./ ϵ)
-        
+        P = a * ones(N)' .+ ones(M) * b' .- C'
+
+        σ = 1.0 * sparse(P .>= 0)
+        γ = sparse(max.(P, 0) ./ ϵ)
+
         G = vcat(
-            hcat(spdiagm(0 => σ*ones(N)), σ), 
-            hcat(sparse(σ'), 
-            spdiagm(0 => sparse(σ')*ones(M) ))
-            )
-        
-        h = vcat(
-            γ*ones(N) - nu, 
-            sparse(γ')*ones(M) - mu
-            )
-                    
-        x = cg(G + δ*I, -ϵ * h)
-        
-        return x[1:M], x[M+1:end]
+            hcat(spdiagm(0 => σ * ones(N)), σ),
+            hcat(sparse(σ'), spdiagm(0 => sparse(σ') * ones(M))),
+        )
+
+        h = vcat(γ * ones(N) - nu, sparse(γ') * ones(M) - mu)
+
+        x = cg(G + δ * I, -ϵ * h)
+
+        return x[1:M], x[(M + 1):end]
     end
 
     # computes optimal maginitude in the minimizing directions
     function search_t(a, b, da, db, θ)
-        
-        d =  ϵ * dot(γ , (da .* ones(N)' .+ ones(M) .* db')) -ϵ*(dot(da, nu) + dot(db, mu))
-        
+        d = ϵ * dot(γ, (da .* ones(N)' .+ ones(M) .* db')) - ϵ * (dot(da, nu) + dot(db, mu))
+
         ϕ₀ = DualObjective(a, b)
         t = 1
-        
-        while DualObjective(a+t*da, b+t*db) >= ϕ₀ + t*θ*d
+
+        while DualObjective(a + t * da, b + t * db) >= ϕ₀ + t * θ * d
             t *= κ
-            
+
             if t < 1e-15
                 # @warn "@ i = $i, t = $t , armijo did not converge"
                 break
             end
-            
         end
         return t
     end
 
     for i in 1:maxiter
-        
+
         # search_dir!(a, b, da, db)
         da, db = search_dir(a, b)
-        
+
         t = search_t(a, b, da, db, θ)
-        
-        a += t*da
-        b += t*db
-        
-        err1 = norm(γ*ones(N) -nu, Inf) 
-        err2 = norm(sparse(γ')*ones(M) - mu, Inf)
-        
+
+        a += t * da
+        b += t * db
+
+        err1 = norm(γ * ones(N) - nu, Inf)
+        err2 = norm(sparse(γ') * ones(M) - mu, Inf)
+
         if err1 <= tol && err2 <= tol
             converged = true
             @warn "Converged @ i = $i with marginal errors: \n err1 = $err1, err2 = $err2 \n"
@@ -556,14 +602,13 @@ function quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 
         elseif i == maxiter
             @warn "Not Converged with errors:\n err1 = $err1, err2 = $err2 \n"
         end
-        
+
         @debug " t = $t"
         @debug "marginal @ i = $i: err1 = $err1, err2 = $err2 "
-        
     end
 
-    if  !converged
-        @warn "SemiSmooth Newton algorithm did not converge"    
+    if !converged
+        @warn "SemiSmooth Newton algorithm did not converge"
     end
 
     return sparse(γ')
