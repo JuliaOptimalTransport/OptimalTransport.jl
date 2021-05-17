@@ -92,7 +92,7 @@ function emd(μ, ν, C, model::MOI.ModelLike)
 end
 
 """
-    emd2(μ, ν, C, optimizer)
+    emd2(μ, ν, C, optimizer; map=nothing)
 
 Compute the optimal transport cost (a scalar) for the Monge-Kantorovich problem with source
 histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
@@ -104,11 +104,21 @@ which is given by
 The corresponding linear programming problem is solved with the user-provided `optimizer`.
 Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
 packages, respectively.
-"""
-function emd2(μ, ν, C, optimizer)
-    # compute optimal transport map
-    γ = emd(μ, ν, C, optimizer)
 
+A pre-computed optimal transport `map` may be provided.
+"""
+function emd2(μ, ν, C, optimizer; map=nothing)
+    γ = if map === nothing
+        # compute optimal transport map
+        emd(μ, ν, C, optimizer)
+    else
+        # check dimensions
+        size(C) == (length(μ), length(ν)) ||
+            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+        size(map) == size(C) ||
+            error("optimal transport map `map` and cost matrix `C` must be of the same size")
+        map
+    end
     return dot(γ, C)
 end
 
@@ -205,10 +215,21 @@ Return optimal value of
 ```
 
 where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
+
+A pre-computed optimal transport `map` may be provided.
 """
-function sinkhorn2(mu, nu, C, eps; kwargs...)
-    gamma = sinkhorn(mu, nu, C, eps; kwargs...)
-    return dot(gamma, C)
+function sinkhorn2(μ, ν, C, ε; map=nothing, kwargs...)
+    γ = if map === nothing
+        sinkhorn(μ, ν, C, ε; kwargs...)
+    else
+        # check dimensions
+        size(C) == (length(μ), length(ν)) ||
+            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+        size(map) == size(C) ||
+            error("optimal transport map `map` and cost matrix `C` must be of the same size")
+        map
+    end
+    return dot(γ, C)
 end
 
 
@@ -282,9 +303,21 @@ using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms f
 for the marginals mu, nu respectively.
 
 See documentation for `sinkhorn_unbalanced` for additional details.
+
+A pre-computed optimal transport `map` may be provided.
 """
-function sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; kwargs...)
-    return dot(C, sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; kwargs...))
+function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, kwargs...)
+    γ = if map === nothing
+        sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; kwargs...)
+    else
+        # check dimensions
+        size(C) == (length(μ), length(ν)) ||
+            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+        size(map) == size(C) ||
+            error("optimal transport map `map` and cost matrix `C` must be of the same size")
+        map
+    end
+    return dot(γ, C)
 end
 
 """

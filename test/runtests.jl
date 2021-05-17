@@ -41,6 +41,10 @@ Random.seed!(100)
     @test dot(C, P) ≈ cost atol=1e-5
     @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
     @test cost ≈ pot_cost atol=1e-5
+
+    # ensure that provided map is used
+    cost2 = emd2(similar(μ), similar(ν), C, lp; map=P)
+    @test cost2 ≈ cost
 end
 
 @testset "entropically regularized transport" begin
@@ -65,6 +69,10 @@ end
         c = sinkhorn2(μ, ν, C, eps)
         c_pot = POT.sinkhorn2(μ, ν, C, eps)
         @test c ≈ c_pot atol=1e-9
+
+        # ensure that provided map is used
+        c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); map=γ)
+        @test c2 ≈ c
     end
 
     # different element type
@@ -137,6 +145,10 @@ end
         c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda)
 
         @test c ≈ c_pot atol=1e-9
+
+        # ensure that provided map is used
+        c2 = sinkhorn_unbalanced2(similar(μ), similar(ν), C, rand(), rand(), rand(); map=γ)
+        @test c2 ≈ c
     end
 end
 
