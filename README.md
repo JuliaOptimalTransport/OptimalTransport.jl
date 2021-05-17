@@ -5,7 +5,7 @@
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/dev)
-![CI](https://github.com/zsteve/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)
+[![CI](https://github.com/zsteve/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)](https://github.com/zsteve/OptimalTransport.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![Codecov](https://codecov.io/gh/zsteve/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/zsteve/OptimalTransport.jl)
 [![Coveralls](https://coveralls.io/repos/github/zsteve/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/zsteve/OptimalTransport.jl?branch=master)
 
@@ -21,20 +21,16 @@ This package provides some [Julia](https://julialang.org/) implementations of al
 * Entropy-regularised barycenters (Sinkhorn barycenters) (`sinkhorn_barycenter`)
 * Quadratically regularised optimal transport via semismooth Newton scheme [Lorenz, 2019] (`quadreg`) 
 
-See the documentation pages linked below for further information. Most calling conventions are analogous to those in the [Python Optimal Transport](https://optimaltransport.github.io/) library, which formed the inspiration for this library. 
+See the documentation pages linked below for further information. Most calling conventions are analogous to those in the [Python Optimal Transport](https://optimaltransport.github.io/) library, which formed the inspiration for this library.
 
 ## Documentation
 
  - [Stable](https://zsteve.github.io/OptimalTransport.jl/stable)
  - [Dev](https://zsteve.github.io/OptimalTransport.jl/dev)
 
-## Basic usage and examples
+## Contributing
 
-Click [here](http://zsteve.phatcode.net/OptimalTransportDocs/examples/examples.html) for a small collection of optimal transport examples using OptimalTransport.jl. See the `examples/` directory for the source. 
-
-## Contributing 
-
-Contributions are more than welcome! Please feel free to submit an issue or pull request in this repository. 
+Contributions are more than welcome! Please feel free to submit an issue or pull request in this repository.
 
 ## Acknowledgements
 
