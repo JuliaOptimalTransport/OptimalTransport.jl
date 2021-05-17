@@ -387,8 +387,8 @@ where ``\\mathrm{entropicOT}^{\\epsilon}_{C}`` denotes the entropic optimal tran
 """
 function sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
     sums = sum(mu_all, dims = 2)
-    if !(maximum(sums) - minimum(sums) ≈ 0)
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
+    if !isapprox(extrema(sums)...)
+        throw(ArgumentError("Error: marginals are unbalanced"))
     end
     K_all = [exp.(-C_all[i]/eps) for i = 1:length(C_all)]
     converged = false
