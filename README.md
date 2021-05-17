@@ -1,7 +1,6 @@
 <a href="http://zsteve.phatcode.net/OptimalTransportDocs/">
-<img src="images/optimaltransport_logo.png" height="125"><br></a>
-
-## Optimal transport algorithms for Julia
+<img src="images/optimaltransport_logo.svg" height="200"><br></a>
+<br>
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/dev)
