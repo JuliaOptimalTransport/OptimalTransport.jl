@@ -12,7 +12,7 @@ using MathOptInterface
 using Distributions, QuadGK
 
 export sinkhorn, sinkhorn2
-export emd, emd2
+export emd, emd2, w2mvncost, w2mvnplan, w2mvncostplan
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
