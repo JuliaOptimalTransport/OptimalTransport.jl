@@ -1,5 +1,6 @@
+<br>
 <a href="http://zsteve.phatcode.net/OptimalTransportDocs/">
-<img src="images/optimaltransport_logo.svg" height="200"><br></a>
+<img src="images/optimaltransport_logo.svg" height="180"><br></a>
 <br>
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/stable)
