@@ -154,4 +154,10 @@ function sinkhorn_unbalanced2(
     )[1]
 end
 
+function smooth_ot_dual(
+    mu, nu, C, eps, reg_type = "l2", method = "L-BFGS-B", tol = 1e-9, max_iter = 500, verbose = false
+)
+    return pot.smooth.smooth_ot_dual(nu, mu, PyReverseDims(C), eps, reg_type = reg_type, method = method, stopThr = tol, numItermax = max_iter)'
+end
+
 end
