@@ -189,6 +189,6 @@ end
         γ = quadreg(μ, ν, C, eps)
         γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps))
         # need to use a larger tolerance here because of a quirk with the POT solver 
-        @test norm(γ - γ_pot, Inf) < 0.5e-4 
+        @test norm(γ - γ_pot, Inf) < 0.5e-4
     end
 end
