@@ -29,7 +29,7 @@ function preprocess(content)
 # [Julia source file](@__REPO_ROOT_URL__/examples/@__NAME__/script.jl).
 # The corresponding
 #md # notebook can be viewed in [nbviewer](@__NBVIEWER_ROOT_URL__/examples/@__NAME__.ipynb).
-#nb # HTML output can be viewed [here](https://zsteve.github.io/OptimalTransport.jl/dev/examples/@__NAME__/).
+#nb # HTML output can be viewed [here](https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev/examples/@__NAME__/).
 #md #
 #md # ```@setup @__NAME__
 #md # import Pkg
@@ -59,11 +59,11 @@ using PyCall
 
 makedocs(;
     modules=[OptimalTransport, POT],
-    repo="https://github.com/zsteve/OptimalTransport.jl/blob/{commit}{path}#L{line}",
+    repo="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/{commit}{path}#L{line}",
     sitename="OptimalTransport.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://zsteve.github.io/OptimalTransport.jl",
+        canonical="https://juliaoptimaltransport.github.io/OptimalTransport.jl",
         assets=String[],
     ),
     pages=[
@@ -75,4 +75,4 @@ makedocs(;
     checkdocs=:exports,
 )
 
-deploydocs(; repo="github.com/zsteve/OptimalTransport.jl", push_preview=true)
+deploydocs(; repo="github.com/JuliaOptimalTransport/OptimalTransport.jl", push_preview=true)
