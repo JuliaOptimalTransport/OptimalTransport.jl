@@ -40,6 +40,7 @@ Contributors include:
 - Tim Matsumoto (UBC)
 - David Widmann (Uppsala)
 - Davi Barreira (FGV)
+- Stephen Zhang (UBC)
 
 ## References
 
