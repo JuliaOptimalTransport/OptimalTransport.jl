@@ -5,7 +5,7 @@ using ..PyCall
 const pot = PyNULL()
 
 function __init__()
-    copy!(pot, pyimport_conda("ot", "pot", "conda-forge"))
+    return copy!(pot, pyimport_conda("ot", "pot", "conda-forge"))
 end
 
 """
@@ -61,8 +61,17 @@ This function is a wrapper of the function
 [`sinkhorn`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn) in the
 Python Optimal Transport package.
 """
-function sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn(nu, mu, PyReverseDims(C), eps; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)'
+function sinkhorn(mu, nu, C, eps; tol=1e-9, max_iter=1000, method="sinkhorn", verbose=false)
+    return pot.sinkhorn(
+        nu,
+        mu,
+        PyReverseDims(C),
+        eps;
+        stopThr=tol,
+        numItermax=max_iter,
+        method=method,
+        verbose=verbose,
+    )'
 end
 
 """
@@ -78,8 +87,19 @@ This function is a wrapper of the function
 [`sinkhorn2`](https://pythonot.github.io/all.html?highlight=sinkhorn#ot.sinkhorn2) in the
 Python Optimal Transport package.
 """
-function sinkhorn2(mu, nu, C, eps; tol=1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn2(nu, mu, PyReverseDims(C), eps; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)[1]
+function sinkhorn2(
+    mu, nu, C, eps; tol=1e-9, max_iter=1000, method="sinkhorn", verbose=false
+)
+    return pot.sinkhorn2(
+        nu,
+        mu,
+        PyReverseDims(C),
+        eps;
+        stopThr=tol,
+        numItermax=max_iter,
+        method=method,
+        verbose=verbose,
+    )[1]
 end
 
 """
@@ -92,8 +112,20 @@ This function is a wrapper of the function
 [`sinkhorn_unbalanced`](https://pythonot.github.io/all.html?highlight=sinkhorn_unbalanced#ot.sinkhorn_unbalanced)
 in the Python Optimal Transport package.
 """
-function sinkhorn_unbalanced(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn_unbalanced(nu, mu, PyReverseDims(C), eps, lambda; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)'
+function sinkhorn_unbalanced(
+    mu, nu, C, eps, lambda; tol=1e-9, max_iter=1000, method="sinkhorn", verbose=false
+)
+    return pot.sinkhorn_unbalanced(
+        nu,
+        mu,
+        PyReverseDims(C),
+        eps,
+        lambda;
+        stopThr=tol,
+        numItermax=max_iter,
+        method=method,
+        verbose=verbose,
+    )'
 end
 
 """
@@ -106,8 +138,57 @@ This function is a wrapper of the function
 [`sinkhorn_unbalanced2`](https://pythonot.github.io/all.html#ot.sinkhorn_unbalanced2) in
 the Python Optimal Transport package.
 """
-function sinkhorn_unbalanced2(mu, nu, C, eps, lambda; tol = 1e-9, max_iter = 1000, method = "sinkhorn", verbose = false)
-    return pot.sinkhorn_unbalanced2(nu, mu, PyReverseDims(C), eps, lambda; stopThr = tol, numItermax = max_iter, method = method, verbose = verbose)[1]
+function sinkhorn_unbalanced2(
+    mu, nu, C, eps, lambda; tol=1e-9, max_iter=1000, method="sinkhorn", verbose=false
+)
+    return pot.sinkhorn_unbalanced2(
+        nu,
+        mu,
+        PyReverseDims(C),
+        eps,
+        lambda;
+        stopThr=tol,
+        numItermax=max_iter,
+        method=method,
+        verbose=verbose,
+    )[1]
+end
+
+function smooth_ot_dual(
+    mu, nu, C, eps; reg_type="l2", method="L-BFGS-B", tol=1e-9, max_iter=500, verbose=false
+)
+    return pot.smooth.smooth_ot_dual(
+        nu,
+        mu,
+        PyReverseDims(C),
+        eps;
+        reg_type=reg_type,
+        method=method,
+        stopThr=tol,
+        numItermax=max_iter,
+    )'
+end
+
+function barycenter(
+    mu_all,
+    C,
+    eps;
+    weights=nothing,
+    method="sinkhorn",
+    max_iter=10000,
+    tol=0.0001,
+    verbose=false,
+)
+    return pot.barycenter(
+        mu_all',
+        C,
+        eps;
+        weights=weights,
+        method=method,
+        numItermax=max_iter,
+        stopThr=tol,
+        verbose=verbose,
+    )
 end
 
 end
