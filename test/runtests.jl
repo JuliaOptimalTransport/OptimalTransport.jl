@@ -5,6 +5,7 @@ using Distances
 using PyCall
 using Tulip
 using MathOptInterface
+using SparseArrays
 
 using LinearAlgebra
 using Random
@@ -169,5 +170,25 @@ end
         γ = sinkhorn_stabilized(μ, ν, C, eps)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; method="sinkhorn_stabilized")
         @test norm(γ - γ_pot, Inf) < 1e-9
+    end
+end
+
+@testset "quadratic optimal transport" begin
+    M = 250
+    N = 200
+    @testset "example" begin
+        # create two uniform histograms
+        μ = fill(1 / M, M)
+        ν = fill(1 / N, N)
+
+        # create random cost matrix
+        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+
+        # compute optimal transport map (Julia implementation + POT)
+        eps = 0.25
+        γ = quadreg(μ, ν, C, eps)
+        γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps; max_iter=5000))
+        # need to use a larger tolerance here because of a quirk with the POT solver 
+        @test norm(γ - γ_pot, Inf) < 1e-4
     end
 end

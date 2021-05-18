@@ -115,8 +115,9 @@ function emd2(μ, ν, C, optimizer; map=nothing)
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
             error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(map) == size(C) ||
-            error("optimal transport map `map` and cost matrix `C` must be of the same size")
+        size(map) == size(C) || error(
+            "optimal transport map `map` and cost matrix `C` must be of the same size",
+        )
         map
     end
     return dot(γ, C)
@@ -225,8 +226,9 @@ function sinkhorn2(μ, ν, C, ε; map=nothing, kwargs...)
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
             error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(map) == size(C) ||
-            error("optimal transport map `map` and cost matrix `C` must be of the same size")
+        size(map) == size(C) || error(
+            "optimal transport map `map` and cost matrix `C` must be of the same size",
+        )
         map
     end
     return dot(γ, C)
@@ -328,8 +330,9 @@ function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, kwargs...)
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
             error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(map) == size(C) ||
-            error("optimal transport map `map` and cost matrix `C` must be of the same size")
+        size(map) == size(C) || error(
+            "optimal transport map `map` and cost matrix `C` must be of the same size",
+        )
         map
     end
     return dot(γ, C)
