@@ -185,10 +185,10 @@ end
         C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
         # compute optimal transport map (Julia implementation + POT)
-        eps = 0.5
+        eps = 0.25
         γ = quadreg(μ, ν, C, eps)
-        γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps))
+        γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps; max_iter = 5000))
         # need to use a larger tolerance here because of a quirk with the POT solver 
-        @test norm(γ - γ_pot, Inf) < 0.5e-4 
+        @test norm(γ - γ_pot, Inf) < 1e-4
     end
 end
