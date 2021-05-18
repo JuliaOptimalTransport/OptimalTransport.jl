@@ -1,5 +1,5 @@
 # OptimalTransport.jl -- optimal transportation algorithms for Julia
-# See prettyprinted documentation at https://zsteve.github.io/OptimalTransport.jl/dev/
+# See prettyprinted documentation at https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev/
 #
 
 module OptimalTransport
