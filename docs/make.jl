@@ -1,6 +1,6 @@
 using OptimalTransport
-import Literate
-import Pkg
+using Literate: Literate
+using Pkg: Pkg
 
 if haskey(ENV, "GITHUB_ACTIONS")
     # Print `@debug` statements (https://github.com/JuliaDocs/Documenter.jl/issues/955)
@@ -75,6 +75,4 @@ makedocs(;
     checkdocs=:exports,
 )
 
-deploydocs(;
-    repo="github.com/zsteve/OptimalTransport.jl", push_preview=true,       
-)
+deploydocs(; repo="github.com/zsteve/OptimalTransport.jl", push_preview=true)

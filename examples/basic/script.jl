@@ -21,11 +21,11 @@ Random.seed!(1234);
 # and $\nu$ (target measure) in 1D:
 
 M = 200
-μ = fill(1/M, M)
+μ = fill(1 / M, M)
 μsupport = rand(M)
 
 N = 250
-ν = fill(1/N, N)
+ν = fill(1 / N, N)
 νsupport = rand(N);
 
 # Now we compute the quadratic cost matrix $C_{ij} = \| x_i - x_j \|_2^2$:
@@ -133,11 +133,11 @@ norm(γ - γpot, Inf)
 # We construct two random measures, now with different total masses:
 
 M = 100
-μ = fill(1/M, M)
+μ = fill(1 / M, M)
 μsupport = rand(M)
 
 N = 200
-ν = fill(1/M, N)
+ν = fill(1 / M, N)
 νsupport = rand(N);
 
 # We compute the quadratic cost matrix:
@@ -164,9 +164,9 @@ norm(γ - γpot, Inf)
 
 μsupport = νsupport = range(-2, 2; length=100)
 C = pairwise(SqEuclidean(), μsupport', νsupport')
-μ = exp.(- μsupport.^2 ./ 0.5^2)
+μ = exp.(-μsupport .^ 2 ./ 0.5^2)
 μ ./= sum(μ)
-ν = νsupport.^2 .* exp.(- νsupport.^2 ./ 0.5^2)
+ν = νsupport .^ 2 .* exp.(-νsupport .^ 2 ./ 0.5^2)
 ν ./= sum(ν)
 
 plot(μsupport, μ; label=raw"$\mu$", size=(600, 400))
@@ -176,8 +176,11 @@ plot!(νsupport, ν; label=raw"$\nu$")
 
 γ = sinkhorn(μ, ν, C, 0.01)
 heatmap(
-    μsupport, νsupport, γ;
-    title="Entropically regularised optimal transport", size=(600, 600)
+    μsupport,
+    νsupport,
+    γ;
+    title="Entropically regularised optimal transport",
+    size=(600, 600),
 )
 
 # ### Quadratically regularised transport
@@ -187,8 +190,11 @@ heatmap(
 
 γquad = Matrix(quadreg(μ, ν, C, 5; maxiter=500))
 heatmap(
-    μsupport, νsupport, γquad;
-    title="Quadratically regularised optimal transport", size=(600, 600)
+    μsupport,
+    νsupport,
+    γquad;
+    title="Quadratically regularised optimal transport",
+    size=(600, 600),
 )
 
 # ### Sinkhorn barycenters
@@ -208,9 +214,9 @@ heatmap(
 # $\lambda_1 \in \{0.25, 0.5, 0.75\}$.
 
 support = range(-1, 1; length=250)
-mu1 = exp.(- (support .+ 0.5).^2 ./ 0.1^2)
+mu1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
 mu1 ./= sum(mu1)
-mu2 = exp.(- (support .- 0.5).^2 ./ 0.1^2)
+mu2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
 mu2 ./= sum(mu2)
 
 plt = plot(; size=(800, 400), legend=:outertopright)
