@@ -192,3 +192,23 @@ end
         @test norm(γ - γ_pot, Inf) < 1e-4
     end
 end
+
+@testset "sinkhorn barycenter" begin
+    @testset "example" begin
+        # set up support
+        support = range(-1, 1; length=250)
+        μ1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
+        μ1 ./= sum(μ1)
+        μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
+        μ2 ./= sum(μ2)
+        μ_all = hcat(μ1, μ2)'
+        # create cost matrix
+        C = pairwise(SqEuclidean(), support')
+        # compute Sinkhorn barycenter (Julia implementation + POT)
+        eps = 0.01
+        μ_interp = sinkhorn_barycenter(μ_all, [C, C], eps, [0.5, 0.5])
+        μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5])
+        # need to use a larger tolerance here because of a quirk with the POT solver 
+        @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
+    end
+end
