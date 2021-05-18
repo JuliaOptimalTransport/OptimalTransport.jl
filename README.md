@@ -1,7 +1,4 @@
-<a href="https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev">
-<img src="images/optimaltransport_logo.png" height="125"><br></a>
-
-## Optimal transport algorithms for Julia
+# OptimalTransport.jl <a href='https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev'><img src='images/optimaltransport_logo_symbol.svg' align="right" height="138.5" /></a>
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/dev)
