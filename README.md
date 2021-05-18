@@ -1,7 +1,4 @@
-<br>
-<a href="https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev">
-<img src="images/optimaltransport_logo.png" height="180"><br></a>
-<br>
+<a href='https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev'><img src='images/optimaltransport_logo.svg' align="right" height="138.5" /></a>
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/dev)
