@@ -169,4 +169,26 @@ function smooth_ot_dual(
     )'
 end
 
+function barycenter(
+    mu_all,
+    C,
+    eps;
+    weights=nothing,
+    method="sinkhorn",
+    max_iter=10000,
+    tol=0.0001,
+    verbose=false,
+)
+    return pot.barycenter(
+        mu_all',
+        C,
+        eps;
+        weights=weights,
+        method=method,
+        numItermax=max_iter,
+        stopThr=tol,
+        verbose=verbose,
+    )
+end
+
 end
