@@ -110,10 +110,7 @@ A pre-computed optimal transport `plan` may be provided.
 function emd2(μ, ν, C, optimizer; map=nothing, plan=map)
     # check deprecation
     if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`",
-            :emd2,
-        )
+        Base.depwarn("the keyword argument `map` is deprecated, please use `plan`", :emd2)
     end
 
     γ = if plan === nothing
@@ -233,8 +230,7 @@ function sinkhorn2(μ, ν, C, ε; map=nothing, plan=map, kwargs...)
     # check deprecation
     if map !== nothing
         Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`",
-            :sinkhorn2,
+            "the keyword argument `map` is deprecated, please use `plan`", :sinkhorn2
         )
     end
 
