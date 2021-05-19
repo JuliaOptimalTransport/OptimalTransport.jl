@@ -1,13 +1,11 @@
-<a href="http://zsteve.phatcode.net/OptimalTransportDocs/">
-<img src="images/optimaltransport_logo.png" height="125"><br></a>
+# OptimalTransport.jl <a href='https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev'><img src="docs/src/assets/logo.svg" align="right" height="138.5" /></a>
 
-## Optimal transport algorithms for Julia
-
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zsteve.github.io/OptimalTransport.jl/dev)
-![CI](https://github.com/zsteve/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)
-[![Codecov](https://codecov.io/gh/zsteve/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/zsteve/OptimalTransport.jl)
-[![Coveralls](https://coveralls.io/repos/github/zsteve/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/zsteve/OptimalTransport.jl?branch=master)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/dev)
+[![CI](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![Codecov](https://codecov.io/gh/JuliaOptimalTransport/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaOptimalTransport/OptimalTransport.jl)
+[![Coveralls](https://coveralls.io/repos/github/JuliaOptimalTransport/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaOptimalTransport/OptimalTransport.jl?branch=master)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 This package provides some [Julia](https://julialang.org/) implementations of algorithms for computational [optimal transport](https://optimaltransport.github.io/), including the Earth-Mover's (Wasserstein) distance, Sinkhorn scaling algorithm for entropy-regularised transport as well as some variants or extensions. 
 
@@ -21,20 +19,16 @@ This package provides some [Julia](https://julialang.org/) implementations of al
 * Entropy-regularised barycenters (Sinkhorn barycenters) (`sinkhorn_barycenter`)
 * Quadratically regularised optimal transport via semismooth Newton scheme [Lorenz, 2019] (`quadreg`) 
 
-See the documentation pages linked below for further information. Most calling conventions are analogous to those in the [Python Optimal Transport](https://optimaltransport.github.io/) library, which formed the inspiration for this library. 
+See the documentation pages linked below for further information. Most calling conventions are analogous to those in the [Python Optimal Transport](https://optimaltransport.github.io/) library, which formed the inspiration for this library.
 
 ## Documentation
 
- - [Stable](https://zsteve.github.io/OptimalTransport.jl/stable)
- - [Dev](https://zsteve.github.io/OptimalTransport.jl/dev)
+ - [Stable](https://juliaoptimaltransport.github.io/OptimalTransport.jl/stable)
+ - [Dev](https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev)
 
-## Basic usage and examples
+## Contributing
 
-Click [here](http://zsteve.phatcode.net/OptimalTransportDocs/examples/examples.html) for a small collection of optimal transport examples using OptimalTransport.jl. See the `examples/` directory for the source. 
-
-## Contributing 
-
-Contributions are more than welcome! Please feel free to submit an issue or pull request in this repository. 
+Contributions are more than welcome! Please feel free to submit an issue or pull request in this repository.
 
 ## Acknowledgements
 
@@ -43,6 +37,7 @@ Contributors include:
 - Tim Matsumoto (UBC)
 - David Widmann (Uppsala)
 - Davi Barreira (FGV)
+- Stephen Zhang (UBC)
 
 ## References
 

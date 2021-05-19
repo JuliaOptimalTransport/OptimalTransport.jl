@@ -31,4 +31,5 @@ jobs:
           PYTHON: python
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
+          GKSwstype: nul # avoid (irrelevant) error messages from GR
         run: julia --project=docs/ docs/make.jl
