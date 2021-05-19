@@ -32,7 +32,7 @@ include("ot1d.jl")
 """
     emd(μ, ν, C, optimizer)
 
-Compute the optimal transport map `γ` for the Monge-Kantorovich problem with source
+Compute the optimal transport plan `γ` for the Monge-Kantorovich problem with source
 histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
 which solves
 ```math
@@ -88,7 +88,7 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     # compute optimal solution
     MOI.optimize!(model)
     status = MOI.get(model, MOI.TerminationStatus())
-    status === MOI.OPTIMAL || error("failed to compute optimal transport map: ", status)
+    status === MOI.OPTIMAL || error("failed to compute optimal transport plan: ", status)
     p = MOI.get(model, MOI.VariablePrimal(), x)
     γ = reshape(p, nμ, nν)
 
@@ -96,7 +96,7 @@ function emd(μ, ν, C, model::MOI.ModelLike)
 end
 
 """
-    emd2(μ, ν, C, optimizer; map=nothing)
+    emd2(μ, ν, C, optimizer; plan=nothing)
 
 Compute the optimal transport cost (a scalar) for the Monge-Kantorovich problem with source
 histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
@@ -109,20 +109,25 @@ The corresponding linear programming problem is solved with the user-provided `o
 Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
 packages, respectively.
 
-A pre-computed optimal transport `map` may be provided.
+A pre-computed optimal transport `plan` may be provided.
 """
-function emd2(μ, ν, C, optimizer; map=nothing)
-    γ = if map === nothing
-        # compute optimal transport map
+function emd2(μ, ν, C, optimizer; map=nothing, plan=map)
+    # check deprecation
+    if map !== nothing
+        Base.depwarn("the keyword argument `map` is deprecated, please use `plan`", :emd2)
+    end
+
+    γ = if plan === nothing
+        # compute optimal transport plan
         emd(μ, ν, C, optimizer)
     else
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
             error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(map) == size(C) || error(
-            "optimal transport map `map` and cost matrix `C` must be of the same size",
+        size(plan) == size(C) || error(
+            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
-        map
+        plan
     end
     return dot(γ, C)
 end
@@ -134,7 +139,7 @@ Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kerne
 the Sinkhorn algorithm (Peyre et al., 2019)
 
 The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost matrix and
-`eps` the entropic regularization parameter. The optimal transport map for histograms `u`
+`eps` the entropic regularization parameter. The optimal transport plan for histograms `u`
 and `v` and cost matrix `C` with regularization parameter `eps` can be computed as
 `Diagonal(u) * K * Diagonal(v)`.
 """
@@ -185,7 +190,7 @@ end
 """
     sinkhorn(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
-Compute entropically regularised transport map of histograms `mu` and `nu` with cost matrix `C` and entropic
+Compute entropically regularised transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`. 
 
 Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
@@ -208,7 +213,7 @@ function sinkhorn(mu, nu, C, eps; kwargs...)
 end
 
 """
-    sinkhorn2(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
+    sinkhorn2(mu, nu, C, eps; plan=nothing, kwargs...)
 
 Compute entropically regularised transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
 regularization parameter `eps`.
@@ -221,19 +226,28 @@ Return optimal value of
 
 where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
 
-A pre-computed optimal transport `map` may be provided.
+A pre-computed optimal transport `plan` may be provided.
+
+See also: [`sinkhorn`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; map=nothing, kwargs...)
-    γ = if map === nothing
+function sinkhorn2(μ, ν, C, ε; map=nothing, plan=map, kwargs...)
+    # check deprecation
+    if map !== nothing
+        Base.depwarn(
+            "the keyword argument `map` is deprecated, please use `plan`", :sinkhorn2
+        )
+    end
+
+    γ = if plan === nothing
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
             error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(map) == size(C) || error(
-            "optimal transport map `map` and cost matrix `C` must be of the same size",
+        size(plan) == size(C) || error(
+            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
-        map
+        plan
     end
     return dot(γ, C)
 end
@@ -241,7 +255,7 @@ end
 """
     sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
 
-Computes the optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
+Computes the optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
 for the marginals `mu`, `nu` respectively.
 
@@ -317,27 +331,35 @@ function sinkhorn_unbalanced(
 end
 
 """
-    sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
+    sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; plan=nothing, kwargs...)
 
 Computes the optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
 using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
 for the marginals mu, nu respectively.
 
-See documentation for `sinkhorn_unbalanced` for additional details.
+A pre-computed optimal transport `plan` may be provided.
 
-A pre-computed optimal transport `map` may be provided.
+See also: [`sinkhorn_unbalanced`](@ref)
 """
-function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, kwargs...)
-    γ = if map === nothing
+function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, plan=map, kwargs...)
+    # check deprecation
+    if map !== nothing
+        Base.depwarn(
+            "the keyword argument `map` is deprecated, please use `plan`",
+            :sinkhorn_unbalanced2,
+        )
+    end
+
+    γ = if plan === nothing
         sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; kwargs...)
     else
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
             error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(map) == size(C) || error(
-            "optimal transport map `map` and cost matrix `C` must be of the same size",
+        size(plan) == size(C) || error(
+            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
-        map
+        plan
     end
     return dot(γ, C)
 end
@@ -345,7 +367,7 @@ end
 """
     sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
 
-Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
+Compute optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm with epsilon-scaling (Schmitzer et al., 2019). 
 
 `k` epsilon-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn with regularisation parameters 
@@ -386,7 +408,7 @@ end
 """
     sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
 
-Compute optimal transport map of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
+Compute optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
 Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
 """
 function sinkhorn_stabilized(
@@ -524,7 +546,7 @@ end
 """
     quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
 
-Computes the optimal transport map of histograms `mu` and `nu` with cost matrix `C` and quadratic regularization parameter `ϵ`, 
+Computes the optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and quadratic regularization parameter `ϵ`, 
 using the semismooth Newton algorithm [Lorenz 2016].
 
 This implementation makes use of IterativeSolvers.jl and SparseArrays.jl.
