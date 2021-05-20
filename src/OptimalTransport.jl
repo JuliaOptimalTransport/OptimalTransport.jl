@@ -675,8 +675,6 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
     return sparse(γ')
 end
 
-
-
 ## 1-Dimensional Optimal Transport Functions
 
 """
@@ -760,7 +758,7 @@ function optimal_transport_cost(
     if plan === nothing
         return _optimal_transport_cost_plan(c, μ, ν)[1]
     else
-        return dot(StatsBase.pairwise(c,μ.support,ν.support), plan)
+        return dot(StatsBase.pairwise(c, μ.support, ν.support), plan)
     end
 
     return cost
@@ -785,7 +783,7 @@ Returns the optimal transport plan γ as a matrix.
 function optimal_transport_plan(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
 )
-    return _optimal_transport_cost_plan(c,μ,ν)[2]
+    return _optimal_transport_cost_plan(c, μ, ν)[2]
 end
 
 """
@@ -801,10 +799,8 @@ and the cost function is of the form ``c(x,y) = h(|x-y|)`` such that
 Returns cost and γ, where cost represtents the optimal transport cost and
 γ is the optimal transport plan given as a matrix.
 """
-function _optimal_transport_cost_plan(
-    c, μ::DiscreteNonParametric, ν::DiscreteNonParametric
-)
-    cost  = 0
+function _optimal_transport_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric)
+    cost = 0
     len_μ = length(μ.p)
     len_ν = length(ν.p)
     γ = zeros(len_μ, len_ν)
@@ -836,6 +832,5 @@ function _optimal_transport_cost_plan(
 
     return cost, γ
 end
-
 
 end
