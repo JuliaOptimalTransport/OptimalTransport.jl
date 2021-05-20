@@ -6,7 +6,6 @@ version = "0.2.3"
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
@@ -16,6 +15,9 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
+StatsBase = "0.33.8"
+QuadGK = "2"
+Distributions = "0.25"
 Distances = "0.9.0, 0.10"
 IterativeSolvers = "0.8.4, 0.9"
 MathOptInterface = "0.9"
