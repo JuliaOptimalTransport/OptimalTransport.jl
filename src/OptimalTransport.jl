@@ -28,7 +28,6 @@ function __init__()
     end
 end
 
-
 """
     emd(μ, ν, C, optimizer)
 
