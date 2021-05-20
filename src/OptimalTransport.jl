@@ -17,7 +17,7 @@ export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
-export otCost1d, otPlan1d, otCostPlan1d
+export optimal_transport_cost, optimal_transport_plan
 
 const MOI = MathOptInterface
 
@@ -28,7 +28,6 @@ function __init__()
     end
 end
 
-include("ot1d.jl")
 
 """
     emd(μ, ν, C, optimizer)
@@ -677,7 +676,6 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
     return sparse(γ')
 end
 
-end
 
 
 ## 1-Dimensional Optimal Transport Functions
@@ -706,10 +704,11 @@ function optimal_transport_cost(
         f(x) = g(μ, ν, x)
         return quadgk(f, 0, 1)[1]
     else
-        quadgk(0, 1) do q
+        cost = quadgk(0, 1) do q
             x = quantile(μ, q)
-        return c(x, plan(x))
-    end
+            return c(x, plan(x))
+        end
+        return cost[1]
     end
 end
 
@@ -837,4 +836,7 @@ function _optimal_transport_cost_plan(
     end
 
     return cost, γ
+end
+
+
 end
