@@ -17,7 +17,7 @@ export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
-export optimal_transport_cost, optimal_transport_plan
+export otcost, otplan
 
 const MOI = MathOptInterface
 
@@ -678,7 +678,7 @@ end
 ## 1-Dimensional Optimal Transport Functions
 
 """
-optimal_transport_cost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
+otcost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
 
 Calculates the optimal transport cost between μ to ν, where
 they are 1-Dimensional distributions and the cost
@@ -688,12 +688,12 @@ function is of the form ``c(x,y) = h(|x-y|)`` such that
 Parameters:\n
 c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
 where `h` is a convex function.
-mu: 1-D distribution (e.g. `mu = Distributions.Normal(0,1)`)\n
-nu: 1-D distribution (e.g. `nu = Distributions.Normal(0,1)`)\n
+mu: 1-D distribution (e.g. `mu = Normal(0,1)`)\n
+nu: 1-D distribution (e.g. `nu = Normal(0,1)`)\n
 plan: Optional parameter in case the optimal transport plan is already known. Providing
 it can speed up calculations.
 """
-function optimal_transport_cost(
+function otcost(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
 )
     if plan === nothing
@@ -710,7 +710,7 @@ function optimal_transport_cost(
 end
 
 """
-optimal_transport_plan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
+otplan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
 
 Calculates the pptimal transport plan between μ to ν, where
 they are 1-Dimensional distributions and the cost
@@ -720,24 +720,24 @@ function is of the form ``c(x,y) = h(|x-y|)`` such that
 Parameters:\n
 c: The cost function, which should be of the form ``c(x,y) = h(|x-y|)``
 where ``h`` is a convex function.
-μ: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `μ = Distributions.Normal(0,1)`)\n
+μ: 1-D distribution (e.g. `μ = Normal(0,1)`)\n
+ν: 1-D distribution (e.g. `ν = Normal(0,1)`)\n
 
 Returns the optimal transport plan as a function
   ```math
   T(x)=F_\\nu^{-1}(F_\\mu(x)).
   ```
 """
-function optimal_transport_plan(
+function otplan(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution
 )
     # Use T instead of γ to indicate that this is a Monge map.
-    T(x) = Distributions.quantile(ν, Distributions.cdf(μ, x))
+    T(x) = quantile(ν, cdf(μ, x))
     return T
 end
 
 """
-optimal_transport_cost(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
+otcost(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
 
 Calculates the Optimal Transport Cost between μ to ν, where
 they are 1-Dimensional distributions and the cost
@@ -752,11 +752,11 @@ where ``h`` is a convex function. \n
 
 Returns the cost.
 """
-function optimal_transport_cost(
+function otcost(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
 )
     if plan === nothing
-        return _optimal_transport_cost_plan(c, μ, ν)[1]
+        return _ot_cost_plan(c, μ, ν)[1]
     else
         return dot(StatsBase.pairwise(c, μ.support, ν.support), plan)
     end
@@ -765,7 +765,7 @@ function optimal_transport_cost(
 end
 
 """
-optimal_transport_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
+otplan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
 
 Calculates the Optimal Transport Plan between μ to ν, where
 they are 1-Dimensional distributions and the cost
@@ -780,14 +780,14 @@ where ``h`` is a convex function. \n
 
 Returns the optimal transport plan γ as a matrix.
 """
-function optimal_transport_plan(
+function otplan(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
 )
-    return _optimal_transport_cost_plan(c, μ, ν)[2]
+    return _ot_cost_plan(c, μ, ν)[2]
 end
 
 """
-function _optimal_transport_cost_plan(
+function _ot_cost_plan(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric
 )
 
@@ -799,19 +799,25 @@ and the cost function is of the form ``c(x,y) = h(|x-y|)`` such that
 Returns cost and γ, where cost represtents the optimal transport cost and
 γ is the optimal transport plan given as a matrix.
 """
-function _optimal_transport_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric)
-    cost = 0
+function _ot_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; get=:plan)
     len_μ = length(μ.p)
     len_ν = length(ν.p)
-    γ = zeros(len_μ, len_ν)
 
+    if get == :plan
+        γ = spzeros(Base.promote_eltype(μ.p, ν.p),len_μ,len_ν)
+    elseif get == :cost
+        cost = c(μ.support[1], ν.support[1])
+    end
     wi = μ.p[1]
     wj = ν.p[1]
     i, j = 1, 1
     while true
         if (wi < wj || j == len_ν)
-            γ[i, j] = wi
-            cost += c(μ.support[i], ν.support[j]) * wi
+            if get == :plan
+                γ[i, j] = wi
+            elseif (get == :cost && i+j > 2) # skip the first case, already computed
+                cost += c(μ.support[i], ν.support[j]) * wi
+            end
             i += 1
             if i == len_μ + 1
                 break
@@ -819,8 +825,11 @@ function _optimal_transport_cost_plan(c, μ::DiscreteNonParametric, ν::Discrete
             wj -= wi
             wi = μ.p[i]
         else
-            γ[i, j] = wj
-            cost += c(μ.support[i], ν.support[j]) * wj
+            if get == :plan
+                γ[i, j] = wj
+            elseif (get == :cost && i+j > 2) # skip the first case, already computed
+                cost += c(μ.support[i], ν.support[j]) * wj
+            end
             j += 1
             if j == len_ν + 1
                 break
@@ -830,7 +839,11 @@ function _optimal_transport_cost_plan(c, μ::DiscreteNonParametric, ν::Discrete
         end
     end
 
-    return cost, γ
+    if get == :plan
+        return γ
+    elseif get == :cost
+        return cost
+    end
 end
 
 end
