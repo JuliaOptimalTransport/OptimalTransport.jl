@@ -57,39 +57,38 @@ end
     μ = Normal(0, 2)
     ν = Normal(10, 2)
     c(x, y) = abs(x - y)
-    γ = optimal_transport_plan(c, μ, ν)
+    γ = otplan(c, μ, ν)
 
-    @test optimal_transport_cost(c, μ, ν) ≈ 10 atol = 1e-5
-    @test optimal_transport_cost(c, μ, ν; plan=γ) ≈ 10 atol = 1e-5
+    @test otcost(c, μ, ν) ≈ 10 atol = 1e-5
+    @test otcost(c, μ, ν; plan=γ) ≈ 10 atol = 1e-5
 
     # Discrete Case
-    n, m = 100, 150
+    n, m = 12, 15
 
-    μ = rand(n)
-    ν = rand(m) .+ 0.5
-    μ_n = rand(n)
-    ν_m = rand(m)
-    μ_n = μ_n / sum(μ_n)
-    ν_m = ν_m / sum(ν_m)
+    μ_support = rand(n)
+    ν_support = rand(m)
+    μ_probs = rand(n)
+    ν_probs = rand(m)
+    μ_probs ./= sum(μ_probs)
+    ν_probs ./= sum(ν_probs)
 
-    μ = DiscreteNonParametric(μ, μ_n)
-    ν = DiscreteNonParametric(ν, ν_m)
+    μ = DiscreteNonParametric(μ_support, μ_probs)
+    ν = DiscreteNonParametric(ν_support, ν_probs)
 
-    c(x, y) = (x - y)^2
     # new version of StatsBase also has functoin pairwise,
     # which conflicts with Distances.pairwise
-    C = Distances.pairwise(SqEuclidean(), μ.support, ν.support)
+    C = pairwise(sqeuclidean, μ.support, ν.support)
 
     lp = Tulip.Optimizer()
     cost_simplex = emd2(μ.p, ν.p, C, lp)
-    cost_1d = optimal_transport_cost(c, μ, ν)
+    cost_1d = otcost(sqeuclidean, μ, ν)
 
     P = emd(μ.p, ν.p, C, lp)
-    γ = optimal_transport_plan(c, μ, ν)
+    γ = otplan(sqeuclidean, μ, ν)
 
     @test cost_1d ≈ cost_simplex atol = 1e-5
-    @test dot(C, γ) ≈ dot(C, P) atol = 1e-5
-    @test optimal_transport_cost(c, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-5
+    @test γ ≈ P atol = 1e-5
+    @test otcost(sqeuclidean, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-5
 end
 
 @testset "entropically regularized transport" begin

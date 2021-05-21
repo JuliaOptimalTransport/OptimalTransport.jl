@@ -802,14 +802,14 @@ Returns cost and γ, where cost represtents the optimal transport cost and
 function _ot_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; get=:plan)
     len_μ = length(μ.p)
     len_ν = length(ν.p)
+    wi = μ.p[1]
+    wj = ν.p[1]
 
     if get == :plan
         γ = spzeros(Base.promote_eltype(μ.p, ν.p),len_μ,len_ν)
     elseif get == :cost
-        cost = c(μ.support[1], ν.support[1])
+        cost = c(μ.support[1], ν.support[1])*min(wi,wj)
     end
-    wi = μ.p[1]
-    wj = ν.p[1]
     i, j = 1, 1
     while true
         if (wi < wj || j == len_ν)
