@@ -756,7 +756,7 @@ function otcost(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
 )
     if plan === nothing
-        return _ot_cost_plan(c, μ, ν)[1]
+        return _ot_cost_plan(c, μ, ν, get=:cost)
     else
         return dot(StatsBase.pairwise(c, μ.support, ν.support), plan)
     end
@@ -783,7 +783,7 @@ Returns the optimal transport plan γ as a matrix.
 function otplan(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
 )
-    return _ot_cost_plan(c, μ, ν)[2]
+    return _ot_cost_plan(c, μ, ν, get=:plan)
 end
 
 """
