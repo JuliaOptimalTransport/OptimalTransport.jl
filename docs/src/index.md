@@ -10,8 +10,8 @@ emd2
 ### Exact optimal transport for 1D
 
 ```@docs
-optimal_transport_cost
-optimal_transport_plan
+otcost
+otplan
 ```
 
 ## Entropically regularised optimal transport
