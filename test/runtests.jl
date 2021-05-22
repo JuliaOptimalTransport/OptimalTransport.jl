@@ -54,16 +54,15 @@ end
 
 @testset "1D Optimal Transport for Convex Cost" begin
     # Continuous Case
-    μ = Normal(0, 2)
-    ν = Normal(10, 2)
-    c(x, y) = abs(x - y)
-    γ = otplan(c, μ, ν)
+    μ = Normal(0, 1)
+    ν = Normal(5, 2)
+    γ = otplan(sqeuclidean, μ, ν)
 
-    @test otcost(c, μ, ν) ≈ 10 atol = 1e-5
-    @test otcost(c, μ, ν; plan=γ) ≈ 10 atol = 1e-5
+    @test otcost(sqeuclidean, μ, ν) ≈ 26 atol = 1e-5
+    @test otcost(sqeuclidean, μ, ν; plan=γ) ≈ 26 atol = 1e-5
 
     # Discrete Case
-    n, m = 12, 15
+    n, m = 10, 15
 
     μ_support = rand(n)
     ν_support = rand(m)
@@ -86,9 +85,9 @@ end
     P = emd(μ.p, ν.p, C, lp)
     γ = otplan(sqeuclidean, μ, ν)
 
-    @test cost_1d ≈ cost_simplex atol = 1e-5
+    @test cost_1d ≈ cost_simplex atol = 1e-6
     @test γ ≈ P atol = 1e-5
-    @test otcost(sqeuclidean, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-5
+    @test otcost(sqeuclidean, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-6
 end
 
 @testset "entropically regularized transport" begin
