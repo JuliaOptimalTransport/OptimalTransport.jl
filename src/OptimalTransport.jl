@@ -678,20 +678,22 @@ end
 ## 1-Dimensional Optimal Transport Functions
 
 """
-otcost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
+    otcost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
 
-Calculates the optimal transport cost between μ to ν, where
-they are 1-Dimensional distributions and the cost
+Compute the optimal transport cost between μ to ν, where
+both are 1-Dimensional distributions and the cost
 function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where `h` is a convex function.
-mu: 1-D distribution (e.g. `mu = Normal(0,1)`)\n
-nu: 1-D distribution (e.g. `nu = Normal(0,1)`)\n
-plan: Optional parameter in case the optimal transport plan is already known. Providing
-it can speed up calculations.
+Return optimal transport cos
+```math
+\\int_0^1 c(F_\\mu^{-1}(x),F_\\nu^{-1}(x))
+```
+
+where ``F_\\mu^{-1}`` is the quantile function of ``\\mu``
+and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
+
+A pre-computed optimal transport `plan` may be provided.
 """
 function otcost(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
@@ -710,23 +712,21 @@ function otcost(
 end
 
 """
-otplan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
+    otplan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
 
-Calculates the pptimal transport plan between μ to ν, where
-they are 1-Dimensional distributions and the cost
+Compute the optimal transport plan between μ to ν, where
+both are 1-Dimensional distributions and the cost
 function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(|x-y|)``
-where ``h`` is a convex function.
-μ: 1-D distribution (e.g. `μ = Normal(0,1)`)\n
-ν: 1-D distribution (e.g. `ν = Normal(0,1)`)\n
+A pre-computed optimal transport `plan` may be provided.
 
-Returns the optimal transport plan as a function
+Return the optimal transport plan as a function
   ```math
-  T(x)=F_\\nu^{-1}(F_\\mu(x)).
+  T(x)=F_\\nu^{-1}(F_\\mu(x))
   ```
+where ``F_\\mu`` is the cdf function of ``\\mu``
+and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
 """
 function otplan(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution
@@ -737,20 +737,14 @@ function otplan(
 end
 
 """
-otcost(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
+    otcost(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
 
-Calculates the Optimal Transport Cost between μ to ν, where
-they are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
+Calculates the optimal transport cost between μ to ν, where
+both are 1-Dimensional discrete distributions with finite support
+and the cost function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where ``h`` is a convex function. \n
-μ: Finite Discrete Distribution (e.g. `μ = DiscreteNonParametric(u, u_n)`)\n
-ν: Finite Discrete Distribution (e.g. `ν = DiscreteNonParametric(v, v_n)`)\n
-
-Returns the cost.
+A pre-computed optimal transport `plan` may be provided.
 """
 function otcost(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
@@ -765,20 +759,16 @@ function otcost(
 end
 
 """
-otplan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
+    otplan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
 
-Calculates the Optimal Transport Plan between μ to ν, where
-they are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
+Calculates the optimal transport cost between μ to ν, where
+both are 1-Dimensional discrete distributions with finite support
+and the cost function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Parameters:\n
-c: The cost function, which should be of the form ``c(x,y) = h(abs(x-y))``
-where ``h`` is a convex function. \n
-μ: Finite Discrete Distribution (e.g. `μ = DiscreteNonParametric(u, u_n)`)\n
-ν: Finite Discrete Distribution (e.g. `ν = DiscreteNonParametric(v, v_n)`)\n
+Return the optimal transport plan as a matrix.
 
-Returns the optimal transport plan γ as a matrix.
+A pre-computed optimal transport `plan` may be provided.
 """
 function otplan(
     c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
@@ -787,17 +777,14 @@ function otplan(
 end
 
 """
-function _ot_cost_plan(
-    c, μ::DiscreteNonParametric, ν::DiscreteNonParametric
-)
+    _ot_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; get=:plan)
 
-Auxiliary function that calculates the cost and plan for
-μ an ν where both  they are 1-Dimensional discrete distributions with finite support
+Compute the optimal transport cost and plan for
+μ an ν where both are 1-Dimensional discrete distributions with finite support
 and the cost function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Returns cost and γ, where cost represtents the optimal transport cost and
-γ is the optimal transport plan given as a matrix.
+Return the plan or the cost depending if `get=:plan` or `get=:cost`, respectively.
 """
 function _ot_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; get=:plan)
     len_μ = length(μ.p)
