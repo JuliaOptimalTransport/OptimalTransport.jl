@@ -728,9 +728,7 @@ Return the optimal transport plan as a function
 where ``F_\\mu`` is the cdf function of ``\\mu``
 and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
 """
-function otplan(
-    c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution
-)
+function otplan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
     # Use T instead of γ to indicate that this is a Monge map.
     T(x) = quantile(ν, cdf(μ, x))
     return T
@@ -746,11 +744,9 @@ and the cost function is of the form ``c(x,y) = h(|x-y|)`` such that
 
 A pre-computed optimal transport `plan` may be provided.
 """
-function otcost(
-    c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
-)
+function otcost(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
     if plan === nothing
-        return _ot_cost_plan(c, μ, ν, get=:cost)
+        return _ot_cost_plan(c, μ, ν; get=:cost)
     else
         return dot(StatsBase.pairwise(c, μ.support, ν.support), plan)
     end
@@ -770,10 +766,8 @@ Return the optimal transport plan as a matrix.
 
 A pre-computed optimal transport `plan` may be provided.
 """
-function otplan(
-    c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing
-)
-    return _ot_cost_plan(c, μ, ν, get=:plan)
+function otplan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; plan=nothing)
+    return _ot_cost_plan(c, μ, ν; get=:plan)
 end
 
 """
@@ -793,16 +787,16 @@ function _ot_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; 
     wj = ν.p[1]
 
     if get == :plan
-        γ = spzeros(Base.promote_eltype(μ.p, ν.p),len_μ,len_ν)
+        γ = spzeros(Base.promote_eltype(μ.p, ν.p), len_μ, len_ν)
     elseif get == :cost
-        cost = c(μ.support[1], ν.support[1])*min(wi,wj)
+        cost = c(μ.support[1], ν.support[1]) * min(wi, wj)
     end
     i, j = 1, 1
     while true
         if (wi < wj || j == len_ν)
             if get == :plan
                 γ[i, j] = wi
-            elseif (get == :cost && i+j > 2) # skip the first case, already computed
+            elseif (get == :cost && i + j > 2) # skip the first case, already computed
                 cost += c(μ.support[i], ν.support[j]) * wi
             end
             i += 1
@@ -814,7 +808,7 @@ function _ot_cost_plan(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric; 
         else
             if get == :plan
                 γ[i, j] = wj
-            elseif (get == :cost && i+j > 2) # skip the first case, already computed
+            elseif (get == :cost && i + j > 2) # skip the first case, already computed
                 cost += c(μ.support[i], ν.support[j]) * wj
             end
             j += 1
