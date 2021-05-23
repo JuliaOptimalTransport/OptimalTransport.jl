@@ -60,7 +60,7 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     # add constraints for source
     for (i, μi) in zip(axes(xmat, 1), μ) # eachrow(xmat) is not available on Julia 1.0
         f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(μi), xi) for xi in view(xs, i, :)], zero(μi)
+            [MOI.ScalarAffineTerm(one(μi), xi) for xi in view(xmat, i, :)], zero(μi)
         )
         MOI.add_constraint(model, f, MOI.EqualTo(μi))
     end
@@ -68,7 +68,7 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     # add constraints for target
     for (i, νi) in zip(axes(xmat, 2), ν) # eachcol(xmat) is not available on Julia 1.0
         f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(νi), xi) for xi in view(xs, :, i)], zero(νi)
+            [MOI.ScalarAffineTerm(one(νi), xi) for xi in view(xmat, :, i)], zero(νi)
         )
         MOI.add_constraint(model, f, MOI.EqualTo(νi))
     end
