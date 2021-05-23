@@ -249,27 +249,6 @@ end
         c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps) for i = 1:d]
         @test c_all ≈ c_pot atol = 1e-9 norm = (x -> norm(x, Inf))
     end
-
-    # computation on the GPU
-    if CUDA.functional()
-        @testset "CUDA" begin
-            # create two uniform histograms
-            μ = CUDA.fill(Float32(1 / M), M)
-            ν = CUDA.fill(Float32(1 / N), N)
-
-            # create random cost matrix
-            C = abs2.(CUDA.rand(M) .- CUDA.rand(1, N))
-
-            # compute optimal transport map
-            eps = 0.01f0
-            γ = sinkhorn(μ, ν, C, eps)
-            @test γ isa CuArray{Float32}
-
-            # compute optimal transport cost
-            c = sinkhorn2(μ, ν, C, eps)
-            @test c isa Float32
-        end
-    end
 end
 
 @testset "unbalanced transport" begin
