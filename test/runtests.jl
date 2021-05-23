@@ -65,12 +65,12 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
-        γ = sinkhorn(μ, ν, C, eps; max_iter=5_000)
+        γ = sinkhorn(μ, ν, C, eps; maxiter=5_000)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         # compute optimal transport cost (Julia implementation + POT)
-        c = sinkhorn2(μ, ν, C, eps; max_iter=5_000)
+        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
         @test c ≈ c_pot atol = 1e-9
 
@@ -93,14 +93,14 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01f0
-        γ = sinkhorn(μ, ν, C, eps; max_iter=5_000)
+        γ = sinkhorn(μ, ν, C, eps; maxiter=5_000)
         @test eltype(γ) === Float32
 
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < Base.eps(Float32)
 
         # compute optimal transport cost (Julia implementation + POT)
-        c = sinkhorn2(μ, ν, C, eps; max_iter=5_000)
+        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
         @test c isa Float32
 
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
