@@ -67,12 +67,12 @@ end
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
         γ = sinkhorn(μ, ν, C, eps)
-        γ_pot = POT.sinkhorn(μ, ν, C, eps)
+        γ_pot = POT.sinkhorn(μ, ν, C, eps; stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         # compute optimal transport cost (Julia implementation + POT)
         c = sinkhorn2(μ, ν, C, eps)
-        c_pot = POT.sinkhorn2(μ, ν, C, eps)[1]
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; stopThr=1e-9)[1]
         @test c ≈ c_pot atol = 1e-9
 
         # ensure that provided map is used
@@ -97,7 +97,7 @@ end
         γ = sinkhorn(μ, ν, C, eps)
         @test eltype(γ) === Float32
 
-        γ_pot = POT.sinkhorn(μ, ν, C, eps)
+        γ_pot = POT.sinkhorn(μ, ν, C, eps; stopThr=1e-9)
         @test eltype(γ_pot) === Float64 # POT does not respect input type
         @test norm(γ - γ_pot, Inf) < Base.eps(Float32)
 
@@ -105,7 +105,7 @@ end
         c = sinkhorn2(μ, ν, C, eps)
         @test c isa Float32
 
-        c_pot = POT.sinkhorn2(μ, ν, C, eps)[1]
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; stopThr=1e-9)[1]
         @test c_pot isa Float64 # POT does not respect input types
         @test c ≈ c_pot atol = Base.eps(Float32)
     end
@@ -144,15 +144,13 @@ end
         eps = 0.01
         lambda = 1
         γ = sinkhorn_unbalanced(μ, ν, C, lambda, lambda, eps)
-        γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda)
+        γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda; stopThr=1e-9)
 
         # compute optimal transport map
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps)
-        c_pot = POT.sinkhorn_unbalanced2(
-            μ, ν, C, eps, lambda; numItermax=5_000, stopThr=1e-9
-        )[1]
+        c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda; stopThr=1e-9)[1]
 
         @test c ≈ c_pot atol = 1e-9
 
@@ -201,7 +199,7 @@ end
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.25
         γ = quadreg(μ, ν, C, eps)
-        γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps)
+        γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps; stopThr=1e-9)
         # need to use a larger tolerance here because of a quirk with the POT solver 
         @test norm(γ - γ_pot, Inf) < 1e-4
     end
@@ -223,7 +221,7 @@ end
         # compute Sinkhorn barycenter (Julia implementation + POT)
         eps = 0.01
         μ_interp = sinkhorn_barycenter(μ_all, [C, C], eps, [0.5, 0.5])
-        μ_interp_pot = POT.barycenter(μ_all', C, eps; weights=[0.5, 0.5])
+        μ_interp_pot = POT.barycenter(μ_all', C, eps; weights=[0.5, 0.5], stopThr=1e-9)
         @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
     end
 end
