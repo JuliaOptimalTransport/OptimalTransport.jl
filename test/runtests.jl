@@ -1,6 +1,5 @@
 using OptimalTransport
 
-using CUDA
 using Distances
 using PythonOT: PythonOT
 using Tulip
@@ -106,27 +105,6 @@ end
 
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
         @test c ≈ c_pot atol = Base.eps(Float32)
-    end
-
-    # computation on the GPU
-    if CUDA.functional()
-        @testset "CUDA" begin
-            # create two uniform histograms
-            μ = CUDA.fill(Float32(1 / M), M)
-            ν = CUDA.fill(Float32(1 / N), N)
-
-            # create random cost matrix
-            C = abs2.(CUDA.rand(M) .- CUDA.rand(1, N))
-
-            # compute optimal transport map
-            eps = 0.01f0
-            γ = sinkhorn(μ, ν, C, eps)
-            @test γ isa CuArray{Float32}
-
-            # compute optimal transport cost
-            c = sinkhorn2(μ, ν, C, eps)
-            @test c isa Float32
-        end
     end
 end
 
