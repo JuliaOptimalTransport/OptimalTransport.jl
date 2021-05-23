@@ -7,7 +7,6 @@ module OptimalTransport
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
-using Requires
 using MathOptInterface
 
 export sinkhorn, sinkhorn2
@@ -17,13 +16,6 @@ export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
 
 const MOI = MathOptInterface
-
-function __init__()
-    @require PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
-        export POT
-        include("pot.jl")
-    end
-end
 
 """
     emd(μ, ν, C, optimizer)
@@ -107,12 +99,7 @@ packages, respectively.
 
 A pre-computed optimal transport `plan` may be provided.
 """
-function emd2(μ, ν, C, optimizer; map=nothing, plan=map)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn("the keyword argument `map` is deprecated, please use `plan`", :emd2)
-    end
-
+function emd2(μ, ν, C, optimizer; plan=nothing)
     γ = if plan === nothing
         # compute optimal transport plan
         emd(μ, ν, C, optimizer)
@@ -226,14 +213,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`sinkhorn`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; map=nothing, plan=map, kwargs...)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`", :sinkhorn2
-        )
-    end
-
+function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
@@ -337,15 +317,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`sinkhorn_unbalanced`](@ref)
 """
-function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, plan=map, kwargs...)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`",
-            :sinkhorn_unbalanced2,
-        )
-    end
-
+function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; kwargs...)
     else

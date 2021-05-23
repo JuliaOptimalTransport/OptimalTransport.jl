@@ -1,7 +1,7 @@
 using OptimalTransport
 
 using Distances
-using PyCall
+using PythonOT: PythonOT
 using Tulip
 using MathOptInterface
 using SparseArrays
@@ -11,6 +11,7 @@ using Random
 using Test
 
 const MOI = MathOptInterface
+const POT = PythonOT
 
 Random.seed!(100)
 
@@ -43,9 +44,6 @@ Random.seed!(100)
     @test cost ≈ pot_cost atol = 1e-5
 
     # ensure that provided map is used
-    cost2 = @test_deprecated(emd2(similar(μ), similar(ν), C, lp; map=P))
-    @test cost2 ≈ cost
-
     cost2 = emd2(similar(μ), similar(ν), C, lp; plan=P)
     @test cost2 ≈ cost
 end
@@ -64,19 +62,16 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
-        γ = sinkhorn(μ, ν, C, eps)
-        γ_pot = POT.sinkhorn(μ, ν, C, eps)
+        γ = sinkhorn(μ, ν, C, eps; maxiter=5_000)
+        γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         # compute optimal transport cost (Julia implementation + POT)
-        c = sinkhorn2(μ, ν, C, eps)
-        c_pot = POT.sinkhorn2(μ, ν, C, eps)
+        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
         @test c ≈ c_pot atol = 1e-9
 
         # ensure that provided map is used
-        c2 = @test_deprecated(sinkhorn2(similar(μ), similar(ν), C, rand(); map=γ))
-        @test c2 ≈ c
-
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
         @test c2 ≈ c
     end
@@ -92,19 +87,17 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01f0
-        γ = sinkhorn(μ, ν, C, eps)
+        γ = sinkhorn(μ, ν, C, eps; maxiter=5_000)
         @test eltype(γ) === Float32
 
-        γ_pot = POT.sinkhorn(μ, ν, C, eps)
-        @test eltype(γ_pot) === Float64 # POT does not respect input type
+        γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < Base.eps(Float32)
 
         # compute optimal transport cost (Julia implementation + POT)
-        c = sinkhorn2(μ, ν, C, eps)
+        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
         @test c isa Float32
 
-        c_pot = POT.sinkhorn2(μ, ν, C, eps)
-        @test c_pot isa Float64 # POT does not respect input types
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
         @test c ≈ c_pot atol = Base.eps(Float32)
     end
 end
@@ -121,22 +114,19 @@ end
         eps = 0.01
         lambda = 1
         γ = sinkhorn_unbalanced(μ, ν, C, lambda, lambda, eps)
-        γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda)
+        γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda; stopThr=1e-9)
 
         # compute optimal transport map
         @test norm(γ - γ_pot, Inf) < 1e-9
 
-        c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps)
-        c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda)
+        c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps; max_iter=5_000)
+        c_pot = POT.sinkhorn_unbalanced2(
+            μ, ν, C, eps, lambda; numItermax=5_000, stopThr=1e-9
+        )[1]
 
         @test c ≈ c_pot atol = 1e-9
 
         # ensure that provided map is used
-        c2 = @test_deprecated(
-            sinkhorn_unbalanced2(similar(μ), similar(ν), C, rand(), rand(), rand(); map=γ)
-        )
-        @test c2 ≈ c
-
         c2 = sinkhorn_unbalanced2(similar(μ), similar(ν), C, rand(), rand(), rand(); plan=γ)
         @test c2 ≈ c
     end
@@ -176,7 +166,7 @@ end
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.25
         γ = quadreg(μ, ν, C, eps)
-        γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps; max_iter=5000))
+        γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps; stopThr=1e-9)
         # need to use a larger tolerance here because of a quirk with the POT solver 
         @test norm(γ - γ_pot, Inf) < 1e-4
     end
@@ -191,13 +181,14 @@ end
         μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
         μ2 ./= sum(μ2)
         μ_all = hcat(μ1, μ2)'
+
         # create cost matrix
-        C = pairwise(SqEuclidean(), support')
+        C = pairwise(SqEuclidean(), support'; dims=2)
+
         # compute Sinkhorn barycenter (Julia implementation + POT)
         eps = 0.01
         μ_interp = sinkhorn_barycenter(μ_all, [C, C], eps, [0.5, 0.5])
-        μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5])
-        # need to use a larger tolerance here because of a quirk with the POT solver 
+        μ_interp_pot = POT.barycenter(μ_all', C, eps; weights=[0.5, 0.5], stopThr=1e-9)
         @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
     end
 end
