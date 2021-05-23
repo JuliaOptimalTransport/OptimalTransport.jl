@@ -106,7 +106,7 @@ quadreg(μ, ν, C, ε; maxiter=500);
 
 # Again we can check that the same result is obtained with the POT package:
 
-γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", max_iter=5_000)
+γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000)
 norm(γ - γ_pot, Inf)
 
 # ## Stabilized Sinkhorn algorithm with $\epsilon$-scaling
@@ -117,7 +117,7 @@ norm(γ - γ_pot, Inf)
 
 # The POT package yields the same result:
 
-γpot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_epsilon_scaling", max_iter=5000)
+γpot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_epsilon_scaling", numItermax=5000)
 norm(γ - γpot, Inf)
 
 # ## Unbalanced optimal transport 
