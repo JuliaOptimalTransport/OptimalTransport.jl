@@ -548,11 +548,10 @@ function ot_reg_cost(mu, nu, C, eps; reg_func="L2", method="lorenz", kwargs...)
         quadreg(mu, nu, C, eps; kwargs...)
     else
         @warn "Unimplemented"
-        nothing 
+        nothing
     end
     return dot(γ, C)
 end
-
 
 """
     quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
