@@ -150,7 +150,9 @@ end
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps)
-        c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda; stopThr=1e-9)[1]
+        c_pot = POT.sinkhorn_unbalanced2(
+            μ, ν, C, eps, lambda; numItermax=5_000, stopThr=1e-9
+        )[1]
 
         @test c ≈ c_pot atol = 1e-9
 
