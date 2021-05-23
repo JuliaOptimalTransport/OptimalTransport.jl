@@ -183,7 +183,7 @@ function sinkhorn_gibbs(
     v = ν ./ (K' * u)
     tmp1 = K * v
     tmp2 = similar(u)
-
+    
     norm_μ = sum(abs, μ) # for convergence check
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
@@ -252,6 +252,10 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
 the computation is stopped.
 
+Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
+as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
+The output in this case is a vector `γ` of coupling matrices such that `γ[i]` is a coupling of `mu[:, i]` and `nu[:, i]`.
+
 See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn(μ, ν, C, ε; kwargs...)
@@ -259,9 +263,13 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
     K = @. exp(-C / ε)
 
     # compute dual potentials
-    u, v = sinkhorn_gibbs(μ, ν, K; kwargs...)
-
-    return K .* u .* v'
+    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
+   
+    if size(mu, 2) == 1
+        return Diagonal(reshape(u, :)) * K * Diagonal(reshape(v, :))
+    else
+        return [Diagonal(u[:, i]) * K * Diagonal(v[:, i]) for i = 1:size(mu, 2)]
+    end
 end
 
 """
@@ -279,6 +287,10 @@ supported here are the same as those in the [`sinkhorn`](@ref) function.
     returns the optimal transport cost without the regularization term. The cost
     with the regularization term can be computed by setting `regularization=true`.
 
+Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
+as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
+The output in this case is a vector `c` of coupling matrices such that `c[i]` is the transport cost for `mu[:, i]` and `nu[:, i]`.
+
 See also: [`sinkhorn`](@ref)
 """
 function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
@@ -286,14 +298,13 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
         # check dimensions
-        size(C) == (length(μ), length(ν)) ||
-            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
+        size(C) == (size(μ, 1), size(ν, 1)) ||
+            error("cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`")
         size(plan) == size(C) || error(
             "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
         plan
     end
-
     cost = if regularization
         dot(γ, C) + ε * sum(LogExpFunctions.xlogx, γ)
     else
