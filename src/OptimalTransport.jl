@@ -66,17 +66,17 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     end
 
     # add constraints for source
-    for (xs, μi) in zip(eachrow(xmat), μ)
+    for (i, μi) in zip(axes(xmat, 1), μ) # eachrow(xmat) is not available on Julia 1.0
         f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(μi), xi) for xi in xs], zero(μi)
+            [MOI.ScalarAffineTerm(one(μi), xi) for xi in view(xmat, i, :)], zero(μi)
         )
         MOI.add_constraint(model, f, MOI.EqualTo(μi))
     end
 
     # add constraints for target
-    for (xs, νi) in zip(eachcol(xmat), ν)
+    for (i, νi) in zip(axes(xmat, 2), ν) # eachcol(xmat) is not available on Julia 1.0
         f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(νi), xi) for xi in xs], zero(νi)
+            [MOI.ScalarAffineTerm(one(νi), xi) for xi in view(xmat, :, i)], zero(νi)
         )
         MOI.add_constraint(model, f, MOI.EqualTo(νi))
     end
@@ -415,16 +415,11 @@ function sinkhorn_stabilized(
     absorb_tol=1e3,
     max_iter=1000,
     tol=1e-9,
-    alpha=nothing,
-    beta=nothing,
+    alpha=zeros(size(mu)),
+    beta=zeros(size(nu)),
     return_duals=false,
     verbose=false,
 )
-    if isnothing(alpha) || isnothing(beta)
-        alpha = zeros(size(mu))
-        beta = zeros(size(nu))
-    end
-
     u = ones(size(mu))
     v = ones(size(nu))
     K = getK(C, alpha, beta, eps, mu, nu)
