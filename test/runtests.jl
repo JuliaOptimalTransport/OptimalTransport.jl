@@ -151,7 +151,7 @@ end
 
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps)
         c_pot = POT.sinkhorn_unbalanced2(
-            μ, ν, C, eps, lambda; numItermax=1_000, stopThr=1e-9
+            μ, ν, C, eps, lambda; numItermax=5_000, stopThr=1e-9
         )[1]
 
         @test c ≈ c_pot atol = 1e-9
