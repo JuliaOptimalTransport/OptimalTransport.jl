@@ -13,7 +13,7 @@ export sinkhorn, sinkhorn2
 export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
-export ot_reg_plan
+export ot_reg_plan, ot_reg_cost
 
 const MOI = MathOptInterface
 
@@ -532,6 +532,25 @@ function ot_reg_plan(mu, nu, C, eps; reg_func="L2", method="lorenz", kwargs...)
     else
         @warn "Unimplemented"
     end
+end
+
+"""
+    ot_reg_cost(mu, nu, C, eps; reg_func = "L2", method = "lorenz", kwargs...)
+
+Compute the optimal transport cost between `mu` and `nu` for optimal transport with a 
+general choice of regulariser `math Ω(γ)`. 
+
+See also: [`ot_reg_plan`](@ref)
+
+"""
+function ot_reg_cost(mu, nu, C, eps; reg_func="L2", method="lorenz", kwargs...)
+    γ = if (reg_func == "L2") && (method == "lorenz")
+        quadreg(mu, nu, C, eps; kwargs...)
+    else
+        @warn "Unimplemented"
+        nothing 
+    end
+    return dot(γ, C)
 end
 
 

@@ -174,6 +174,9 @@ end
 >>>>>>> d6c9ee3 (updated tests and docstrings)
         # need to use a larger tolerance here because of a quirk with the POT solver 
         @test norm(γ - γ_pot, Inf) < 1e-4
+        c = ot_reg_cost(μ, ν, C, eps; reg_func="L2", method="lorenz")
+        c_pot = dot(γ_pot, C)
+        @test c ≈ c_pot atol = 1e-4
     end
 end
 
