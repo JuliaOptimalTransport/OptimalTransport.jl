@@ -20,7 +20,7 @@ jobs:
           using Pkg: Pkg
           Pkg.develop(Pkg.PackageSpec(path=pwd()))
           Pkg.instantiate()
-          include(joinpath("docs", "make.jl"))
+          include(joinpath(pwd(), "docs", "make.jl"))
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
