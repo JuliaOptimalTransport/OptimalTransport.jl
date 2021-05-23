@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         version:
+          - '1.0'
           - '1'
           - 'nightly'
         os:
@@ -22,12 +23,6 @@ jobs:
           - macOS-latest 
         arch:
           - x64
-          - x86
-        exclude:
-          - os: ubuntu-latest
-            arch: x86
-          - os: macOS-latest
-            arch: x86
         include:
           - version: '1'
             os: ubuntu-latest
