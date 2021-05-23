@@ -99,12 +99,7 @@ packages, respectively.
 
 A pre-computed optimal transport `plan` may be provided.
 """
-function emd2(μ, ν, C, optimizer; map=nothing, plan=map)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn("the keyword argument `map` is deprecated, please use `plan`", :emd2)
-    end
-
+function emd2(μ, ν, C, optimizer; plan=nothing)
     γ = if plan === nothing
         # compute optimal transport plan
         emd(μ, ν, C, optimizer)
@@ -218,14 +213,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`sinkhorn`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; map=nothing, plan=map, kwargs...)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`", :sinkhorn2
-        )
-    end
-
+function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
@@ -329,15 +317,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`sinkhorn_unbalanced`](@ref)
 """
-function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, plan=map, kwargs...)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`",
-            :sinkhorn_unbalanced2,
-        )
-    end
-
+function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; kwargs...)
     else

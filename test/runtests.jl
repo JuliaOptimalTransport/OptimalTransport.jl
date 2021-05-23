@@ -44,9 +44,6 @@ Random.seed!(100)
     @test cost ≈ pot_cost atol = 1e-5
 
     # ensure that provided map is used
-    cost2 = @test_deprecated(emd2(similar(μ), similar(ν), C, lp; map=P))
-    @test cost2 ≈ cost
-
     cost2 = emd2(similar(μ), similar(ν), C, lp; plan=P)
     @test cost2 ≈ cost
 end
@@ -75,9 +72,6 @@ end
         @test c ≈ c_pot atol = 1e-9
 
         # ensure that provided map is used
-        c2 = @test_deprecated(sinkhorn2(similar(μ), similar(ν), C, rand(); map=γ))
-        @test c2 ≈ c
-
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
         @test c2 ≈ c
     end
@@ -133,11 +127,6 @@ end
         @test c ≈ c_pot atol = 1e-9
 
         # ensure that provided map is used
-        c2 = @test_deprecated(
-            sinkhorn_unbalanced2(similar(μ), similar(ν), C, rand(), rand(), rand(); map=γ)
-        )
-        @test c2 ≈ c
-
         c2 = sinkhorn_unbalanced2(similar(μ), similar(ν), C, rand(), rand(), rand(); plan=γ)
         @test c2 ≈ c
     end
