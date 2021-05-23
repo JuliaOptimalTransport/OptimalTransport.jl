@@ -55,10 +55,9 @@ for name in EXAMPLES
 end
 
 using Documenter
-using PyCall
 
 makedocs(;
-    modules=[OptimalTransport, POT],
+    modules=[OptimalTransport],
     repo="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/{commit}{path}#L{line}",
     sitename="OptimalTransport.jl",
     format=Documenter.HTML(;
@@ -68,7 +67,6 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "POT" => "pot.md",
         "Examples" => [joinpath("examples", "$(name).md") for name in EXAMPLES],
     ],
     strict=true,

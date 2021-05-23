@@ -2,7 +2,7 @@ using OptimalTransport
 
 using CUDA
 using Distances
-using PyCall
+using PythonOT: PythonOT
 using Tulip
 using MathOptInterface
 using SparseArrays
@@ -12,6 +12,7 @@ using Random
 using Test
 
 const MOI = MathOptInterface
+const POT = PythonOT
 
 Random.seed!(100)
 
@@ -71,7 +72,7 @@ end
 
         # compute optimal transport cost (Julia implementation + POT)
         c = sinkhorn2(μ, ν, C, eps)
-        c_pot = POT.sinkhorn2(μ, ν, C, eps)
+        c_pot = POT.sinkhorn2(μ, ν, C, eps)[1]
         @test c ≈ c_pot atol = 1e-9
 
         # ensure that provided map is used
@@ -104,7 +105,7 @@ end
         c = sinkhorn2(μ, ν, C, eps)
         @test c isa Float32
 
-        c_pot = POT.sinkhorn2(μ, ν, C, eps)
+        c_pot = POT.sinkhorn2(μ, ν, C, eps)[1]
         @test c_pot isa Float64 # POT does not respect input types
         @test c ≈ c_pot atol = Base.eps(Float32)
     end
@@ -149,7 +150,7 @@ end
         @test norm(γ - γ_pot, Inf) < 1e-9
 
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps)
-        c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda)
+        c_pot = POT.sinkhorn_unbalanced2(μ, ν, C, eps, lambda; stopThr=1e-9)[1]
 
         @test c ≈ c_pot atol = 1e-9
 
@@ -198,7 +199,7 @@ end
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.25
         γ = quadreg(μ, ν, C, eps)
-        γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps; max_iter=5000))
+        γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps)
         # need to use a larger tolerance here because of a quirk with the POT solver 
         @test norm(γ - γ_pot, Inf) < 1e-4
     end
@@ -213,13 +214,14 @@ end
         μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
         μ2 ./= sum(μ2)
         μ_all = hcat(μ1, μ2)'
+
         # create cost matrix
-        C = pairwise(SqEuclidean(), support')
+        C = pairwise(SqEuclidean(), support'; dims=2)
+
         # compute Sinkhorn barycenter (Julia implementation + POT)
         eps = 0.01
         μ_interp = sinkhorn_barycenter(μ_all, [C, C], eps, [0.5, 0.5])
-        μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5])
-        # need to use a larger tolerance here because of a quirk with the POT solver 
+        μ_interp_pot = POT.barycenter(μ_all', C, eps; weights=[0.5, 0.5])
         @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
     end
 end

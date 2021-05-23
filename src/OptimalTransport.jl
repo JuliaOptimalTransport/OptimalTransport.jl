@@ -7,7 +7,6 @@ module OptimalTransport
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
-using Requires
 using MathOptInterface
 
 export sinkhorn, sinkhorn2
@@ -17,13 +16,6 @@ export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
 
 const MOI = MathOptInterface
-
-function __init__()
-    @require PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
-        export POT
-        include("pot.jl")
-    end
-end
 
 """
     emd(μ, ν, C, optimizer)
