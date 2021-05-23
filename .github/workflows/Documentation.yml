@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies, build and deploy
         run: |
           using Pkg: Pkg
-          Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.develop(Pkg.PackageSpec(path=pwd()))
           Pkg.instantiate()
           include("docs/make.jl")
         env:
