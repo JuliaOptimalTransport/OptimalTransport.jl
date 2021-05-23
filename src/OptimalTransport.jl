@@ -517,7 +517,7 @@ general choice of regulariser `math Ω(γ)`. Solves for `gamma` that minimises
 ```
 
 Supported choices of `math Ω` are:
-- L2: `math Ω(γ) = \\frac{1}{2} \\| γ \\|_2^2`, `reg_func = "L2"`
+- L2: ``Ω(γ) = \\frac{1}{2} \\| γ \\|_2^2``, `reg_func = "L2"`
 
 Supported solution methods are:
 - L2: `method = "lorenz"` for the semi-smooth Newton method of Lorenz et al. 

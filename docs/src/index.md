@@ -23,7 +23,7 @@ sinkhorn_unbalanced
 sinkhorn_unbalanced2
 ```
 
-## Quadratically regularised optimal transport
+## Optimal transport with general regularisation 
 ```@docs
-quadreg
+ot_reg_plan
 ```
