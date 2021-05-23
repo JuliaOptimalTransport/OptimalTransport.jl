@@ -264,12 +264,7 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
 
     # compute dual potentials
     u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
-
-    if mu isa Vector
-        return Diagonal(reshape(u, :)) * K * Diagonal(reshape(v, :))
-    else
-        return [Diagonal(u[:, i]) * K * Diagonal(v[:, i]) for i in 1:size(mu, 2)]
-    end
+    return Diagonal(reshape(u, :)) * K * Diagonal(reshape(v, :))
 end
 
 """
