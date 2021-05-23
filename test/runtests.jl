@@ -165,8 +165,13 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.25
+<<<<<<< HEAD
         γ = ot_reg_plan(μ, ν, C, eps)
         γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps; stopThr=1e-9)
+=======
+        γ = ot_reg_plan(μ, ν, C, eps; reg_func="L2", method="lorenz")
+        γ_pot = sparse(POT.smooth_ot_dual(μ, ν, C, eps; max_iter=5000))
+>>>>>>> d6c9ee3 (updated tests and docstrings)
         # need to use a larger tolerance here because of a quirk with the POT solver 
         @test norm(γ - γ_pot, Inf) < 1e-4
     end

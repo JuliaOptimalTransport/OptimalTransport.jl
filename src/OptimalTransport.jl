@@ -506,7 +506,27 @@ function sinkhorn_barycenter(
     return u_all[1, :] .* (K_all[1] * v_all[1, :])
 end
 
-function ot_reg_plan(mu, nu, C, eps; reg_func = "L2", method = "lorenz", kwargs...)
+"""
+    ot_reg_plan(mu, nu, C, eps; reg_func = "L2", method = "lorenz", kwargs...)
+
+Compute the optimal transport plan between `mu` and `nu` for optimal transport with a 
+general choice of regulariser `math Ω(γ)`. Solves for `gamma` that minimises
+
+```math
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle + ε Ω(γ)
+```
+
+Supported choices of `math Ω` are:
+- L2: `math Ω(γ) = \\frac{1}{2} \\| γ \\|_2^2`, `reg_func = "L2"`
+
+Supported solution methods are:
+- L2: `method = "lorenz"` for the semi-smooth Newton method of Lorenz et al. 
+
+References
+
+Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. Applied Mathematics & Optimization, pp.1-31.
+"""
+function ot_reg_plan(mu, nu, C, eps; reg_func="L2", method="lorenz", kwargs...)
     if (reg_func == "L2") && (method == "lorenz")
         return quadreg(mu, nu, C, eps; kwargs...)
     else
