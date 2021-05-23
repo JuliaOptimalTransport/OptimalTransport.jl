@@ -35,14 +35,6 @@ jobs:
             coverage: true
     steps:
       - uses: actions/checkout@v2
-      - name: Install python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-          architecture: ${{ matrix.arch }}
-      # Limitation of pip: https://pythonot.github.io/index.html#pip-installation
-      - run: python -m pip install cython numpy
-      - run: python -m pip install pot
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
@@ -58,11 +50,11 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
-        env:
-          PYTHON: python
       - uses: julia-actions/julia-runtest@latest
+        with:
+          coverage: ${{ matrix.coverage || false }}
         env:
-          PYTHON: python
+          PYTHON: '' # Use Conda.jl also on Linux
       - uses: julia-actions/julia-processcoverage@v1
         if: matrix.coverage
       - uses: codecov/codecov-action@v1
