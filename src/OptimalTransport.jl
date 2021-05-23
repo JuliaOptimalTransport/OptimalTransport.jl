@@ -407,16 +407,11 @@ function sinkhorn_stabilized(
     absorb_tol=1e3,
     max_iter=1000,
     tol=1e-9,
-    alpha=nothing,
-    beta=nothing,
+    alpha=zeros(size(mu)),
+    beta=zeros(size(nu)),
     return_duals=false,
     verbose=false,
 )
-    if isnothing(alpha) || isnothing(beta)
-        alpha = zeros(size(mu))
-        beta = zeros(size(nu))
-    end
-
     u = ones(size(mu))
     v = ones(size(nu))
     K = getK(C, alpha, beta, eps, mu, nu)
