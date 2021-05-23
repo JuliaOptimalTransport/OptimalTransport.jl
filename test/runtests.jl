@@ -1,6 +1,5 @@
 using OptimalTransport
 
-using CUDA
 using Distances
 using PyCall
 using Tulip
@@ -108,27 +107,6 @@ end
         @test c_pot isa Float64 # POT does not respect input types
         @test c ≈ c_pot atol = Base.eps(Float32)
     end
-
-    # computation on the GPU
-    if CUDA.functional()
-        @testset "CUDA" begin
-            # create two uniform histograms
-            μ = CUDA.fill(Float32(1 / M), M)
-            ν = CUDA.fill(Float32(1 / N), N)
-
-            # create random cost matrix
-            C = abs2.(CUDA.rand(M) .- CUDA.rand(1, N))
-
-            # compute optimal transport map
-            eps = 0.01f0
-            γ = sinkhorn(μ, ν, C, eps)
-            @test γ isa CuArray{Float32}
-
-            # compute optimal transport cost
-            c = sinkhorn2(μ, ν, C, eps)
-            @test c isa Float32
-        end
-    end
 end
 
 @testset "unbalanced transport" begin
@@ -207,7 +185,7 @@ end
 @testset "sinkhorn barycenter" begin
     @testset "example" begin
         # set up support
-        support = range(-1, 1; length=250)
+        support = range(-1; stop=1, length=250)
         μ1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
         μ1 ./= sum(μ1)
         μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
