@@ -226,7 +226,7 @@ plot!(plt, support, mu1; label=raw"$\mu_1$")
 plot!(plt, support, mu2; label=raw"$\mu_2$")
 
 mu = hcat(mu1, mu2)
-C1 = C2 = pairwise(SqEuclidean(), support')
+C1 = C2 = pairwise(SqEuclidean(), support'; dims=2)
 C = [C1, C2]
 for λ1 in (0.25, 0.5, 0.75)
     λ2 = 1 - λ1

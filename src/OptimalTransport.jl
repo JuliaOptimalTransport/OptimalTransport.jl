@@ -264,11 +264,11 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
 
     # compute dual potentials
     u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
-   
+
     if size(mu, 2) == 1
         return Diagonal(reshape(u, :)) * K * Diagonal(reshape(v, :))
     else
-        return [Diagonal(u[:, i]) * K * Diagonal(v[:, i]) for i = 1:size(mu, 2)]
+        return [Diagonal(u[:, i]) * K * Diagonal(v[:, i]) for i in 1:size(mu, 2)]
     end
 end
 
@@ -298,8 +298,9 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
         # check dimensions
-        size(C) == (size(μ, 1), size(ν, 1)) ||
-            error("cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`")
+        size(C) == (size(μ, 1), size(ν, 1)) || error(
+            "cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`",
+        )
         size(plan) == size(C) || error(
             "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
@@ -688,9 +689,9 @@ function sinkhorn_barycenter(
         throw(ArgumentError("Error: marginals are unbalanced"))
     end
     # if batch_kernel = true, then compute all kernel reductions as matmul
-    batch_kernel = (C_all isa AbstractMatrix)  
+    batch_kernel = (C_all isa AbstractMatrix)
     if batch_kernel
-        K_all = exp.(-C_all/eps)
+        K_all = exp.(-C_all / eps)
     else
         K_all = [exp.(-C_all[i] / eps) for i in 1:length(C_all)]
     end
@@ -708,7 +709,7 @@ function sinkhorn_barycenter(
         end
         a = ones(size(u_all, 1))
         if batch_kernel
-            a = prod((K_all * v_all)'.^lambda_all, dims = 1)'
+            a = prod((K_all * v_all)' .^ lambda_all; dims=1)'
             u_all = a ./ (K_all * v_all)
         else
             for i in 1:N
@@ -724,8 +725,8 @@ function sinkhorn_barycenter(
                 err = maximum(abs.(mu_all .- v_all .* (K_all' * u_all)))
             else
                 err = maximum([
-                    maximum(abs.(mu_all[:, i] .- v_all[:, i] .* (K_all[i]' * u_all[:, i]))) for
-                    i in 1:N
+                    maximum(abs.(mu_all[:, i] .- v_all[:, i] .* (K_all[i]' * u_all[:, i])))
+                    for i in 1:N
                 ])
             end
             @debug "Sinkhorn algorithm: iteration $n" err
