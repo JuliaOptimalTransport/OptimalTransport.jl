@@ -186,7 +186,7 @@ end
 @testset "sinkhorn barycenter" begin
     @testset "example" begin
         # set up support
-        support = range(-1, 1; length=250)
+        support = range(-1; stop=1, length=250)
         μ1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
         μ1 ./= sum(μ1)
         μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
