@@ -337,7 +337,7 @@ end
         C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
         # compute optimal transport map (Julia implementation + POT)
-        eps = 0.01
+        eps = 0.0025
         γ = sinkhorn_stabilized(μ, ν, C, eps)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; method="sinkhorn_stabilized")
         @test norm(γ - γ_pot, Inf) < 1e-9
@@ -372,8 +372,7 @@ end
         μ1 ./= sum(μ1)
         μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
         μ2 ./= sum(μ2)
-        μ_all = hcat(μ1, μ2)'
-
+        μ_all = hcat(μ1, μ2)
         # create cost matrix
         C = pairwise(SqEuclidean(), support'; dims=2)
 
@@ -382,5 +381,6 @@ end
         μ_interp = sinkhorn_barycenter(μ_all, [C, C], eps, [0.5, 0.5])
         μ_interp_pot = POT.barycenter(μ_all', C, eps; weights=[0.5, 0.5], stopThr=1e-9)
         @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
+        @test norm(μ_interp - μ_interp_batch, Inf) < 1e-9
     end
 end

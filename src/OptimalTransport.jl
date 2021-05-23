@@ -656,8 +656,8 @@ Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection
 histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
 and entropic regularisation parameter `eps`. 
 
- - `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `math i = 1, \\ldots, N`.
- - `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`.
+ - `mu_all` is taken to contain `N` histograms `mu_all[:, i]` for `math i = 1, \\ldots, N`.
+ - `C_all` is taken either to be a single cost matrix or a list of `N` cost matrices corresponding to the `mu_all[:, i]`.
  - `eps` is the scalar regularisation parameter.
  - `lambda_all` are positive weights.
 
@@ -672,32 +672,51 @@ where ``\\mathrm{entropicOT}^{\\epsilon}_{C}`` denotes the entropic optimal tran
 function sinkhorn_barycenter(
     mu_all, C_all, eps, lambda_all; tol=1e-9, check_marginal_step=10, max_iter=1000
 )
-    sums = sum(mu_all; dims=2)
+    sums = sum(mu_all; dims=1)
     if !isapprox(extrema(sums)...)
         throw(ArgumentError("Error: marginals are unbalanced"))
     end
-    K_all = [exp.(-C_all[i] / eps) for i in 1:length(C_all)]
+    # if batch_kernel = true, then compute all kernel reductions as matmul
+    batch_kernel = (C_all isa AbstractMatrix)  
+    if batch_kernel
+        K_all = exp.(-C_all/eps)
+    else
+        K_all = [exp.(-C_all[i] / eps) for i in 1:length(C_all)]
+    end
     converged = false
     v_all = ones(size(mu_all))
     u_all = ones(size(mu_all))
-    N = size(mu_all, 1)
+    N = size(mu_all, 2)
     for n in 1:max_iter
-        for i in 1:N
-            v_all[i, :] = mu_all[i, :] ./ (K_all[i]' * u_all[i, :])
+        if batch_kernel
+            v_all = mu_all ./ (K_all' * u_all)
+        else
+            for i in 1:N
+                v_all[:, i] = mu_all[:, i] ./ (K_all[i]' * u_all[:, i])
+            end
         end
-        a = ones(size(u_all, 2))
-        for i in 1:N
-            a = a .* ((K_all[i] * v_all[i, :]) .^ (lambda_all[i]))
-        end
-        for i in 1:N
-            u_all[i, :] = a ./ (K_all[i] * v_all[i, :])
+        a = ones(size(u_all, 1))
+        if batch_kernel
+            a = prod((K_all * v_all)'.^lambda_all, dims = 1)'
+            u_all = a ./ (K_all * v_all)
+        else
+            for i in 1:N
+                a = a .* ((K_all[i] * v_all[:, i]) .^ (lambda_all[i]))
+            end
+            for i in 1:N
+                u_all[:, i] = a ./ (K_all[i] * v_all[:, i])
+            end
         end
         if n % check_marginal_step == 0
             # check marginal errors
-            err = maximum([
-                maximum(abs.(mu_all[i, :] .- v_all[i, :] .* (K_all[i]' * u_all[i, :]))) for
-                i in 1:N
-            ])
+            if batch_kernel
+                err = maximum(abs.(mu_all .- v_all .* (K_all' * u_all)))
+            else
+                err = maximum([
+                    maximum(abs.(mu_all[:, i] .- v_all[:, i] .* (K_all[i]' * u_all[:, i]))) for
+                    i in 1:N
+                ])
+            end
             @debug "Sinkhorn algorithm: iteration $n" err
             if err < tol
                 converged = true
@@ -708,7 +727,11 @@ function sinkhorn_barycenter(
     if !converged
         @warn "Sinkhorn did not converge"
     end
-    return u_all[1, :] .* (K_all[1] * v_all[1, :])
+    if batch_kernel
+        return u_all[:, 1] .* (K_all * v_all[:, 1])
+    else
+        return u_all[:, 1] .* (K_all[1] * v_all[:, 1])
+    end
 end
 
 """
