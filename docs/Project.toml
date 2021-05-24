@@ -6,5 +6,5 @@ OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 [compat]
 Documenter = "0.26"
 Literate = "2.8"
-OptimalTransport = "0.3"
+OptimalTransport = "0.3, 0.2"
 julia = "1"
