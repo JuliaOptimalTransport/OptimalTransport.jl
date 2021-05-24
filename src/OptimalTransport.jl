@@ -176,7 +176,7 @@ function sinkhorn_gibbs(
     if size(μ, 2) != size(ν, 2)
         throw(DimensionMismatch("Error: number of columns in mu and nu must coincide, if matrix valued"))
     end
-
+    
     # set default values of tolerances
     T = float(Base.promote_eltype(μ, ν, K))
     _atol = atol === nothing ? 0 : atol
