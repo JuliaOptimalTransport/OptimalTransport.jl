@@ -49,11 +49,12 @@ Random.seed!(100)
         # create random cost matrix
         C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
-        cost = emd2(μ, ν, C, Tulip.Optimizer())
+        # compute optimal transport map
+        P = emd(μ, ν, C, Tulip.Optimizer())
 
-        # ensure that provided map is used
-        cost2 = emd2(similar(μ), similar(ν), C, lp; plan=P)
-        @test cost2 ≈ cost
+        # do not use μ and ν to ensure that provided map is used
+        cost = emd2(similar(μ), similar(ν), C, Tulip.Optimizer(); plan=P)
+        @test cost ≈ emd2(μ, ν, C, Tulip.Optimizer())
     end
 
     # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/71
