@@ -43,12 +43,12 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     xmat = reshape(x, nμ, nν)
 
     # define objective function
-    T = eltype(C)
+    T = float(eltype(C))
     zero_T = zero(T)
     MOI.set(
         model,
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{T}}(),
-        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(vec(C), x), zero_T),
+        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(float.(vec(C)), x), zero_T),
     )
     MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
 

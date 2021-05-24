@@ -23,29 +23,45 @@ Random.seed!(100)
     μ ./= sum(μ)
     ν ./= sum(ν)
 
-    # create random cost matrix
-    C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+    @testset "example" begin
+        # create random cost matrix
+        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
-    # compute optimal transport map and cost with POT
-    pot_P = POT.emd(μ, ν, C)
-    pot_cost = POT.emd2(μ, ν, C)
+        # compute optimal transport map and cost with POT
+        pot_P = POT.emd(μ, ν, C)
+        pot_cost = POT.emd2(μ, ν, C)
 
-    # compute optimal transport map and cost with Tulip
-    lp = Tulip.Optimizer()
-    P = emd(μ, ν, C, lp)
-    @test size(C) == size(P)
-    @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
-    @test maximum(abs, P .- pot_P) < 1e-2
+        # compute optimal transport map and cost with Tulip
+        lp = Tulip.Optimizer()
+        P = emd(μ, ν, C, lp)
+        @test size(C) == size(P)
+        @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
+        @test maximum(abs, P .- pot_P) < 1e-2
 
-    lp = Tulip.Optimizer()
-    cost = emd2(μ, ν, C, lp)
-    @test dot(C, P) ≈ cost atol = 1e-5
-    @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
-    @test cost ≈ pot_cost atol = 1e-5
+        lp = Tulip.Optimizer()
+        cost = emd2(μ, ν, C, lp)
+        @test dot(C, P) ≈ cost atol = 1e-5
+        @test MOI.get(lp, MOI.TerminationStatus()) == MOI.OPTIMAL
+        @test cost ≈ pot_cost atol = 1e-5
+    end
 
-    # ensure that provided map is used
-    cost2 = emd2(similar(μ), similar(ν), C, lp; plan=P)
-    @test cost2 ≈ cost
+    @testset "pre-computed plan" begin
+        # create random cost matrix
+        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+
+        # compute optimal transport map
+        P = emd(μ, ν, C, Tulip.Optimizer())
+
+        # do not use μ and ν to ensure that provided map is used
+        cost = emd2(similar(μ), similar(ν), C, Tulip.Optimizer(); plan=P)
+        @test cost ≈ emd2(μ, ν, C, Tulip.Optimizer())
+    end
+
+    # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/71
+    @testset "cost matrix with integers" begin
+        C = pairwise(SqEuclidean(), rand(1:10, 1, M), rand(1:10, 1, N); dims=2)
+        emd2(μ, ν, C, Tulip.Optimizer())
+    end
 end
 
 @testset "entropically regularized transport" begin
