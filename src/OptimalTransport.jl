@@ -173,6 +173,10 @@ function sinkhorn_gibbs(
     sum(μ) ≈ sum(ν) ||
         throw(ArgumentError("source and target marginals must have the same mass"))
 
+    if size(μ, 2) != size(ν, 2)
+        throw(DimensionMismatch("Error: number of columns in mu and nu must coincide, if matrix valued"))
+    end
+
     # set default values of tolerances
     T = float(Base.promote_eltype(μ, ν, K))
     _atol = atol === nothing ? 0 : atol
@@ -684,7 +688,7 @@ function sinkhorn_barycenter(
         throw(ArgumentError("Error: marginals are unbalanced"))
     end
     # if batch_kernel = true, then compute all kernel reductions as matmul
-    batch_kernel = (C_all isa AbstractMatrix)
+    batch_kernel = (C_all isa Matrix)
     if batch_kernel
         K_all = exp.(-C_all / eps)
     else
