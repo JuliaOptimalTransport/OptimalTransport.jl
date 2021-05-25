@@ -231,6 +231,13 @@ function sinkhorn_gibbs(
     return u, v
 end
 
+function add_singleton(x::AbstractArray, ::Val{dim}) where {dim}
+    shape = ntuple(ndims(x) + 1) do i
+        return i < dim ? size(x, i) : (i > dim ? size(x, i - 1) : 1)
+    end
+    return reshape(x, shape)
+end
+
 """
     sinkhorn(
         μ, ν, C, ε; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
@@ -258,7 +265,7 @@ the computation is stopped.
 
 Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
 as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
-The output in this case is a vector `γ` of coupling matrices such that `γ[i]` is a coupling of `mu[:, i]` and `nu[:, i]`.
+The output in this case is an `Array` `γ` of coupling matrices such that `γ[:, :, i]` is a coupling of `mu[:, i]` and `nu[:, i]`.
 
 See also: [`sinkhorn2`](@ref)
 """
@@ -268,7 +275,7 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
 
     # compute dual potentials
     u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
-    return Diagonal(reshape(u, :)) * K * Diagonal(reshape(v, :))
+	return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
 end
 
 """

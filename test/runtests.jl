@@ -131,6 +131,7 @@ end
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
 
+<<<<<<< HEAD
         # with regularization term
         c_w_regularization = sinkhorn2(μ, ν, C, eps; maxiter=5_000, regularization=true)
         @test c_w_regularization ≈ c + eps * sum(x -> iszero(x) ? x : x * log(x), γ)
@@ -138,6 +139,12 @@ end
         # compare with POT
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
         @test c_pot ≈ c
+=======
+        # compute optimal transport cost (Julia implementation + POT)
+        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
+        @test c ≈ c_pot atol = 1e-9
+>>>>>>> 6e4b1bf (implement common output type for sinkhorn and sinkhorn2)
 
         # ensure that provided map is used and correct
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
@@ -165,6 +172,7 @@ end
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-6)
         @test Float32.(γ_pot) ≈ γ rtol = 1e-3
 
+<<<<<<< HEAD
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-6)
         @test c isa Float32
@@ -203,6 +211,14 @@ end
         @test (@test_deprecated OptimalTransport.sinkhorn_gibbs(
             μ, ν, K; check_marginal_step=5
         )) == γ
+=======
+        # compute optimal transport cost (Julia implementation + POT)
+        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
+        @test c isa Vector{Float32}
+
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
+        @test c ≈ c_pot atol = Base.eps(Float32)
+>>>>>>> 6e4b1bf (implement common output type for sinkhorn and sinkhorn2)
     end
     # batch kernel reduction 
     @testset "batch" begin
@@ -218,13 +234,13 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
-        γ_all = sinkhorn(μ, ν, C, eps)
-        γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps) for i in 1:d]
-        @test maximum([norm(γ_all[i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
+        γ_all = sinkhorn(μ, ν, C, eps; maxiter = 5_000)
+        γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps; numItermax = 5_000) for i in 1:d]
+        @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
 
-        c_all = sinkhorn2(μ, ν, C, eps)
-        c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps)[1] for i in 1:d]
-        @test c_all ≈ c_pot atol = 1e-9 norm = (x -> norm(x, Inf))
+        c_all = sinkhorn2(μ, ν, C, eps; maxiter = 5_000)
+        c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax = 5_000)[1] for i in 1:d]
+        @test c_all ≈ c_pot atol = 1e-8 norm = (x -> norm(x, Inf))
     end
 end
 
