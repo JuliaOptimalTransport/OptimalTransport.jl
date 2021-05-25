@@ -234,12 +234,12 @@ end
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.01
-        γ_all = sinkhorn(μ, ν, C, eps; maxiter = 5_000)
-        γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps; numItermax = 5_000) for i in 1:d]
+        γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000)
+        γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
         @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
 
-        c_all = sinkhorn2(μ, ν, C, eps; maxiter = 5_000)
-        c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax = 5_000)[1] for i in 1:d]
+        c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
+        c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax=5_000)[1] for i in 1:d]
         @test c_all ≈ c_pot atol = 1e-8 norm = (x -> norm(x, Inf))
     end
 end

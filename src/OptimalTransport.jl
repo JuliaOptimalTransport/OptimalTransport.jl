@@ -275,7 +275,7 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
 
     # compute dual potentials
     u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
-	return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
+    return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
 end
 
 """
