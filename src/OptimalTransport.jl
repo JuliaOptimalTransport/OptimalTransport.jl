@@ -307,7 +307,7 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         size(C) == (size(μ, 1), size(ν, 1)) || error(
             "cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`",
         )
-        size(plan) == size(C) || error(
+        (size(plan, 1), size(plan, 2)) == size(C) || error(
             "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
         plan
