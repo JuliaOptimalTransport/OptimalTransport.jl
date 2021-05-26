@@ -675,17 +675,17 @@ A pre-computed optimal transport `plan` may be provided.
 function ot_cost(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
 )
-    if plan === nothing
-        g(μ, ν, x) = c(quantile(μ, x), quantile(ν, x))
-        f(x) = g(μ, ν, x)
-        return quadgk(f, 0, 1)[1]
+    cost, _ = if plan === nothing
+        quadgk(0, 1) do q
+            return c(quantile(μ, q), quantile(ν, q))
+        end
     else
-        cost = quadgk(0, 1) do q
+        quadgk(0, 1) do q
             x = quantile(μ, q)
             return c(x, plan(x))
         end
-        return cost[1]
     end
+    return cost
 end
 
 """
