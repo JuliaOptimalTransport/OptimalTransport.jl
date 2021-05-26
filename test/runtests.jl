@@ -66,41 +66,48 @@ Random.seed!(100)
 end
 
 @testset "1D Optimal Transport for Convex Cost" begin
-    # Continuous Case
-    μ = Normal(0, 1)
-    ν = Normal(5, 2)
-    γ = ot_plan(sqeuclidean, μ, ν)
+    @testset "continuous distributions" begin
+        # two normal distributions (has analytical solution)
+        μ = Normal(randn(), rand())
+        ν = Normal(randn(), rand())
 
-    @test ot_cost(sqeuclidean, μ, ν) ≈ 26 atol = 1e-5
-    @test ot_cost(sqeuclidean, μ, ν; plan=γ) ≈ 26 atol = 1e-5
+        # compute OT plan
+        γ = ot_plan(sqeuclidean, μ, ν)
+        x = randn()
+        @test γ(x) ≈ quantile(ν, cdf(μ, x))
 
-    # Discrete Case
-    # n, m = 10, 15
+        # compute OT cost
+        c = ot_cost(sqeuclidean, μ, ν)
+        @test c ≈ (mean(μ) - mean(ν))^2 + (std(μ) - std(ν))^2
 
-    # μ_support = rand(n)
-    # ν_support = rand(m)
-    # μ_probs = rand(n)
-    # ν_probs = rand(m)
-    # μ_probs ./= sum(μ_probs)
-    # ν_probs ./= sum(ν_probs)
+        # do not use ν to ensure that the provided plan is used
+        @test ot_cost(sqeuclidean, μ, Normal(randn(), rand()); plan=γ) ≈ c
+    end
 
-    # μ = DiscreteNonParametric(μ_support, μ_probs)
-    # ν = DiscreteNonParametric(ν_support, ν_probs)
+    @testset "semidiscrete case" begin
+        μ = Normal(randn(), rand())
+        νprobs = rand(30)
+        νprobs ./= sum(νprobs)
+        ν = Categorical(νprobs)
 
-    # # new version of StatsBase also has functoin pairwise,
-    # # which conflicts with Distances.pairwise
-    # C = pairwise(sqeuclidean, μ.support, ν.support)
+        # compute OT plan
+        γ = ot_plan(euclidean, μ, ν)
+        x = randn()
+        @test γ(x) ≈ quantile(ν, cdf(μ, x))
 
-    # lp = Tulip.Optimizer()
-    # cost_simplex = emd2(μ.p, ν.p, C, lp)
-    # cost_1d = ot_cost(sqeuclidean, μ, ν)
+        # compute OT cost, without and with provided plan
+        # do not use ν in the second case to ensure that the provided plan is used
+        c = ot_cost(euclidean, μ, ν)
+        @test ot_cost(euclidean, μ, Categorical(reverse(νprobs)); plan=γ) ≈ c
 
-    # P = emd(μ.p, ν.p, C, lp)
-    # γ = ot_plan(sqeuclidean, μ, ν)
-
-    # @test cost_1d ≈ cost_simplex atol = 1e-6
-    # @test γ ≈ P atol = 1e-5
-    # @test ot_cost(sqeuclidean, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-6
+        # check that OT cost is consistent with OT cost of a discretization
+        m = 500
+        xs = rand(μ, m)
+        μdiscrete = fill(1/m, m)
+        C = pairwise(Euclidean(), xs', (1:length(νprobs))'; dims=2)
+        c2 = emd2(μdiscrete, νprobs, C, Tulip.Optimizer())
+        @test c2 ≈ c rtol=1e-1
+    end
 end
 
 @testset "entropically regularized transport" begin
