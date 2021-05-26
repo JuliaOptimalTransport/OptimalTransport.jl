@@ -126,7 +126,7 @@ end
         eps = 0.01
         γ = sinkhorn(μ, ν, C, eps; maxiter=5_000)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test norm(γ - γ_pot, Inf) < 1e-4
+        @test norm(γ - γ_pot, Inf) < 5e-3
 
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
@@ -163,7 +163,7 @@ end
         @test eltype(γ) === Float32
 
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test norm(γ - γ_pot, Inf) < 1e-4
+        @test norm(γ - γ_pot, Inf) < 5e-3
 
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
