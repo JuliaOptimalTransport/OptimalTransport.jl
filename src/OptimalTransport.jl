@@ -652,25 +652,25 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
     return sparse(γ')
 end
 
-## 1-Dimensional Optimal Transport Functions
-
 """
-    ot_cost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
+    ot_cost(
+        c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
+    )
 
-Compute the optimal transport cost between μ to ν, where
-both are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
-``h`` is a convex function.
+Compute the optimal transport cost for the Monge-Kantorovich problem with univariate
+distributions `μ` and `ν` as source and target marginals and cost function `c` of
+the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function.
 
-Return optimal transport cost
+In this setting, the optimal transport cost can be computed as
 ```math
-\\int_0^1 c(F_\\mu^{-1}(x),F_\\nu^{-1}(x))
+\\int_0^1 c(F_\\mu^{-1}(x), F_\\nu^{-1}(x)) \\mathrm{d}x
 ```
-
-where ``F_\\mu^{-1}`` is the quantile function of ``\\mu``
-and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
+where ``F_\\mu^{-1}`` and ``F_\\nu^{-1}`` are the quantile functions of `μ` and `ν`,
+respectively.
 
 A pre-computed optimal transport `plan` may be provided.
+
+See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
 function ot_cost(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
@@ -689,21 +689,20 @@ function ot_cost(
 end
 
 """
-    ot_plan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
+    ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
 
-Compute the optimal transport plan between μ to ν, where
-both are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
-``h`` is a convex function.
+Compute the optimal transport plan for the Monge-Kantorovich problem with univariate
+distributions `μ` and `ν` as source and target marginals and cost function `c` of
+the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function.
 
-A pre-computed optimal transport `plan` may be provided.
+In this setting, the optimal transport plan is the Monge map
+```math
+T = F_\\nu^{-1} \\circ F_\\mu
+```
+where ``F_\\mu`` is the cumulative distribution function of `μ` and ``F_\\nu^{-1}`` is the
+quantile function of `ν`.
 
-Return the optimal transport plan as a function
-  ```math
-  T(x)=F_\\nu^{-1}(F_\\mu(x))
-  ```
-where ``F_\\mu`` is the cdf function of ``\\mu``
-and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
+See also: [`ot_cost`](@ref), [`emd`](@ref)
 """
 function ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
     # Use T instead of γ to indicate that this is a Monge map.
