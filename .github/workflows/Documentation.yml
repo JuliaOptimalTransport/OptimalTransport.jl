@@ -12,24 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-      # Limitation of pip: https://pythonot.github.io/index.html#pip-installation
-      - run: python -m pip install cython numpy
-      - run: python -m pip install pot
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
-      - name: Install dependencies
-        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: Install dependencies, build and deploy
+        run: |
+          using Pkg: Pkg
+          Pkg.develop(Pkg.PackageSpec(path=pwd()))
+          Pkg.instantiate()
+          include(joinpath(pwd(), "docs", "make.jl"))
         env:
-          PYTHON: python
-      - name: Build and deploy
-        env:
-          PYTHON: python
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
+          PYTHON: '' # Use Conda.jl also on Linux
           GKSwstype: nul # avoid (irrelevant) error messages from GR
-        run: julia --project=docs/ docs/make.jl
+        shell: julia --color=yes --project=docs/ {0}
