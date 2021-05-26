@@ -652,7 +652,7 @@ both are 1-Dimensional distributions and the cost
 function is of the form ``c(x,y) = h(|x-y|)`` such that
 ``h`` is a convex function.
 
-Return optimal transport cos
+Return optimal transport cost
 ```math
 \\int_0^1 c(F_\\mu^{-1}(x),F_\\nu^{-1}(x))
 ```

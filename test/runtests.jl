@@ -69,10 +69,10 @@ end
     # Continuous Case
     μ = Normal(0, 1)
     ν = Normal(5, 2)
-    γ = otplan(sqeuclidean, μ, ν)
+    γ = ot_plan(sqeuclidean, μ, ν)
 
-    @test otcost(sqeuclidean, μ, ν) ≈ 26 atol = 1e-5
-    @test otcost(sqeuclidean, μ, ν; plan=γ) ≈ 26 atol = 1e-5
+    @test ot_cost(sqeuclidean, μ, ν) ≈ 26 atol = 1e-5
+    @test ot_cost(sqeuclidean, μ, ν; plan=γ) ≈ 26 atol = 1e-5
 
     # Discrete Case
     # n, m = 10, 15
@@ -93,14 +93,14 @@ end
 
     # lp = Tulip.Optimizer()
     # cost_simplex = emd2(μ.p, ν.p, C, lp)
-    # cost_1d = otcost(sqeuclidean, μ, ν)
+    # cost_1d = ot_cost(sqeuclidean, μ, ν)
 
     # P = emd(μ.p, ν.p, C, lp)
-    # γ = otplan(sqeuclidean, μ, ν)
+    # γ = ot_plan(sqeuclidean, μ, ν)
 
     # @test cost_1d ≈ cost_simplex atol = 1e-6
     # @test γ ≈ P atol = 1e-5
-    # @test otcost(sqeuclidean, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-6
+    # @test ot_cost(sqeuclidean, μ, ν; plan=γ) ≈ cost_simplex atol = 1e-6
 end
 
 @testset "entropically regularized transport" begin
