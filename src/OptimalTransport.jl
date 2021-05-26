@@ -9,8 +9,8 @@ using LinearAlgebra
 using IterativeSolvers, SparseArrays
 using LogExpFunctions: LogExpFunctions
 using MathOptInterface
-using Distributions, QuadGK
-using StatsBase
+using Distributions
+using QuadGK
 
 export sinkhorn, sinkhorn2
 export emd, emd2
