@@ -16,7 +16,7 @@ export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
-export otcost, otplan
+export ot_cost, ot_plan
 
 const MOI = MathOptInterface
 
@@ -645,7 +645,7 @@ end
 ## 1-Dimensional Optimal Transport Functions
 
 """
-    otcost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
+    ot_cost(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution; plan=nothing)
 
 Compute the optimal transport cost between μ to ν, where
 both are 1-Dimensional distributions and the cost
@@ -662,7 +662,7 @@ and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
 
 A pre-computed optimal transport `plan` may be provided.
 """
-function otcost(
+function ot_cost(
     c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
 )
     if plan === nothing
@@ -679,7 +679,7 @@ function otcost(
 end
 
 """
-    otplan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
+    ot_plan(c,mu::ContinuousUnivariateDistribution,nu::UnivariateDistribution)
 
 Compute the optimal transport plan between μ to ν, where
 both are 1-Dimensional distributions and the cost
@@ -695,7 +695,7 @@ Return the optimal transport plan as a function
 where ``F_\\mu`` is the cdf function of ``\\mu``
 and ``F_\\nu^{-1}`` is the quantile function of ``\\nu``.
 """
-function otplan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
+function ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
     # Use T instead of γ to indicate that this is a Monge map.
     T(x) = quantile(ν, cdf(μ, x))
     return T
