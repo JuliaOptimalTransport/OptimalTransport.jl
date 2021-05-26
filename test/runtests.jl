@@ -121,14 +121,24 @@ end
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < 1e-9
 
-        # compute optimal transport cost (Julia implementation + POT)
+        # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
-        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-        @test c ≈ c_pot atol = 1e-9
 
-        # ensure that provided map is used
+        # with regularization term
+        c_w_regularization = sinkhorn2(μ, ν, C, eps; maxiter=5_000, regularization=true)
+        @test c_w_regularization ≈ c + eps * sum(x -> iszero(x) ? x : x * log(x), γ)
+
+        # compare with POT
+        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
+        @test c_pot ≈ c atol = 1e-9
+
+        # ensure that provided map is used and correct
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
         @test c2 ≈ c
+        c2_w_regularization = sinkhorn2(
+            similar(μ), similar(ν), C, eps; plan=γ, regularization=true
+        )
+        @test c2_w_regularization ≈ c_w_regularization
     end
 
     # different element type
@@ -148,12 +158,17 @@ end
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
         @test norm(γ - γ_pot, Inf) < Base.eps(Float32)
 
-        # compute optimal transport cost (Julia implementation + POT)
+        # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
         @test c isa Float32
 
+        # with regularization term
+        c_w_regularization = sinkhorn2(μ, ν, C, eps; maxiter=5_000, regularization=true)
+        @test c_w_regularization ≈ c + eps * sum(x -> iszero(x) ? x : x * log(x), γ)
+
+        # compare with POT
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-        @test c ≈ c_pot atol = Base.eps(Float32)
+        @test c_pot ≈ c atol = Base.eps(Float32)
     end
 end
 

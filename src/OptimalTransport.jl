@@ -7,6 +7,7 @@ module OptimalTransport
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
+using LogExpFunctions: LogExpFunctions
 using MathOptInterface
 using Distributions, QuadGK
 using StatsBase
@@ -174,19 +175,23 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
 end
 
 """
-    sinkhorn(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
+    sinkhorn(μ, ν, C, ε; tol=1e-9, check_marginal_step=10, maxiter=1_000)
 
-Compute entropically regularised transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`. 
+Compute the optimal transport plan for the entropic regularization optimal transport problem
+with source and target marginals `μ` and `ν`, cost matrix `C` of size
+`(length(μ), length(ν))`, and entropic regularization parameter `ε`.
 
-Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
-
+The optimal transport plan `γ` is of the same size as `C` and solves
 ```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle - \\epsilon H(\\gamma)
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
++ \\varepsilon \\Omega(\\gamma),
 ```
+where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
+regularization term.
 
-where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
-
+Every `check_marginal_step` steps a convergence check of the error of the marginal
+`μ` with absolute tolerance `tol` is performed. After `maxiter` iterations, the
+computation is stopped.
 """
 function sinkhorn(mu, nu, C, eps; kwargs...)
     # compute Gibbs kernel
@@ -199,24 +204,22 @@ function sinkhorn(mu, nu, C, eps; kwargs...)
 end
 
 """
-    sinkhorn2(mu, nu, C, eps; plan=nothing, kwargs...)
+    sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
 
-Compute entropically regularised transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`.
-
-Return optimal value of
-
-```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle - \\epsilon H(\\gamma)
-```
-
-where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
+Solve the entropic regularization optimal transport problem with source and target
+marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic
+regularization parameter `ε`, and return the optimal cost.
 
 A pre-computed optimal transport `plan` may be provided.
 
+!!! note
+    As the `sinkhorn2` function in the Python Optimal Transport package, this function
+    returns the optimal transport cost without the regularization term. The cost
+    with the regularization term can be computed by setting `regularization=true`.
+
 See also: [`sinkhorn`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
+function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
@@ -228,7 +231,14 @@ function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
         )
         plan
     end
-    return dot(γ, C)
+
+    cost = if regularization
+        dot(γ, C) + ε * sum(LogExpFunctions.xlogx, γ)
+    else
+        dot(γ, C)
+    end
+
+    return cost
 end
 
 """
