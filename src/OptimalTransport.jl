@@ -8,12 +8,14 @@ using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
 using MathOptInterface
+using Distributions
 
 export sinkhorn, sinkhorn2
 export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
+export ot_cost
 
 const MOI = MathOptInterface
 
@@ -637,6 +639,22 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
     end
 
     return sparse(γ')
+end
+
+"""
+    ot_cost(c,mu::MvNormal,nu::MvNormal; plan=nothing)
+Compute the optimal transport cost between μ to ν, where
+both are 1-Dimensional distributions and the cost
+function is of the form ``c(x,y) = h(|x-y|)`` such that
+``h`` is a convex function.
+Return optimal transport cost
+"""
+function ot_cost(
+    c::SqEuclidean, μ::MvNormal, ν::MvNormal; plan=nothing
+)
+    μΣsqrt = μ.Σ^(1/2)
+    w2     = sqeuclidean(μ.μ, ν.μ) + tr(μ.Σ + ν.Σ - 2*(μΣsqrt*ν.Σ*μΣsqrt)^(1/2))
+    return w2
 end
 
 end
