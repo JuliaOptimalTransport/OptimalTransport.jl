@@ -9,6 +9,7 @@ using LinearAlgebra
 using IterativeSolvers, SparseArrays
 using MathOptInterface
 using Distributions
+using PDMats
 
 export sinkhorn, sinkhorn2
 export emd, emd2
@@ -18,6 +19,8 @@ export quadreg
 export ot_cost
 
 const MOI = MathOptInterface
+
+include("distances/bures.jl")
 
 """
     emd(μ, ν, C, optimizer)
@@ -644,17 +647,59 @@ end
 """
     ot_cost(c,mu::MvNormal,nu::MvNormal; plan=nothing)
 Compute the optimal transport cost between μ to ν, where
-both are 1-Dimensional distributions and the cost
-function is of the form ``c(x,y) = h(|x-y|)`` such that
-``h`` is a convex function.
-Return optimal transport cost
+both are Normal or Multivariate Normal distributions and the cost
+function ``c(x,y) = (||x-y||)^2``
+
+Return optimal transport cost.
 """
 function ot_cost(
     c::SqEuclidean, μ::MvNormal, ν::MvNormal; plan=nothing
 )
-    μΣsqrt = μ.Σ^(1/2)
-    w2     = sqeuclidean(μ.μ, ν.μ) + tr(μ.Σ + ν.Σ - 2*(μΣsqrt*ν.Σ*μΣsqrt)^(1/2))
-    return w2
+    return sqeuclidean(μ.μ, ν.μ) + sqbures(μ.Σ, ν.Σ)
+end
+
+
+"""
+    _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
+Compute
+```math
+\\Sigma_\\mu^{-1/2}
+(
+\\Sigma_\\mu^{1/2}
+\\Sigma_\\nu
+\\Sigma_\\mu^{1/2}
+)
+\\Sigma_\\mu^{-1/2}
+```
+"""
+function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
+    sqrt_A = sqrt(A)
+    return tr_sqrt(sqrt_A * B * sqrt_A)
+end
+function _gaussian_ot_A(A::PDMats.PDiagMat, B::AbstractMatrix)
+    return tr_sqrt(sqrt.(A.diag) .* B .* sqrt.(A.diag'))
+end
+function _gaussian_ot_A(A::StridedMatrix, B::PDMats.PDMat)
+    return tr_sqrt(PDMats.X_A_Xt(B, sqrt(A)))
+end
+_gaussian_ot_A(A::PDMats.PDMat, B::PDMats.PDMat) = _gaussian_ot_A(A.mat, B)
+_gaussian_ot_A(A::AbstractMatrix, B::PDMats.PDiagMat) = _gaussian_ot_A(B, A)
+_gaussian_ot_A(A::PDMats.PDMat, B::StridedMatrix) = _gaussian_ot_A(B, A)
+
+"""
+    ot_plan(c,mu::MvNormal,nu::MvNormal; plan=nothing)
+Compute the optimal transport plan between μ to ν, where
+both are Normal or Multivariate Normal distributions and the cost
+function ``c(x,y) = (||x-y||)^2``
+
+Return optimal transport plan.
+"""
+function ot_plan(
+    c::SqEuclidean, μ::MvNormal, ν::MvNormal
+)
+    XΣsqrt = X.Σ^(1/2)
+    T(x)   = Y.μ + XΣsqrt*(XΣsqrt*Y.Σ*XΣsqrt)^(1/2)*XΣsqrt*(x - X.μ)
+    return T
 end
 
 end

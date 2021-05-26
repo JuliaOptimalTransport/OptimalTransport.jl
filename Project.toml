@@ -9,11 +9,12 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+PDMats = "90014a1f-27ba-587c-ab20-58faa44d9150"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-Distributions = "0.25"
 Distances = "0.9.0, 0.10"
+Distributions = "0.25"
 IterativeSolvers = "0.8.4, 0.9"
 MathOptInterface = "0.9"
 julia = "1"
