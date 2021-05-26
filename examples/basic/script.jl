@@ -7,13 +7,15 @@
 using OptimalTransport
 using Distances
 using Plots
-using PyCall
+using PythonOT: PythonOT
 using Tulip
 
 using LinearAlgebra
 using Random
 
-Random.seed!(1234);
+Random.seed!(1234)
+
+const POT = PythonOT
 
 # ## Problem setup
 #
@@ -30,7 +32,7 @@ N = 250
 
 # Now we compute the quadratic cost matrix $C_{ij} = \| x_i - x_j \|_2^2$:
 
-C = pairwise(SqEuclidean(), μsupport', νsupport');
+C = pairwise(SqEuclidean(), μsupport', νsupport'; dims=2);
 
 # ## Exact optimal transport
 #
@@ -104,7 +106,7 @@ quadreg(μ, ν, C, ε; maxiter=500);
 
 # Again we can check that the same result is obtained with the POT package:
 
-γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", max_iter=5_000)
+γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000)
 norm(γ - γ_pot, Inf)
 
 # ## Stabilized Sinkhorn algorithm with $\epsilon$-scaling
@@ -115,7 +117,7 @@ norm(γ - γ_pot, Inf)
 
 # The POT package yields the same result:
 
-γpot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_epsilon_scaling", max_iter=5000)
+γpot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_epsilon_scaling", numItermax=5000)
 norm(γ - γpot, Inf)
 
 # ## Unbalanced optimal transport 
@@ -142,7 +144,7 @@ N = 200
 
 # We compute the quadratic cost matrix:
 
-C = pairwise(SqEuclidean(), μsupport', νsupport');
+C = pairwise(SqEuclidean(), μsupport', νsupport'; dims=2);
 
 # Now we solve the corresponding unbalanced, entropy-regularised transport problem with
 # $\epsilon = 0.01$ and $\lambda_1 = \lambda_2 = 1$:
@@ -163,7 +165,7 @@ norm(γ - γpot, Inf)
 # Let us construct source and target measures again:
 
 μsupport = νsupport = range(-2, 2; length=100)
-C = pairwise(SqEuclidean(), μsupport', νsupport')
+C = pairwise(SqEuclidean(), μsupport', νsupport'; dims=2)
 μ = exp.(-μsupport .^ 2 ./ 0.5^2)
 μ ./= sum(μ)
 ν = νsupport .^ 2 .* exp.(-νsupport .^ 2 ./ 0.5^2)
@@ -224,7 +226,7 @@ plot!(plt, support, mu1; label=raw"$\mu_1$")
 plot!(plt, support, mu2; label=raw"$\mu_2$")
 
 mu = hcat(mu1, mu2)'
-C1 = C2 = pairwise(SqEuclidean(), support')
+C1 = C2 = pairwise(SqEuclidean(), support'; dims=2)
 C = [C1, C2]
 for λ1 in (0.25, 0.5, 0.75)
     λ2 = 1 - λ1

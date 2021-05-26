@@ -7,7 +7,6 @@ module OptimalTransport
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
-using Requires
 using MathOptInterface
 using Distributions, QuadGK
 using StatsBase
@@ -20,13 +19,6 @@ export quadreg
 export otcost, otplan
 
 const MOI = MathOptInterface
-
-function __init__()
-    @require PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0" begin
-        export POT
-        include("pot.jl")
-    end
-end
 
 """
     emd(μ, ν, C, optimizer)
@@ -54,12 +46,12 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     xmat = reshape(x, nμ, nν)
 
     # define objective function
-    T = eltype(C)
+    T = float(eltype(C))
     zero_T = zero(T)
     MOI.set(
         model,
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{T}}(),
-        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(vec(C), x), zero_T),
+        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(float.(vec(C)), x), zero_T),
     )
     MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
 
@@ -69,17 +61,17 @@ function emd(μ, ν, C, model::MOI.ModelLike)
     end
 
     # add constraints for source
-    for (xs, μi) in zip(eachrow(xmat), μ)
+    for (i, μi) in zip(axes(xmat, 1), μ) # eachrow(xmat) is not available on Julia 1.0
         f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(μi), xi) for xi in xs], zero(μi)
+            [MOI.ScalarAffineTerm(one(μi), xi) for xi in view(xmat, i, :)], zero(μi)
         )
         MOI.add_constraint(model, f, MOI.EqualTo(μi))
     end
 
     # add constraints for target
-    for (xs, νi) in zip(eachcol(xmat), ν)
+    for (i, νi) in zip(axes(xmat, 2), ν) # eachcol(xmat) is not available on Julia 1.0
         f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(νi), xi) for xi in xs], zero(νi)
+            [MOI.ScalarAffineTerm(one(νi), xi) for xi in view(xmat, :, i)], zero(νi)
         )
         MOI.add_constraint(model, f, MOI.EqualTo(νi))
     end
@@ -110,12 +102,7 @@ packages, respectively.
 
 A pre-computed optimal transport `plan` may be provided.
 """
-function emd2(μ, ν, C, optimizer; map=nothing, plan=map)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn("the keyword argument `map` is deprecated, please use `plan`", :emd2)
-    end
-
+function emd2(μ, ν, C, optimizer; plan=nothing)
     γ = if plan === nothing
         # compute optimal transport plan
         emd(μ, ν, C, optimizer)
@@ -229,14 +216,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`sinkhorn`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; map=nothing, plan=map, kwargs...)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`", :sinkhorn2
-        )
-    end
-
+function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
@@ -340,15 +320,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`sinkhorn_unbalanced`](@ref)
 """
-function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; map=nothing, plan=map, kwargs...)
-    # check deprecation
-    if map !== nothing
-        Base.depwarn(
-            "the keyword argument `map` is deprecated, please use `plan`",
-            :sinkhorn_unbalanced2,
-        )
-    end
-
+function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; kwargs...)
     else
@@ -418,16 +390,11 @@ function sinkhorn_stabilized(
     absorb_tol=1e3,
     max_iter=1000,
     tol=1e-9,
-    alpha=nothing,
-    beta=nothing,
+    alpha=zeros(size(mu)),
+    beta=zeros(size(nu)),
     return_duals=false,
     verbose=false,
 )
-    if isnothing(alpha) || isnothing(beta)
-        alpha = zeros(size(mu))
-        beta = zeros(size(nu))
-    end
-
     u = ones(size(mu))
     v = ones(size(nu))
     K = getK(C, alpha, beta, eps, mu, nu)
