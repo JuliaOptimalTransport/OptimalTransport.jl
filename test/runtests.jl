@@ -103,10 +103,10 @@ end
         # check that OT cost is consistent with OT cost of a discretization
         m = 500
         xs = rand(μ, m)
-        μdiscrete = fill(1/m, m)
+        μdiscrete = fill(1 / m, m)
         C = pairwise(Euclidean(), xs', (1:length(νprobs))'; dims=2)
         c2 = emd2(μdiscrete, νprobs, C, Tulip.Optimizer())
-        @test c2 ≈ c rtol=1e-1
+        @test c2 ≈ c rtol = 1e-1
     end
 end
 
