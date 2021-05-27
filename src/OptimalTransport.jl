@@ -117,39 +117,89 @@ function emd2(μ, ν, C, optimizer; plan=nothing)
 end
 
 """
-    sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
+    sinkhorn_gibbs(
+        μ, ν, K; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
+    )
 
-Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
-the Sinkhorn algorithm (Peyre et al., 2019)
+Compute the dual potentials for the entropic regularization optimal transport problem
+with source and target marginals `μ` and `ν` and Gibbs kernel `K` using the Sinkhorn
+algorithm.
 
-The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost matrix and
-`eps` the entropic regularization parameter. The optimal transport plan for histograms `u`
-and `v` and cost matrix `C` with regularization parameter `eps` can be computed as
-`Diagonal(u) * K * Diagonal(v)`.
+The Gibbs kernel `K` is defined as
+```math
+K = \\exp(-C / \\varepsilon),
+```
+where ``C`` is the cost matrix and ``\\varepsilon`` the entropic regularization parameter.
+The corresponding optimal transport plan can be computed from the dual potentials ``u``
+and ``v`` as
+```math
+\\gamma = \\operatorname{diag}(u) K \\operatorname{diag}(v).
+```
+
+Every `check_convergence` steps a convergence check of the error of the marginal
+`μ` with absolute tolerance `atol` and relative tolerance `rtol` is performed. The default
+`rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations, the
+computation is stopped.
 """
-function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
-    if !(sum(mu) ≈ sum(nu))
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
+function sinkhorn_gibbs(
+    μ,
+    ν,
+    K;
+    tol=nothing,
+    atol=tol,
+    rtol=nothing,
+    check_marginal_step=nothing,
+    check_convergence=check_marginal_step,
+    maxiter::Int=1_000,
+)
+    if tol !== nothing
+        Base.depwarn(
+            "keyword argument `tol` is deprecated, please use `atol` and `rtol`",
+            :sinkhorn_gibbs,
+        )
     end
+    if check_marginal_step !== nothing
+        Base.depwarn(
+            "keyword argument `check_marginal_step` is deprecated, please use `check_convergence`",
+            :sinkhorn_gibbs,
+        )
+    end
+    sum(μ) ≈ sum(ν) ||
+        throw(ArgumentError("source and target marginals must have the same mass"))
+
+    # set default values of tolerances
+    T = float(Base.promote_eltype(μ, ν, K))
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     # initial iteration
-    temp_v = vec(sum(K; dims=2))
-    u = mu ./ temp_v
-    temp_u = K' * u
-    v = nu ./ temp_u
+    u = μ ./ sum(K; dims=2)
+    v = ν ./ (K' * u)
+    tmp1 = K * v
+    tmp2 = similar(u)
 
+    norm_μ = norm(μ) # for convergence check
     isconverged = false
+    check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 0:maxiter
-        # check mu marginal
-        if iter % check_marginal_step == 0
-            mul!(temp_v, K, v)
-            @. temp_v = abs(mu - u * temp_v)
+        if iter % check_step == 0
+            # check source marginal
+            # do not overwrite `tmp1` but reuse it for computing `u` if not converged
+            @. tmp2 = u * tmp1
+            norm_uKv = norm(tmp2)
+            @. tmp2 = μ - tmp2
+            norm_diff = norm(tmp2)
 
-            err = maximum(temp_v)
-            @debug "Sinkhorn algorithm: iteration $iter" err
+            @debug "Sinkhorn algorithm (" *
+                   string(iter) *
+                   "/" *
+                   string(maxiter) *
+                   ": absolute error of source marginal = " *
+                   string(norm_diff)
 
             # check stopping criterion
-            if err < tol
+            if norm_diff < _atol + _rtol * max(norm_μ, norm_uKv)
+                @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
                 isconverged = true
                 break
             end
@@ -157,22 +207,24 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
 
         # perform next iteration
         if iter < maxiter
-            mul!(temp_v, K, v)
-            @. u = mu / temp_v
-            mul!(temp_u, K', u)
-            @. v = nu / temp_u
+            @. u = μ / tmp1
+            mul!(v, K', u)
+            @. v = ν / v
+            mul!(tmp1, K, v)
         end
     end
 
     if !isconverged
-        @warn "Sinkhorn algorithm did not converge"
+        @warn "Sinkhorn algorithm ($maxiter/$maxiter): not converged"
     end
 
     return u, v
 end
 
 """
-    sinkhorn(μ, ν, C, ε; tol=1e-9, check_marginal_step=10, maxiter=1_000)
+    sinkhorn(
+        μ, ν, C, ε; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
+    )
 
 Compute the optimal transport plan for the entropic regularization optimal transport problem
 with source and target marginals `μ` and `ν`, cost matrix `C` of size
@@ -186,18 +238,19 @@ The optimal transport plan `γ` is of the same size as `C` and solves
 where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
 regularization term.
 
-Every `check_marginal_step` steps a convergence check of the error of the marginal
-`μ` with absolute tolerance `tol` is performed. After `maxiter` iterations, the
+Every `check_convergence` steps a convergence check of the error of the marginal
+`μ` with absolute tolerance `atol` and relative tolerance `rtol` is performed. The default
+`rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations, the
 computation is stopped.
 """
-function sinkhorn(mu, nu, C, eps; kwargs...)
+function sinkhorn(μ, ν, C, ε; kwargs...)
     # compute Gibbs kernel
-    K = @. exp(-C / eps)
+    K = @. exp(-C / ε)
 
     # compute dual potentials
-    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
+    u, v = sinkhorn_gibbs(μ, ν, K; kwargs...)
 
-    return Diagonal(u) * K * Diagonal(v)
+    return K .* u .* v'
 end
 
 """
