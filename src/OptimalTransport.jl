@@ -121,7 +121,7 @@ end
         μ, ν, K; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
     )
 
-Compute the dual potentials for the entropic regularization optimal transport problem
+Compute the dual potentials for the entropically regularized optimal transport problem
 with source and target marginals `μ` and `ν` and Gibbs kernel `K` using the Sinkhorn
 algorithm.
 
@@ -226,8 +226,8 @@ end
         μ, ν, C, ε; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
     )
 
-Compute the optimal transport plan for the entropic regularization optimal transport problem
-with source and target marginals `μ` and `ν`, cost matrix `C` of size
+Compute the optimal transport plan for the entropically regularized optimal transport
+problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
 `(length(μ), length(ν))`, and entropic regularization parameter `ε`.
 
 The optimal transport plan `γ` is of the same size as `C` and solves
@@ -256,7 +256,7 @@ end
 """
     sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
 
-Solve the entropic regularization optimal transport problem with source and target
+Solve the entropically regularized optimal transport problem with source and target
 marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic
 regularization parameter `ε`, and return the optimal cost.
 
