@@ -120,7 +120,7 @@ function emd2(μ, ν, C, optimizer; plan=nothing)
 end
 
 """
-    sinkhorn_gibbs(mu, nu, K; tol=√eps, check_marginal_step=10, maxiter=1_000)
+    sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
 
 Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
 the Sinkhorn algorithm (Peyre et al., 2019)
@@ -130,28 +130,25 @@ The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost mat
 and `v` and cost matrix `C` with regularization parameter `eps` can be computed as
 `Diagonal(u) * K * Diagonal(v)`.
 """
-function sinkhorn_gibbs(
-    μ, ν, K;
-    tol=sqrt(eps(Base.promote_eltype(μ, ν, K))), check_marginal_step=10, maxiter=1_000
-)
-    if !(sum(μ) ≈ sum(ν))
+function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
+    if !(sum(mu) ≈ sum(nu))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
     end
 
     # initial iteration
-    u = μ ./ sum(K; dims=2)
-    v = ν ./ (K' * u)
-    tmp1 = K * v
-    tmp2 = similar(u)
+    temp_v = vec(sum(K; dims=2))
+    u = mu ./ temp_v
+    temp_u = K' * u
+    v = nu ./ temp_u
 
     isconverged = false
     for iter in 0:maxiter
+        # check mu marginal
         if iter % check_marginal_step == 0
-            # check source marginal
-            # do not overwrite `tmp1` to be able to reuse it if another iteration has to
-            # be computed
-            @. tmp2 = μ - u * tmp1
-            err = norm(tmp2)
+            mul!(temp_v, K, v)
+            @. temp_v = abs(mu - u * temp_v)
+
+            err = maximum(temp_v)
             @debug "Sinkhorn algorithm: iteration $iter" err
 
             # check stopping criterion
@@ -163,10 +160,10 @@ function sinkhorn_gibbs(
 
         # perform next iteration
         if iter < maxiter
-            @. u = μ / tmp1
-            mul!(v, K', u)
-            @. v = ν / v
-            mul!(tmp1, K, v)
+            mul!(temp_v, K, v)
+            @. u = mu / temp_v
+            mul!(temp_u, K', u)
+            @. v = nu / temp_u
         end
     end
 
@@ -178,7 +175,7 @@ function sinkhorn_gibbs(
 end
 
 """
-    sinkhorn(μ, ν, C, ε; tol=√eps, check_marginal_step=10, maxiter=1_000)
+    sinkhorn(μ, ν, C, ε; tol=1e-9, check_marginal_step=10, maxiter=1_000)
 
 Compute the optimal transport plan for the entropic regularization optimal transport problem
 with source and target marginals `μ` and `ν`, cost matrix `C` of size
@@ -193,17 +190,17 @@ where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is th
 regularization term.
 
 Every `check_marginal_step` steps a convergence check of the error of the marginal
-`μ` with absolute tolerance `tol` is performed. The default `tol` depends on the types of
-`μ`, `ν`, and `C`. After `maxiter` iterations, the computation is stopped.
+`μ` with absolute tolerance `tol` is performed. After `maxiter` iterations, the
+computation is stopped.
 """
-function sinkhorn(μ, ν, C, ε; kwargs...)
+function sinkhorn(mu, nu, C, eps; kwargs...)
     # compute Gibbs kernel
-    K = @. exp(-C / ε)
+    K = @. exp(-C / eps)
 
     # compute dual potentials
-    u, v = sinkhorn_gibbs(μ, ν, K; kwargs...)
+    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
 
-    return K .* u .* v'
+    return Diagonal(u) * K * Diagonal(v)
 end
 
 """
