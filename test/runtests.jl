@@ -204,8 +204,8 @@ end
         # compute optimal transport plan and cost for balanced OT
         γ_balanced = sinkhorn(μ, ν, C, ε)
         c_balanced = sinkhorn2(μ, ν, C, ε)
-        @test γ_balanced ≈ γ rtol=1e-4
-        @test c_balanced ≈ c rtol=1e-4
+        @test γ_balanced ≈ γ rtol = 1e-4
+        @test c_balanced ≈ c rtol = 1e-4
     end
 
     @testset "deprecations" begin
