@@ -136,10 +136,13 @@ and ``v`` as
 \\gamma = \\operatorname{diag}(u) K \\operatorname{diag}(v).
 ```
 
-Every `check_convergence` steps a convergence check of the error of the marginal
-`μ` with absolute tolerance `atol` and relative tolerance `rtol` is performed. The default
-`rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations, the
-computation is stopped.
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterate of the transport plan `G` satisfies
+```julia
+isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
+```
+The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
+the computation is stopped.
 """
 function sinkhorn_gibbs(
     μ,
@@ -238,10 +241,15 @@ The optimal transport plan `γ` is of the same size as `C` and solves
 where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
 regularization term.
 
-Every `check_convergence` steps a convergence check of the error of the marginal
-`μ` with absolute tolerance `atol` and relative tolerance `rtol` is performed. The default
-`rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations, the
-computation is stopped.
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterate of the transport plan `G` satisfies
+```julia
+isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
+```
+The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
+the computation is stopped.
+
+See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn(μ, ν, C, ε; kwargs...)
     # compute Gibbs kernel
