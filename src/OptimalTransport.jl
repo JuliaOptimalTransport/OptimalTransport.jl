@@ -241,7 +241,7 @@ end
 """
     sinkhorn_unbalanced(μ, ν, C, λ1::Real, λ2::Real, ε; kwargs...)
 
-Compute the optimal transport plan for the unbalanced entropic regularization optimal
+Compute the optimal transport plan for the unbalanced entropically regularized optimal
 transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
 `(length(μ), length(ν))`, entropic regularization parameter `ε`, and marginal relaxation
 terms `λ1` and `λ2`.
@@ -292,7 +292,7 @@ end
         atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000,
     )
 
-Compute the optimal transport plan for the unbalanced entropic regularization optimal
+Compute the optimal transport plan for the unbalanced entropically regularized optimal
 transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
 `(length(μ), length(ν))`, entropic regularization parameter `ε`, and soft marginal
 constraints ``F_1`` and ``F_2`` with "proxdiv" functions `proxdivF!` and `proxdivG!`.
@@ -443,7 +443,7 @@ end
     sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; plan=nothing, kwargs...)
     sinkhorn_unbalanced2(μ, ν, C, proxdivF1!, proxdivF2!, ε; plan=nothing, kwargs...)
 
-Compute the optimal transport plan for the unbalanced entropic regularization optimal
+Compute the optimal transport plan for the unbalanced entropically regularized optimal
 transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
 `(length(μ), length(ν))`, entropic regularization parameter `ε`, and marginal relaxation
 terms `λ1` and `λ2` or soft marginal constraints with "proxdiv" functions `proxdivF1!` and
