@@ -117,7 +117,7 @@ end
         @test eltype(γ) === Float32
 
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000)
-        @test Float32.(γ_pot) ≈ γ rtol=1e-3
+        @test Float32.(γ_pot) ≈ γ rtol = 1e-3
 
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
@@ -129,7 +129,7 @@ end
 
         # compare with POT
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000)[1]
-        @test Float32(c_pot) ≈ c rtol=1e-3
+        @test Float32(c_pot) ≈ c rtol = 1e-3
     end
 
     @testset "deprecations" begin
