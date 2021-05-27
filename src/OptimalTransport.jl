@@ -334,12 +334,15 @@ and can be computed in closed-form for specific choices of ``F``. For instance, 
 ```
 where all operators are acting pointwise.[^CPSV18]
 
-Every `check_convergence` steps a convergence check of the error of the scaling factors
-with absolute tolerance `atol` and relative tolerance `rtol` is performed. The default
-`rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations, the
-computation is stopped.
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterates of the scaling factor in the current and previous iteration satisfy
+`isapprox(vcat(a, b), vcat(aprev, bprev); atol=atol, rtol=rtol)` where `a` and `b` are the
+current iterates and `aprev` and `bprev` the previous ones. The default `rtol` depends on
+the types of `μ`, `ν`, and `C`. After `maxiter` iterations, the computation is stopped.
 
 [^CPSV18]: Chizat, L., Peyré, G., Schmitzer, B., & Vialard, F.-X. (2018). [Scaling algorithms for unbalanced optimal transport problems](https://doi.org/10.1090/mcom/3303). Mathematics of Computation, 87(314), 2563–2609.
+
+See also: [`sinkhorn_unbalanced2`](@ref)
 """
 function sinkhorn_unbalanced(
     μ,
