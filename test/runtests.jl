@@ -126,7 +126,7 @@ end
         eps = 0.01
         γ = sinkhorn(μ, ν, C, eps; maxiter=5_000)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test norm(γ - γ_pot, Inf) < 1e-4
+        @test norm(γ - γ_pot, Inf) < 1e-9
 
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
@@ -137,7 +137,7 @@ end
 
         # compare with POT
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-        @test c_pot ≈ c atol = 1e-4
+        @test c_pot ≈ c atol = 1e-9
 
         # ensure that provided map is used and correct
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
@@ -163,7 +163,7 @@ end
         @test eltype(γ) === Float32
 
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test norm(γ - γ_pot, Inf) < 1e-4
+        @test norm(γ - γ_pot, Inf) < Base.eps(Float32)
 
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
@@ -175,7 +175,7 @@ end
 
         # compare with POT
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-        @test c_pot ≈ c atol = 1e-4
+        @test c_pot ≈ c atol = Base.eps(Float32)
     end
 end
 
