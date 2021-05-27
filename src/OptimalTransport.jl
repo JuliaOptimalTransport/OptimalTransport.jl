@@ -239,10 +239,7 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
 end
 
 """
-    sinkhorn_unbalanced(
-        μ, ν, C, λ1::Real, λ2::Real, ε;
-        atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000,
-    )
+    sinkhorn_unbalanced(μ, ν, C, λ1::Real, λ2::Real, ε; kwargs...)
 
 Compute the optimal transport plan for the unbalanced entropic regularization optimal
 transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
@@ -259,10 +256,8 @@ The optimal transport plan `γ` is of the same size as `C` and solves
 where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
 regularization term and ``\\operatorname{KL}`` is the Kullback-Leibler divergence.
 
-Every `check_convergence` steps a convergence check of the error of the scaling factors
-with absolute tolerance `atol` and relative tolerance `rtol` is performed. The default
-`rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations, the
-computation is stopped.
+The keyword arguments supported here are the same as those in the `sinkhorn_unbalanced`
+for unbalanced optimal transport problems with general soft marginal constraints.
 """
 function sinkhorn_unbalanced(
     μ, ν, C, λ1::Real, λ2::Real, ε; proxdiv_F1=nothing, proxdiv_F2=nothing, kwargs...
@@ -451,7 +446,9 @@ transport problem with source and target marginals `μ` and `ν`, cost matrix `C
 terms `λ1` and `λ2` or soft marginal constraints with "proxdiv" functions `proxdivF1!` and
 `proxdivF2!`.
 
-A pre-computed optimal transport `plan` may be provided.
+A pre-computed optimal transport `plan` may be provided. The other keyword arguments
+supported here are the same as those in the [`sinkhorn_unbalanced`](@ref) for unbalanced
+optimal transport problems with general soft marginal constraints.
 
 See also: [`sinkhorn_unbalanced`](@ref)
 """
