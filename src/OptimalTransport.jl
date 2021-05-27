@@ -178,7 +178,7 @@ function sinkhorn_gibbs(
     tmp1 = K * v
     tmp2 = similar(u)
 
-    norm_μ = norm(μ) # for convergence check
+    norm_μ = sum(abs, μ) # for convergence check
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 0:maxiter
@@ -186,9 +186,9 @@ function sinkhorn_gibbs(
             # check source marginal
             # do not overwrite `tmp1` but reuse it for computing `u` if not converged
             @. tmp2 = u * tmp1
-            norm_uKv = norm(tmp2)
+            norm_uKv = sum(abs, tmp2)
             @. tmp2 = μ - tmp2
-            norm_diff = norm(tmp2)
+            norm_diff = sum(abs, tmp2)
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
