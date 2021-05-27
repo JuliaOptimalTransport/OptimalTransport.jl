@@ -14,7 +14,7 @@ export sinkhorn, sinkhorn2
 export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
-export quadreg
+export ot_reg_plan, ot_reg_cost
 
 const MOI = MathOptInterface
 
@@ -514,6 +514,53 @@ function sinkhorn_barycenter(
         @warn "Sinkhorn did not converge"
     end
     return u_all[1, :] .* (K_all[1] * v_all[1, :])
+end
+
+"""
+    ot_reg_plan(mu, nu, C, eps; reg_func = "L2", method = "lorenz", kwargs...)
+
+Compute the optimal transport plan between `mu` and `nu` for optimal transport with a 
+general choice of regulariser `math Ω(γ)`. Solves for `gamma` that minimises
+
+```math
+\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle + ε Ω(γ)
+```
+
+Supported choices of `math Ω` are:
+- L2: ``Ω(γ) = \\frac{1}{2} \\| γ \\|_2^2``, `reg_func = "L2"`
+
+Supported solution methods are:
+- L2: `method = "lorenz"` for the semi-smooth Newton method of Lorenz et al. 
+
+References
+
+Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. Applied Mathematics & Optimization, pp.1-31.
+"""
+function ot_reg_plan(mu, nu, C, eps; reg_func="L2", method="lorenz", kwargs...)
+    if (reg_func == "L2") && (method == "lorenz")
+        return quadreg(mu, nu, C, eps; kwargs...)
+    else
+        @warn "Unimplemented"
+    end
+end
+
+"""
+    ot_reg_cost(mu, nu, C, eps; reg_func = "L2", method = "lorenz", kwargs...)
+
+Compute the optimal transport cost between `mu` and `nu` for optimal transport with a 
+general choice of regulariser `math Ω(γ)`. 
+
+See also: [`ot_reg_plan`](@ref)
+
+"""
+function ot_reg_cost(mu, nu, C, eps; reg_func="L2", method="lorenz", kwargs...)
+    γ = if (reg_func == "L2") && (method == "lorenz")
+        quadreg(mu, nu, C, eps; kwargs...)
+    else
+        @warn "Unimplemented"
+        nothing
+    end
+    return dot(γ, C)
 end
 
 """
