@@ -4,6 +4,7 @@ using Distances
 using PythonOT: PythonOT
 using Tulip
 using MathOptInterface
+using Distributions
 using SparseArrays
 
 using LinearAlgebra
@@ -61,6 +62,51 @@ Random.seed!(100)
     @testset "cost matrix with integers" begin
         C = pairwise(SqEuclidean(), rand(1:10, 1, M), rand(1:10, 1, N); dims=2)
         emd2(μ, ν, C, Tulip.Optimizer())
+    end
+end
+
+@testset "1D Optimal Transport for Convex Cost" begin
+    @testset "continuous distributions" begin
+        # two normal distributions (has analytical solution)
+        μ = Normal(randn(), rand())
+        ν = Normal(randn(), rand())
+
+        # compute OT plan
+        γ = ot_plan(sqeuclidean, μ, ν)
+        x = randn()
+        @test γ(x) ≈ quantile(ν, cdf(μ, x))
+
+        # compute OT cost
+        c = ot_cost(sqeuclidean, μ, ν)
+        @test c ≈ (mean(μ) - mean(ν))^2 + (std(μ) - std(ν))^2
+
+        # do not use ν to ensure that the provided plan is used
+        @test ot_cost(sqeuclidean, μ, Normal(randn(), rand()); plan=γ) ≈ c
+    end
+
+    @testset "semidiscrete case" begin
+        μ = Normal(randn(), rand())
+        νprobs = rand(30)
+        νprobs ./= sum(νprobs)
+        ν = Categorical(νprobs)
+
+        # compute OT plan
+        γ = ot_plan(euclidean, μ, ν)
+        x = randn()
+        @test γ(x) ≈ quantile(ν, cdf(μ, x))
+
+        # compute OT cost, without and with provided plan
+        # do not use ν in the second case to ensure that the provided plan is used
+        c = ot_cost(euclidean, μ, ν)
+        @test ot_cost(euclidean, μ, Categorical(reverse(νprobs)); plan=γ) ≈ c
+
+        # check that OT cost is consistent with OT cost of a discretization
+        m = 500
+        xs = rand(μ, m)
+        μdiscrete = fill(1 / m, m)
+        C = pairwise(Euclidean(), xs', (1:length(νprobs))'; dims=2)
+        c2 = emd2(μdiscrete, νprobs, C, Tulip.Optimizer())
+        @test c2 ≈ c rtol = 1e-1
     end
 end
 

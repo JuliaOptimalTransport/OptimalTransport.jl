@@ -2,9 +2,12 @@
 
 
 ## Exact optimal transport (Kantorovich) problem
+
 ```@docs
 emd
 emd2
+ot_plan
+ot_cost
 ```
 
 ## Entropically regularised optimal transport
