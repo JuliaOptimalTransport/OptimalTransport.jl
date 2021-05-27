@@ -131,12 +131,8 @@ and `v` and cost matrix `C` with regularization parameter `eps` can be computed 
 `Diagonal(u) * K * Diagonal(v)`.
 """
 function sinkhorn_gibbs(
-    μ,
-    ν,
-    K;
-    tol=sqrt(eps(Base.promote_eltype(μ, ν, K))),
-    check_marginal_step=10,
-    maxiter=1_000,
+    μ, ν, K;
+    tol=sqrt(eps(Base.promote_eltype(μ, ν, K))), check_marginal_step=10, maxiter=1_000
 )
     if !(sum(μ) ≈ sum(ν))
         throw(ArgumentError("Error: mu and nu must lie in the simplex"))
