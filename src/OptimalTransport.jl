@@ -198,7 +198,7 @@ function sinkhorn_gibbs(
                    string(norm_diff)
 
             # check stopping criterion
-            if norm_diff < _atol + _rtol * max(norm_μ, norm_uKv)
+            if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
                 @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
                 isconverged = true
                 break
