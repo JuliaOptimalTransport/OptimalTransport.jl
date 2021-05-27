@@ -126,7 +126,7 @@ end
         eps = 0.01
         γ = sinkhorn(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test γ_pot ≈ γ rtol=1e-6
+        @test γ_pot ≈ γ rtol = 1e-6
 
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
