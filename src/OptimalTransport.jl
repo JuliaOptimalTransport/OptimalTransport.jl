@@ -260,7 +260,8 @@ Solve the entropic regularization optimal transport problem with source and targ
 marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic
 regularization parameter `ε`, and return the optimal cost.
 
-A pre-computed optimal transport `plan` may be provided.
+A pre-computed optimal transport `plan` may be provided. The other keyword arguments
+supported here are the same as those in the [`sinkhorn`](@ref) function.
 
 !!! note
     As the `sinkhorn2` function in the Python Optimal Transport package, this function
