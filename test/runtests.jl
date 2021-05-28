@@ -225,6 +225,14 @@ end
         c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
         c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax=5_000)[1] for i in 1:d]
         @test c_all ≈ c_pot atol = 1e-8 norm = (x -> norm(x, Inf))
+
+        γ_all = sinkhorn(μ[:, 1], ν, C, eps; maxiter = 5_000);
+        γ_pot = [POT.sinkhorn(μ[:, 1], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
+        @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
+
+        γ_all = sinkhorn(μ, ν[:, 1], C, eps; maxiter = 5_000);
+        γ_pot = [POT.sinkhorn(μ[:, i], ν[:, 1], C, eps; numItermax=5_000) for i in 1:d]
+        @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
     end
 end
 

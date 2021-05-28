@@ -144,7 +144,6 @@ and ``v`` as
 ```math
 \\gamma = \\operatorname{diag}(u) K \\operatorname{diag}(v).
 ```
-
 Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
 the iterate of the transport plan `G` satisfies
 ```julia
@@ -152,6 +151,11 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 ```
 The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
 the computation is stopped.
+
+Note that for a common kernel `K`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
+as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
+The output are then matrices `u` and `v` such that `u[:, i]` and `v[:, i]` are the dual variables for `mu[:, i]` and `nu[:, i]`.
+In addition, the case where one of `mu` or `nu` is a single histogram and the other a matrix of histograms is supported.
 """
 function sinkhorn_gibbs(
     μ,
@@ -176,12 +180,11 @@ function sinkhorn_gibbs(
             :sinkhorn_gibbs,
         )
     end
+    if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
+        throw(DimensionMismatch("Error: number of columns in mu and nu must coincide, if both are matrix valued"))
+    end
     sum(μ) ≈ sum(ν) ||
         throw(ArgumentError("source and target marginals must have the same mass"))
-
-    if size(μ, 2) != size(ν, 2)
-        throw(DimensionMismatch("Error: number of columns in mu and nu must coincide, if matrix valued"))
-    end
     
     # set default values of tolerances
     T = float(Base.promote_eltype(μ, ν, K))
@@ -189,7 +192,8 @@ function sinkhorn_gibbs(
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     # initial iteration
-    u = μ ./ sum(K; dims=2)
+    u = zeros(size(μ, 1), max(size(μ, 2), size(ν, 2)))
+    u .= μ ./ sum(K; dims=2)
     v = ν ./ (K' * u)
     tmp1 = K * v
     tmp2 = similar(u)
