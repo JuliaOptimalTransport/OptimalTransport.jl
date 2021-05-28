@@ -192,8 +192,8 @@ function sinkhorn_gibbs(
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     # initial iteration
-    u = zeros(size(μ, 1), max(size(μ, 2), size(ν, 2)))
-    u .= μ ./ sum(K; dims=2)
+    u = isequal(size(μ, 2), size(ν, 2)) ? similar(μ) : repeat(similar(μ[:, 1]), outer = (1, max(size(μ, 2), size(ν, 2))))
+    u .= μ ./ vec(sum(K; dims=2))
     v = ν ./ (K' * u)
     tmp1 = K * v
     tmp2 = similar(u)
@@ -323,7 +323,7 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         plan
     end
     cost = if regularization
-        dot_matwise(γ, C) + ε * reshape(sum(LogExpFunctions.xlogx, γ; dims = (1, 2)), size(γ)[3:end])
+        dot_matwise(γ, C) .+ ε * reshape(sum(LogExpFunctions.xlogx, γ; dims = (1, 2)), size(γ)[3:end])
     else
         dot_matwise(γ, C)
     end
