@@ -131,7 +131,6 @@ end
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
 
-<<<<<<< HEAD
         # with regularization term
         c_w_regularization = sinkhorn2(μ, ν, C, eps; maxiter=5_000, regularization=true)
         @test c_w_regularization ≈ c + eps * sum(x -> iszero(x) ? x : x * log(x), γ)
@@ -139,12 +138,6 @@ end
         # compare with POT
         c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
         @test c_pot ≈ c
-=======
-        # compute optimal transport cost (Julia implementation + POT)
-        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
-        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test c ≈ c_pot atol = 1e-9
->>>>>>> 6e4b1bf (implement common output type for sinkhorn and sinkhorn2)
 
         # ensure that provided map is used and correct
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
@@ -172,7 +165,6 @@ end
         γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-6)
         @test Float32.(γ_pot) ≈ γ rtol = 1e-3
 
-<<<<<<< HEAD
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-6)
         @test c isa Float32
@@ -211,14 +203,6 @@ end
         @test (@test_deprecated OptimalTransport.sinkhorn_gibbs(
             μ, ν, K; check_marginal_step=5
         )) == γ
-=======
-        # compute optimal transport cost (Julia implementation + POT)
-        c = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
-        @test c isa Vector{Float32}
-
-        c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
-        @test c ≈ c_pot atol = Base.eps(Float32)
->>>>>>> 6e4b1bf (implement common output type for sinkhorn and sinkhorn2)
     end
     # batch kernel reduction 
     @testset "batch" begin
@@ -416,11 +400,9 @@ end
 
         # compute Sinkhorn barycenter (Julia implementation + POT)
         eps = 0.01
-        μ_interp = sinkhorn_barycenter(μ_all, [C, C], eps, [0.5, 0.5])
-        μ_interp_batch = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5])
-        μ_interp_pot = POT.barycenter(μ_all', C, eps; weights=[0.5, 0.5], stopThr = 1e-9)
+        μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5])
+        μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5], stopThr = 1e-9)
         # need to use a larger tolerance here because of a quirk with the POT solver 
         @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
-        @test norm(μ_interp - μ_interp_batch, Inf) < 1e-9
     end
 end

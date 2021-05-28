@@ -21,6 +21,12 @@ export ot_cost, ot_plan
 
 const MOI = MathOptInterface
 
+dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
+function dot_matwise(x::AbstractArray, y::AbstractMatrix)
+    xmat = reshape(x, size(x, 1) * size(x, 2), :)
+    return reshape(reshape(y, 1, :) * xmat, size(x)[3:end])
+end
+
 """
     emd(μ, ν, C, optimizer)
 
@@ -668,73 +674,36 @@ function sinkhorn_stabilized(
 end
 
 """
-    sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
+    sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
 
-Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N`
-histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
-and entropic regularisation parameter `eps`. 
-
- - `mu_all` is taken to contain `N` histograms `mu_all[:, i]` for `math i = 1, \\ldots, N`.
- - `C_all` is taken either to be a single cost matrix or a list of `N` cost matrices corresponding to the `mu_all[:, i]`.
- - `eps` is the scalar regularisation parameter.
- - `lambda_all` are positive weights.
-
-Returns the entropically regularised barycenter of the `mu_all`, i.e. the distribution that minimises
+Compute the Sinkhorn barycenter for a collection of `N` histograms contained in the columns of `μ`, for a cost matrix `C` of size `(size(μ, 1), size(μ, 1))`, relative weights `w` of size `N`, and entropic regularisation parameter `ε`. 
+Returns the entropically regularised barycenter of the `μ`, i.e. the histogram `ρ` of length `size(μ, 1)` that solves 
 
 ```math
-\\min_{\\mu \\in \\Sigma} \\sum_{i = 1}^N \\lambda_i \\mathrm{entropicOT}^{\\epsilon}_{C_i}(\\mu, \\mu_i)
+\\min_{\\rho \\in \\Sigma} \\sum_{i = 1}^N w_i \\operatorname{OT}_{\\varepsilon}(\\mu_i, \\rho)
 ```
 
-where ``\\mathrm{entropicOT}^{\\epsilon}_{C}`` denotes the entropic optimal transport cost with cost ``C`` and entropic regularisation level ``\\epsilon``.
+where ``\\operatorname{OT}_{ε}(\\mu, \\nu) = \\inf_{\\gamma \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)`` 
+is the entropic optimal transport loss with cost ``C`` and regularisation ``\\epsilon``.
 """
-function sinkhorn_barycenter(
-    mu_all, C_all, eps, lambda_all; tol=1e-9, check_marginal_step=10, max_iter=1000
-)
-    sums = sum(mu_all; dims=1)
+function sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
+    sums = sum(μ; dims=1)
     if !isapprox(extrema(sums)...)
         throw(ArgumentError("Error: marginals are unbalanced"))
     end
-    # if batch_kernel = true, then compute all kernel reductions as matmul
-    batch_kernel = (C_all isa Matrix)
-    if batch_kernel
-        K_all = exp.(-C_all / eps)
-    else
-        K_all = [exp.(-C_all[i] / eps) for i in 1:length(C_all)]
-    end
+    K = exp.(-C / ε)
     converged = false
-    v_all = ones(size(mu_all))
-    u_all = ones(size(mu_all))
-    N = size(mu_all, 2)
+    v = ones(size(μ))
+    u = ones(size(μ))
+    N = size(μ, 2)
     for n in 1:max_iter
-        if batch_kernel
-            v_all = mu_all ./ (K_all' * u_all)
-        else
-            for i in 1:N
-                v_all[:, i] = mu_all[:, i] ./ (K_all[i]' * u_all[:, i])
-            end
-        end
-        a = ones(size(u_all, 1))
-        if batch_kernel
-            a = prod((K_all * v_all)' .^ lambda_all; dims=1)'
-            u_all = a ./ (K_all * v_all)
-        else
-            for i in 1:N
-                a = a .* ((K_all[i] * v_all[:, i]) .^ (lambda_all[i]))
-            end
-            for i in 1:N
-                u_all[:, i] = a ./ (K_all[i] * v_all[:, i])
-            end
-        end
+        v = μ ./ (K' * u)
+        a = ones(size(u, 1))
+        a = prod((K * v)' .^ w; dims=1)'
+        u = a ./ (K * v)
         if n % check_marginal_step == 0
             # check marginal errors
-            if batch_kernel
-                err = maximum(abs.(mu_all .- v_all .* (K_all' * u_all)))
-            else
-                err = maximum([
-                    maximum(abs.(mu_all[:, i] .- v_all[:, i] .* (K_all[i]' * u_all[:, i])))
-                    for i in 1:N
-                ])
-            end
+            err = maximum(abs.(μ .- v .* (K' * u)))
             @debug "Sinkhorn algorithm: iteration $n" err
             if err < tol
                 converged = true
@@ -745,11 +714,7 @@ function sinkhorn_barycenter(
     if !converged
         @warn "Sinkhorn did not converge"
     end
-    if batch_kernel
-        return u_all[:, 1] .* (K_all * v_all[:, 1])
-    else
-        return u_all[:, 1] .* (K_all[1] * v_all[:, 1])
-    end
+    return u[:, 1] .* (K * v[:, 1])
 end
 
 """
