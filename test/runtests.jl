@@ -1,26 +1,26 @@
 using OptimalTransport
-
-using Distances
-using PythonOT: PythonOT
-using Tulip
-using MathOptInterface
-using Distributions
-using SparseArrays
-
-using LinearAlgebra
-using Pkg: Pkg
-using Random
 using Test
-
-const MOI = MathOptInterface
-const POT = PythonOT
-
-Random.seed!(100)
 
 const GROUP = get(ENV, "GROUP", "All")
 
 @testset "OptimalTransport" begin
     if GROUP == "All" || GROUP == "OptimalTransport"
+        # Load packages only if tests are run to avoid Python errors with buildkite
+        using Distances
+        using PythonOT: PythonOT
+        using Tulip
+        using MathOptInterface
+        using Distributions
+        using SparseArrays
+
+        using LinearAlgebra
+        using Random
+
+        const MOI = MathOptInterface
+        const POT = PythonOT
+
+        Random.seed!(100)
+
         @testset "Earth-Movers Distance" begin
             M = 200
             N = 250
@@ -415,6 +415,8 @@ const GROUP = get(ENV, "GROUP", "All")
 
     # CUDA requires Julia >= 1.6
     if (GROUP == "All" || GROUP == "GPU") && VERSION >= v"1.6"
+        using Pkg: Pkg
+
         # activate separate environment: CUDA can't be added to test/Project.toml since it
         # is not available on older Julia versions
         pkgdir = dirname(dirname(pathof(OptimalTransport)))
