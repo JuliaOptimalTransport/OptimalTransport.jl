@@ -417,7 +417,7 @@ Random.seed!(100)
         # is not available on older Julia versions
         pkgdir = dirname(dirname(pathof(OptimalTransport)))
         Pkg.activate("gpu")
-        Pkg.develop(Pkg.PackageSpec(; path=pkgdir)
+        Pkg.develop(Pkg.PackageSpec(; path=pkgdir))
         Pkg.instantiate()
 
         include(joinpath("gpu", "runtests.jl"))
