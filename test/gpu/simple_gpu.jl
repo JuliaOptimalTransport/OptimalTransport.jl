@@ -6,6 +6,8 @@ using Distances
 using Random
 using Test
 
+CUDA.allowscalar(false)
+
 Random.seed!(100)
 
 @testset "simple_gpu.jl" begin
@@ -33,8 +35,8 @@ Random.seed!(100)
             c = sinkhorn2(cu(μ), cu(ν), cu(C), ε)
 
             # compare with results on the CPU
-            @test γ ≈ sinkhorn(μ, ν, C, ε)
-            @test c ≈ sinkhorn2(μ, ν, C, ε)
+            @test γ ≈ cu(sinkhorn(μ, ν, C, ε))
+            @test c ≈ cu(sinkhorn2(μ, ν, C, ε))
         end
 
         @testset "sinkhorn_unbalanced" begin
@@ -59,8 +61,8 @@ Random.seed!(100)
             c = sinkhorn_unbalanced2(cu(μ), cu(ν), cu(C), λ1, λ2, ε)
 
             # compare with results on the CPU
-            @test γ ≈ sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε)
-            @test c ≈ sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε)
+            @test γ ≈ cu(sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε))
+            @test c ≈ cu(sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε))
         end
     end
 end
