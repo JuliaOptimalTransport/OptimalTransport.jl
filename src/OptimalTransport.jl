@@ -181,24 +181,32 @@ function sinkhorn_gibbs(
         )
     end
     if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
-        throw(DimensionMismatch("Error: number of columns in mu and nu must coincide, if both are matrix valued"))
+        throw(
+            DimensionMismatch(
+                "Error: number of columns in mu and nu must coincide, if both are matrix valued",
+            ),
+        )
     end
-    all(sum(μ; dims = 1) .≈ sum(ν; dims = 1)) ||
+    all(sum(μ; dims=1) .≈ sum(ν; dims=1)) ||
         throw(ArgumentError("source and target marginals must have the same mass"))
-    
+
     # set default values of tolerances
     T = float(Base.promote_eltype(μ, ν, K))
     _atol = atol === nothing ? 0 : atol
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     # initial iteration
-    u = isequal(size(μ, 2), size(ν, 2)) ? similar(μ) : repeat(similar(μ[:, 1]), outer = (1, max(size(μ, 2), size(ν, 2))))
+    u = if isequal(size(μ, 2), size(ν, 2))
+        similar(μ)
+    else
+        repeat(similar(μ[:, 1]); outer=(1, max(size(μ, 2), size(ν, 2))))
+    end
     u .= μ ./ vec(sum(K; dims=2))
     v = ν ./ (K' * u)
     tmp1 = K * v
     tmp2 = similar(u)
-    
-    norm_μ = sum(abs, μ; dims = 1) # for convergence check
+
+    norm_μ = sum(abs, μ; dims=1) # for convergence check
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 0:maxiter
@@ -206,9 +214,9 @@ function sinkhorn_gibbs(
             # check source marginal
             # do not overwrite `tmp1` but reuse it for computing `u` if not converged
             @. tmp2 = u * tmp1
-            norm_uKv = sum(abs, tmp2; dims = 1)
+            norm_uKv = sum(abs, tmp2; dims=1)
             @. tmp2 = μ - tmp2
-            norm_diff = sum(abs, tmp2; dims = 1)
+            norm_diff = sum(abs, tmp2; dims=1)
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
@@ -323,7 +331,8 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         plan
     end
     cost = if regularization
-        dot_matwise(γ, C) .+ ε * reshape(sum(LogExpFunctions.xlogx, γ; dims = (1, 2)), size(γ)[3:end])
+        dot_matwise(γ, C) .+
+        ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
     else
         dot_matwise(γ, C)
     end
