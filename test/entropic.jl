@@ -122,7 +122,7 @@ Random.seed!(100)
         eps = 0.01
         γ = sinkhorn_stabilized(μ, ν, C, eps)
         γ_pot = POT.sinkhorn(μ, ν, C, eps; method="sinkhorn_stabilized")
-        @test γ ≈ γ_pot rtol=1e-6
+        @test γ ≈ γ_pot rtol = 1e-6
     end
 
     @testset "sinkhorn_barycenter" begin
