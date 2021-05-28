@@ -1,0 +1,16 @@
+steps:
+  - label: "Julia v1"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "1"
+      - JuliaCI/julia-test#v1:
+          coverage: false
+    agents:
+      queue: "juliagpu"
+      cuda: "*"
+    # Don't run Buildkite if the commit message includes the text [skip tests]
+    if: build.message !~ /\[skip tests\]/
+    timeout_in_minutes: 60
+
+env:
+  GROUP: GPU
