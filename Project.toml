@@ -1,7 +1,7 @@
 name = "OptimalTransport"
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 authors = ["zsteve <stephenz@student.unimelb.edu.au>"]
-version = "0.3.3"
+version = "0.3.4"
 
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
