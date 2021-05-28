@@ -3,6 +3,7 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/dev)
 [![CI](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![DOI](https://zenodo.org/badge/253333137.svg)](https://zenodo.org/badge/latestdoi/253333137)
 [![Codecov](https://codecov.io/gh/JuliaOptimalTransport/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaOptimalTransport/OptimalTransport.jl)
 [![Coveralls](https://coveralls.io/repos/github/JuliaOptimalTransport/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaOptimalTransport/OptimalTransport.jl?branch=master)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
