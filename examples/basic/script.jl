@@ -208,7 +208,7 @@ heatmap(
 # ```math
 # \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \operatorname{OT}_{\epsilon}(\mu, \mu_i)
 # ```
-# where $\mathrm{OT}_\epsilon(\mu, \mu_i)$ denotes the entropically regularised
+# where $\operatorname{OT}_\epsilon(\mu, \mu_i)$ denotes the entropically regularised
 # optimal transport cost with marginals $\mu$ and $\mu_i$, cost matrix $C$, and entropic
 # regularisation parameter $\epsilon$.
 #
