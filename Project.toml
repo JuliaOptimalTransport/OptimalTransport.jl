@@ -26,8 +26,9 @@ julia = "1"
 [extras]
 PythonOT = "3c485715-4278-42b2-9b5f-8f00e43c12ef"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
 
 [targets]
-test = ["Tulip", "PythonOT", "Random", "Test"]
+test = ["Tulip", "PythonOT", "Random", "SafeTestsets", "Test"]
