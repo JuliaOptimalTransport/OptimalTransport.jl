@@ -315,8 +315,8 @@ The optimal transport plan `γ` is of the same size as `C` and solves
 ```math
 \\inf_{\\gamma} \\langle \\gamma, C \\rangle
 + \\varepsilon \\Omega(\\gamma)
-+ \\lambda_1 \\operatorname{KL}(\\gamma 1, \\mu)
-+ \\lambda_2 \\operatorname{KL}(\\gamma^{\\mathsf{T}} 1, \\nu),
++ \\lambda_1 \\operatorname{KL}(\\gamma 1 | \\mu)
++ \\lambda_2 \\operatorname{KL}(\\gamma^{\\mathsf{T}} 1 | \\nu),
 ```
 where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
 regularization term and ``\\operatorname{KL}`` is the Kullback-Leibler divergence.
