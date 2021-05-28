@@ -674,13 +674,13 @@ Compute
 """
 function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
     sqrt_A = sqrt(A)
-    return tr_sqrt(sqrt_A * B * sqrt_A)
+    return sqrt_A * B * sqrt_A
 end
 function _gaussian_ot_A(A::PDMats.PDiagMat, B::AbstractMatrix)
-    return tr_sqrt(sqrt.(A.diag) .* B .* sqrt.(A.diag'))
+    return sqrt.(A.diag) .* B .* sqrt.(A.diag')
 end
 function _gaussian_ot_A(A::StridedMatrix, B::PDMats.PDMat)
-    return tr_sqrt(PDMats.X_A_Xt(B, sqrt(A)))
+    return PDMats.X_A_Xt(B, sqrt(A))
 end
 _gaussian_ot_A(A::PDMats.PDMat, B::PDMats.PDMat) = _gaussian_ot_A(A.mat, B)
 _gaussian_ot_A(A::AbstractMatrix, B::PDMats.PDiagMat) = _gaussian_ot_A(B, A)
@@ -697,8 +697,8 @@ Return optimal transport plan.
 function ot_plan(
     c::SqEuclidean, μ::MvNormal, ν::MvNormal
 )
-    XΣsqrt = X.Σ^(1/2)
-    T(x)   = Y.μ + XΣsqrt*(XΣsqrt*Y.Σ*XΣsqrt)^(1/2)*XΣsqrt*(x - X.μ)
+    Σμsqrt = μ.Σ^(-1/2)
+    T(x)   = ν.μ + (Σμsqrt*sqrt(_gaussian_ot_A(μ.Σ,ν.Σ))*Σμsqrt)*(x - μ.μ)
     return T
 end
 
