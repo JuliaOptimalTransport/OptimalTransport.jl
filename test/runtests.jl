@@ -17,6 +17,8 @@ const POT = PythonOT
 
 Random.seed!(100)
 
+const GROUP = get(ENV, "GROUP", "All")
+
 @testset "OptimalTransport" begin
     if GROUP == "All" || GROUP == "OptimalTransport"
         @testset "Earth-Movers Distance" begin
