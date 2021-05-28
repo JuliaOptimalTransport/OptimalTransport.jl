@@ -370,7 +370,7 @@ The optimal transport plan `γ` is of the same size as `C` and solves
 + F_2(\\gamma^{\\mathsf{T}} 1, \\nu),
 ```
 where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
-regularization term and ``F_1(\\cdot, \\mu)`` and ``F_2(\\cdot, \\nu)` are soft marginal
+regularization term and ``F_1(\\cdot, \\mu)`` and ``F_2(\\cdot, \\nu)`` are soft marginal
 constraints for the source and target marginals.
 
 The functions `proxdivF1!(s, p, ε)` and `proxdivF2!(s, p, ε)` evaluate the "proxdiv"
@@ -394,7 +394,7 @@ operator of ``F_i(\\cdot, p)/\\varepsilon`` for the Kullback-Leibler
 and can be computed in closed-form for specific choices of ``F``. For instance, if
 ``F(\\cdot, p) = \\lambda \\operatorname{KL}(\\cdot | p)`` (``\\lambda > 0``), then
 ```math
-\\operatorname{prox}_{F(\\cdot | p)/\\varepsilon}^{\\operatorname{KL}}(x)
+\\operatorname{prox}_{F(\\cdot, p)/\\varepsilon}^{\\operatorname{KL}}(x)
 = x^{\\frac{\\varepsilon}{\\varepsilon + \\lambda}} p^{\\frac{\\lambda}{\\varepsilon + \\lambda}},
 ```
 where all operators are acting pointwise.[^CPSV18]
