@@ -7,16 +7,18 @@ module OptimalTransport
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
+using LogExpFunctions: LogExpFunctions
 using MathOptInterface
 using Distributions
 using PDMats
+using QuadGK
 
 export sinkhorn, sinkhorn2
 export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
-export ot_cost
+export ot_cost, ot_plan
 
 const MOI = MathOptInterface
 
@@ -121,39 +123,92 @@ function emd2(μ, ν, C, optimizer; plan=nothing)
 end
 
 """
-    sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
+    sinkhorn_gibbs(
+        μ, ν, K; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
+    )
 
-Compute dual potentials `u` and `v` for histograms `mu` and `nu` and Gibbs kernel `K` using
-the Sinkhorn algorithm (Peyre et al., 2019)
+Compute the dual potentials for the entropically regularized optimal transport problem
+with source and target marginals `μ` and `ν` and Gibbs kernel `K` using the Sinkhorn
+algorithm.
 
-The Gibbs kernel `K` is given by `K = exp.(- C / eps)` where `C` is the cost matrix and
-`eps` the entropic regularization parameter. The optimal transport plan for histograms `u`
-and `v` and cost matrix `C` with regularization parameter `eps` can be computed as
-`Diagonal(u) * K * Diagonal(v)`.
+The Gibbs kernel `K` is defined as
+```math
+K = \\exp(-C / \\varepsilon),
+```
+where ``C`` is the cost matrix and ``\\varepsilon`` the entropic regularization parameter.
+The corresponding optimal transport plan can be computed from the dual potentials ``u``
+and ``v`` as
+```math
+\\gamma = \\operatorname{diag}(u) K \\operatorname{diag}(v).
+```
+
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterate of the transport plan `G` satisfies
+```julia
+isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
+```
+The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
+the computation is stopped.
 """
-function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=1000)
-    if !(sum(mu) ≈ sum(nu))
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
+function sinkhorn_gibbs(
+    μ,
+    ν,
+    K;
+    tol=nothing,
+    atol=tol,
+    rtol=nothing,
+    check_marginal_step=nothing,
+    check_convergence=check_marginal_step,
+    maxiter::Int=1_000,
+)
+    if tol !== nothing
+        Base.depwarn(
+            "keyword argument `tol` is deprecated, please use `atol` and `rtol`",
+            :sinkhorn_gibbs,
+        )
     end
+    if check_marginal_step !== nothing
+        Base.depwarn(
+            "keyword argument `check_marginal_step` is deprecated, please use `check_convergence`",
+            :sinkhorn_gibbs,
+        )
+    end
+    sum(μ) ≈ sum(ν) ||
+        throw(ArgumentError("source and target marginals must have the same mass"))
+
+    # set default values of tolerances
+    T = float(Base.promote_eltype(μ, ν, K))
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     # initial iteration
-    temp_v = vec(sum(K; dims=2))
-    u = mu ./ temp_v
-    temp_u = K' * u
-    v = nu ./ temp_u
+    u = μ ./ sum(K; dims=2)
+    v = ν ./ (K' * u)
+    tmp1 = K * v
+    tmp2 = similar(u)
 
+    norm_μ = sum(abs, μ) # for convergence check
     isconverged = false
+    check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 0:maxiter
-        # check mu marginal
-        if iter % check_marginal_step == 0
-            mul!(temp_v, K, v)
-            @. temp_v = abs(mu - u * temp_v)
+        if iter % check_step == 0
+            # check source marginal
+            # do not overwrite `tmp1` but reuse it for computing `u` if not converged
+            @. tmp2 = u * tmp1
+            norm_uKv = sum(abs, tmp2)
+            @. tmp2 = μ - tmp2
+            norm_diff = sum(abs, tmp2)
 
-            err = maximum(temp_v)
-            @debug "Sinkhorn algorithm: iteration $iter" err
+            @debug "Sinkhorn algorithm (" *
+                   string(iter) *
+                   "/" *
+                   string(maxiter) *
+                   ": absolute error of source marginal = " *
+                   string(norm_diff)
 
             # check stopping criterion
-            if err < tol
+            if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+                @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
                 isconverged = true
                 break
             end
@@ -161,64 +216,75 @@ function sinkhorn_gibbs(mu, nu, K; tol=1e-9, check_marginal_step=10, maxiter=100
 
         # perform next iteration
         if iter < maxiter
-            mul!(temp_v, K, v)
-            @. u = mu / temp_v
-            mul!(temp_u, K', u)
-            @. v = nu / temp_u
+            @. u = μ / tmp1
+            mul!(v, K', u)
+            @. v = ν / v
+            mul!(tmp1, K, v)
         end
     end
 
     if !isconverged
-        @warn "Sinkhorn algorithm did not converge"
+        @warn "Sinkhorn algorithm ($maxiter/$maxiter): not converged"
     end
 
     return u, v
 end
 
 """
-    sinkhorn(mu, nu, C, eps; tol=1e-9, check_marginal_step=10, maxiter=1000)
+    sinkhorn(
+        μ, ν, C, ε; atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000
+    )
 
-Compute entropically regularised transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`. 
+Compute the optimal transport plan for the entropically regularized optimal transport
+problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
+`(length(μ), length(ν))`, and entropic regularization parameter `ε`.
 
-Return optimal transport coupling `γ` of the same dimensions as `C` which solves 
-
+The optimal transport plan `γ` is of the same size as `C` and solves
 ```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle - \\epsilon H(\\gamma)
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
++ \\varepsilon \\Omega(\\gamma),
 ```
+where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
+regularization term.
 
-where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterate of the transport plan `G` satisfies
+```julia
+isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
+```
+The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
+the computation is stopped.
 
+See also: [`sinkhorn2`](@ref)
 """
-function sinkhorn(mu, nu, C, eps; kwargs...)
+function sinkhorn(μ, ν, C, ε; kwargs...)
     # compute Gibbs kernel
-    K = @. exp(-C / eps)
+    K = @. exp(-C / ε)
 
     # compute dual potentials
-    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
+    u, v = sinkhorn_gibbs(μ, ν, K; kwargs...)
 
-    return Diagonal(u) * K * Diagonal(v)
+    return K .* u .* v'
 end
 
 """
-    sinkhorn2(mu, nu, C, eps; plan=nothing, kwargs...)
+    sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
 
-Compute entropically regularised transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic
-regularization parameter `eps`.
+Solve the entropically regularized optimal transport problem with source and target
+marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic
+regularization parameter `ε`, and return the optimal cost.
 
-Return optimal value of
+A pre-computed optimal transport `plan` may be provided. The other keyword arguments
+supported here are the same as those in the [`sinkhorn`](@ref) function.
 
-```math
-\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle - \\epsilon H(\\gamma)
-```
-
-where ``H`` is the entropic regulariser, ``H(\\gamma) = -\\sum_{i, j} \\gamma_{ij} \\log(\\gamma_{ij})``.
-
-A pre-computed optimal transport `plan` may be provided.
+!!! note
+    As the `sinkhorn2` function in the Python Optimal Transport package, this function
+    returns the optimal transport cost without the regularization term. The cost
+    with the regularization term can be computed by setting `regularization=true`.
 
 See also: [`sinkhorn`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
+function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
@@ -230,101 +296,238 @@ function sinkhorn2(μ, ν, C, ε; plan=nothing, kwargs...)
         )
         plan
     end
-    return dot(γ, C)
+
+    cost = if regularization
+        dot(γ, C) + ε * sum(LogExpFunctions.xlogx, γ)
+    else
+        dot(γ, C)
+    end
+
+    return cost
 end
 
 """
-    sinkhorn_unbalanced(mu, nu, C, lambda1, lambda2, eps; tol = 1e-9, max_iter = 1000, verbose = false, proxdiv_F1 = nothing, proxdiv_F2 = nothing)
+    sinkhorn_unbalanced(μ, ν, C, λ1::Real, λ2::Real, ε; kwargs...)
 
-Computes the optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
-using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
-for the marginals `mu`, `nu` respectively.
+Compute the optimal transport plan for the unbalanced entropically regularized optimal
+transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
+`(length(μ), length(ν))`, entropic regularization parameter `ε`, and marginal relaxation
+terms `λ1` and `λ2`.
 
-For full generality, the user can specify the soft marginal constraints ``(F_1(\\cdot | \\mu), F_2(\\cdot | \\nu))`` to the problem
-
+The optimal transport plan `γ` is of the same size as `C` and solves
 ```math
-\\min_\\gamma \\epsilon \\mathrm{KL}(\\gamma | \\exp(-C/\\epsilon)) + F_1(\\gamma_1 | \\mu) + F_2(\\gamma_2 | \\nu)
+\\inf_{\\gamma} \\langle \\gamma, C \\rangle
++ \\varepsilon \\Omega(\\gamma)
++ \\lambda_1 \\operatorname{KL}(\\gamma 1 | \\mu)
++ \\lambda_2 \\operatorname{KL}(\\gamma^{\\mathsf{T}} 1 | \\nu),
 ```
+where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
+regularization term and ``\\operatorname{KL}`` is the Kullback-Leibler divergence.
 
-via `math\\mathrm{proxdiv}_{F_1}(s, p)` and `math\\mathrm{proxdiv}_{F_2}(s, p)` (see Chizat et al., 2016 for details on this). If specified, the algorithm will use the user-specified F1, F2 rather than the default (a KL-divergence).
+The keyword arguments supported here are the same as those in the `sinkhorn_unbalanced`
+for unbalanced optimal transport problems with general soft marginal constraints.
 """
 function sinkhorn_unbalanced(
-    mu,
-    nu,
-    C,
-    lambda1,
-    lambda2,
-    eps;
-    tol=1e-9,
-    max_iter=1000,
-    verbose=false,
-    proxdiv_F1=nothing,
-    proxdiv_F2=nothing,
+    μ, ν, C, λ1::Real, λ2::Real, ε; proxdiv_F1=nothing, proxdiv_F2=nothing, kwargs...
 )
-    function proxdiv_KL(s, eps, lambda, p)
-        return @. (s^(eps / (eps + lambda)) * p^(lambda / (eps + lambda))) / s
+    if proxdiv_F1 !== nothing && proxdiv_F2 !== nothing
+        Base.depwarn(
+            "keyword arguments `proxdiv_F1` and `proxdiv_F2` are deprecated",
+            :sinkhorn_unbalanced,
+        )
+
+        # have to wrap the "proxdiv" functions since the signature changed
+        # ε was fixed in the function, so we ignore it
+        proxdiv_F1_wrapper(s, p, _) = copyto!(s, proxdiv_F1(s, p))
+        proxdiv_F2_wrapper(s, p, _) = copyto!(s, proxdiv_F2(s, p))
+
+        return sinkhorn_unbalanced(
+            μ, ν, C, proxdiv_F1_wrapper, proxdiv_F2_wrapper, ε; kwargs...
+        )
     end
 
-    a = ones(size(mu, 1))
-    b = ones(size(nu, 1))
-    a_old = a
-    b_old = b
-    tmp_a = zeros(size(nu, 1))
-    tmp_b = zeros(size(mu, 1))
+    # define "proxdiv" functions for the unbalanced OT problem
+    proxdivF!(s, p, ε, λ) = (s .= (p ./ s) .^ (λ / (ε + λ)))
+    proxdivF1!(s, p, ε) = proxdivF!(s, p, ε, λ1)
+    proxdivF2!(s, p, ε) = proxdivF!(s, p, ε, λ2)
 
-    K = @. exp(-C / eps)
+    return sinkhorn_unbalanced(μ, ν, C, proxdivF1!, proxdivF2!, ε; kwargs...)
+end
 
-    iter = 1
+"""
+    sinkhorn_unbalanced(
+        μ, ν, C, proxdivF1!, proxdivF2!, ε;
+        atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000,
+    )
 
-    while true
-        a_old = a
-        b_old = b
-        tmp_b = K * b
-        if proxdiv_F1 == nothing
-            a = proxdiv_KL(tmp_b, eps, lambda1, mu)
-        else
-            a = proxdiv_F1(tmp_b, mu)
+Compute the optimal transport plan for the unbalanced entropically regularized optimal
+transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
+`(length(μ), length(ν))`, entropic regularization parameter `ε`, and soft marginal
+constraints ``F_1`` and ``F_2`` with "proxdiv" functions `proxdivF!` and `proxdivG!`.
+
+The optimal transport plan `γ` is of the same size as `C` and solves
+```math
+\\inf_{\\gamma} \\langle \\gamma, C \\rangle
++ \\varepsilon \\Omega(\\gamma)
++ F_1(\\gamma 1, \\mu)
++ F_2(\\gamma^{\\mathsf{T}} 1, \\nu),
+```
+where ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{i,j} \\log \\gamma_{i,j}`` is the entropic
+regularization term and ``F_1(\\cdot, \\mu)`` and ``F_2(\\cdot, \\nu)`` are soft marginal
+constraints for the source and target marginals.
+
+The functions `proxdivF1!(s, p, ε)` and `proxdivF2!(s, p, ε)` evaluate the "proxdiv"
+functions of ``F_1(\\cdot, p)`` and ``F_2(\\cdot, p)`` at ``s`` for the entropic
+regularization parameter ``\\varepsilon``. They have to be mutating and overwrite the first
+argument `s` with the result of their computations.
+
+Mathematically, the "proxdiv" functions are defined as
+```math
+\\operatorname{proxdiv}_{F_i}(s, p, \\varepsilon)
+= \\operatorname{prox}^{\\operatorname{KL}}_{F_i(\\cdot, p)/\\varepsilon}(s) \\oslash s
+```
+where ``\\oslash`` denotes element-wise division and
+``\\operatorname{prox}_{F_i(\\cdot, p)/\\varepsilon}^{\\operatorname{KL}}`` is the proximal
+operator of ``F_i(\\cdot, p)/\\varepsilon`` for the Kullback-Leibler
+(``\\operatorname{KL}``) divergence.  It is defined as
+```math
+\\operatorname{prox}_{F}^{\\operatorname{KL}}(x)
+= \\operatorname{argmin}_{y} F(y) + \\operatorname{KL}(y|x)
+```
+and can be computed in closed-form for specific choices of ``F``. For instance, if
+``F(\\cdot, p) = \\lambda \\operatorname{KL}(\\cdot | p)`` (``\\lambda > 0``), then
+```math
+\\operatorname{prox}_{F(\\cdot, p)/\\varepsilon}^{\\operatorname{KL}}(x)
+= x^{\\frac{\\varepsilon}{\\varepsilon + \\lambda}} p^{\\frac{\\lambda}{\\varepsilon + \\lambda}},
+```
+where all operators are acting pointwise.[^CPSV18]
+
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterates of the scaling factor in the current and previous iteration satisfy
+`isapprox(vcat(a, b), vcat(aprev, bprev); atol=atol, rtol=rtol)` where `a` and `b` are the
+current iterates and `aprev` and `bprev` the previous ones. The default `rtol` depends on
+the types of `μ`, `ν`, and `C`. After `maxiter` iterations, the computation is stopped.
+
+[^CPSV18]: Chizat, L., Peyré, G., Schmitzer, B., & Vialard, F.-X. (2018). [Scaling algorithms for unbalanced optimal transport problems](https://doi.org/10.1090/mcom/3303). Mathematics of Computation, 87(314), 2563–2609.
+
+See also: [`sinkhorn_unbalanced2`](@ref)
+"""
+function sinkhorn_unbalanced(
+    μ,
+    ν,
+    C,
+    proxdivF1!,
+    proxdivF2!,
+    ε;
+    tol=nothing,
+    atol=tol,
+    rtol=nothing,
+    max_iter=nothing,
+    maxiter=max_iter,
+    check_convergence::Int=10,
+)
+    # deprecations
+    if tol !== nothing
+        Base.depwarn(
+            "keyword argument `tol` is deprecated, please use `atol` and `rtol`",
+            :sinkhorn_unbalanced,
+        )
+    end
+    if max_iter !== nothing
+        Base.depwarn(
+            "keyword argument `max_iter` is deprecated, please use `maxiter`",
+            :sinkhorn_unbalanced,
+        )
+    end
+
+    # compute Gibbs kernel
+    K = @. exp(-C / ε)
+
+    # set default values of squared tolerances
+    T = float(Base.promote_eltype(μ, ν, K))
+    sqatol = atol === nothing ? 0 : atol^2
+    sqrtol = rtol === nothing ? (sqatol > zero(sqatol) ? zero(T) : eps(T)) : rtol^2
+
+    # initialize iterates
+    a = similar(μ, T)
+    sum!(a, K)
+    proxdivF1!(a, μ, ε)
+    b = similar(ν, T)
+    mul!(b, K', a)
+    proxdivF2!(b, ν, ε)
+
+    # caches for convergence checks
+    a_old = similar(a)
+    b_old = similar(b)
+
+    isconverged = false
+    _maxiter = maxiter === nothing ? 1_000 : maxiter
+    for iter in 1:_maxiter
+        # update cache if necessary
+        ischeck = iter % check_convergence == 0
+        if ischeck
+            copyto!(a_old, a)
+            copyto!(b_old, b)
         end
-        tmp_a = K' * a
-        if proxdiv_F2 == nothing
-            b = proxdiv_KL(tmp_a, eps, lambda2, nu)
-        else
-            b = proxdiv_F2(tmp_a, nu)
-        end
-        iter += 1
-        if iter % 10 == 0
-            err_a =
-                maximum(abs.(a - a_old)) / max(maximum(abs.(a)), maximum(abs.(a_old)), 1)
-            err_b =
-                maximum(abs.(b - b_old)) / max(maximum(abs.(b)), maximum(abs.(b_old)), 1)
-            if verbose
-                println("Iteration $iter, err = ", 0.5 * (err_a + err_b))
-            end
-            if (0.5 * (err_a + err_b) < tol) || iter > max_iter
+
+        # compute next iterates
+        mul!(a, K, b)
+        proxdivF1!(a, μ, ε)
+        mul!(b, K', a)
+        proxdivF2!(b, ν, ε)
+
+        # check convergence of the scaling factors
+        if ischeck
+            # compute norm of current and previous scaling factors and their difference
+            sqnorm_a_b = sum(abs2, a) + sum(abs2, b)
+            sqnorm_a_b_old = sum(abs2, a_old) + sum(abs2, b_old)
+            a_old .-= a
+            b_old .-= b
+            sqeuclidean_a_b = sum(abs2, a_old) + sum(abs2, b_old)
+            @debug "Sinkhorn algorithm (" *
+                   string(iter) *
+                   "/" *
+                   string(_maxiter) *
+                   ": squared Euclidean distance of iterates = " *
+                   string(sqeuclidean_a_b)
+
+            # check convergence of `a`
+            if sqeuclidean_a_b < max(sqatol, sqrtol * max(sqnorm_a_b, sqnorm_a_b_old))
+                @debug "Sinkhorn algorithm ($iter/$_maxiter): converged"
+                isconverged = true
                 break
             end
         end
     end
-    if iter > max_iter && verbose
-        println("Warning: exited before convergence")
+
+    if !isconverged
+        @warn "Sinkhorn algorithm ($_maxiter/$_maxiter): not converged"
     end
-    return Diagonal(a) * K * Diagonal(b)
+
+    return K .* a .* b'
 end
 
 """
-    sinkhorn_unbalanced2(mu, nu, C, lambda1, lambda2, eps; plan=nothing, kwargs...)
+    sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; plan=nothing, kwargs...)
+    sinkhorn_unbalanced2(μ, ν, C, proxdivF1!, proxdivF2!, ε; plan=nothing, kwargs...)
 
-Computes the optimal transport cost of histograms `mu` and `nu` with cost matrix `C` and entropic regularization parameter `eps`, 
-using the unbalanced Sinkhorn algorithm [Chizat 2016] with KL-divergence terms for soft marginal constraints, with weights `(lambda1, lambda2)`
-for the marginals mu, nu respectively.
+Compute the optimal transport plan for the unbalanced entropically regularized optimal
+transport problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
+`(length(μ), length(ν))`, entropic regularization parameter `ε`, and marginal relaxation
+terms `λ1` and `λ2` or soft marginal constraints with "proxdiv" functions `proxdivF1!` and
+`proxdivF2!`.
 
-A pre-computed optimal transport `plan` may be provided.
+A pre-computed optimal transport `plan` may be provided. The other keyword arguments
+supported here are the same as those in the [`sinkhorn_unbalanced`](@ref) for unbalanced
+optimal transport problems with general soft marginal constraints.
 
 See also: [`sinkhorn_unbalanced`](@ref)
 """
-function sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; plan=nothing, kwargs...)
+function sinkhorn_unbalanced2(
+    μ, ν, C, λ1_or_proxdivF1, λ2_or_proxdivF2, ε; plan=nothing, kwargs...
+)
     γ = if plan === nothing
-        sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; kwargs...)
+        sinkhorn_unbalanced(μ, ν, C, λ1_or_proxdivF1, λ2_or_proxdivF2, ε; kwargs...)
     else
         # check dimensions
         size(C) == (length(μ), length(ν)) ||
@@ -645,6 +848,64 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
 end
 
 """
+    ot_cost(
+        c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
+    )
+
+Compute the optimal transport cost for the Monge-Kantorovich problem with univariate
+distributions `μ` and `ν` as source and target marginals and cost function `c` of
+the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function.
+
+In this setting, the optimal transport cost can be computed as
+```math
+\\int_0^1 c(F_\\mu^{-1}(x), F_\\nu^{-1}(x)) \\mathrm{d}x
+```
+where ``F_\\mu^{-1}`` and ``F_\\nu^{-1}`` are the quantile functions of `μ` and `ν`,
+respectively.
+
+A pre-computed optimal transport `plan` may be provided.
+
+See also: [`ot_plan`](@ref), [`emd2`](@ref)
+"""
+function ot_cost(
+    c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
+)
+    cost, _ = if plan === nothing
+        quadgk(0, 1) do q
+            return c(quantile(μ, q), quantile(ν, q))
+        end
+    else
+        quadgk(0, 1) do q
+            x = quantile(μ, q)
+            return c(x, plan(x))
+        end
+    end
+    return cost
+end
+
+"""
+    ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
+
+Compute the optimal transport plan for the Monge-Kantorovich problem with univariate
+distributions `μ` and `ν` as source and target marginals and cost function `c` of
+the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function.
+
+In this setting, the optimal transport plan is the Monge map
+```math
+T = F_\\nu^{-1} \\circ F_\\mu
+```
+where ``F_\\mu`` is the cumulative distribution function of `μ` and ``F_\\nu^{-1}`` is the
+quantile function of `ν`.
+
+See also: [`ot_cost`](@ref), [`emd`](@ref)
+"""
+function ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
+    # Use T instead of γ to indicate that this is a Monge map.
+    T(x) = quantile(ν, cdf(μ, x))
+    return T
+end
+
+"""
     ot_cost(c,mu::MvNormal,nu::MvNormal; plan=nothing)
 Compute the optimal transport cost between μ to ν, where
 both are Normal or Multivariate Normal distributions and the cost
@@ -686,6 +947,7 @@ _gaussian_ot_A(A::PDMats.PDMat, B::PDMats.PDMat) = _gaussian_ot_A(A.mat, B)
 _gaussian_ot_A(A::AbstractMatrix, B::PDMats.PDiagMat) = _gaussian_ot_A(B, A)
 _gaussian_ot_A(A::PDMats.PDMat, B::StridedMatrix) = _gaussian_ot_A(B, A)
 
+
 """
     ot_plan(c,mu::MvNormal,nu::MvNormal; plan=nothing)
 Compute the optimal transport plan between μ to ν, where
@@ -701,5 +963,6 @@ function ot_plan(
     T(x)   = ν.μ + (Σμsqrt*sqrt(_gaussian_ot_A(μ.Σ,ν.Σ))*Σμsqrt)*(x - μ.μ)
     return T
 end
+
 
 end
