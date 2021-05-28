@@ -152,10 +152,11 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
 the computation is stopped.
 
-Note that for a common kernel `K`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
-as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
-The output are then matrices `u` and `v` such that `u[:, i]` and `v[:, i]` are the dual variables for `mu[:, i]` and `nu[:, i]`.
-In addition, the case where one of `mu` or `nu` is a single histogram and the other a matrix of histograms is supported.
+Note that for a common kernel `K`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
+as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
+The output are then matrices `u` and `v` such that `u[:, i]` and `v[:, i]` are the dual variables for `μ[:, i]` and `ν[:, i]`.
+
+In addition, the case where one of `μ` or `ν` is a single histogram and the other a matrix of histograms is supported.
 """
 function sinkhorn_gibbs(
     μ,
@@ -183,7 +184,7 @@ function sinkhorn_gibbs(
     if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
         throw(
             DimensionMismatch(
-                "Error: number of columns in mu and nu must coincide, if both are matrix valued",
+                "Error: number of columns in μ and ν must coincide, if both are matrix valued",
             ),
         )
     end
@@ -281,9 +282,10 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
 the computation is stopped.
 
-Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
-as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
-The output in this case is an `Array` `γ` of coupling matrices such that `γ[:, :, i]` is a coupling of `mu[:, i]` and `nu[:, i]`.
+Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
+as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
+
+The output in this case is an `Array` `γ` of coupling matrices such that `γ[:, :, i]` is a coupling of `μ[:, i]` and `ν[:, i]`.
 
 See also: [`sinkhorn2`](@ref)
 """
@@ -310,10 +312,6 @@ supported here are the same as those in the [`sinkhorn`](@ref) function.
     As the `sinkhorn2` function in the Python Optimal Transport package, this function
     returns the optimal transport cost without the regularization term. The cost
     with the regularization term can be computed by setting `regularization=true`.
-
-Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `mu` and `nu`
-as matrices whose columns `mu[:, i]` and `nu[:, i]` correspond to pairs of histograms. 
-The output in this case is a vector `c` of coupling matrices such that `c[i]` is the transport cost for `mu[:, i]` and `nu[:, i]`.
 
 See also: [`sinkhorn`](@ref)
 """
