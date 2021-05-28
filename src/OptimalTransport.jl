@@ -183,7 +183,7 @@ function sinkhorn_gibbs(
     if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
         throw(DimensionMismatch("Error: number of columns in mu and nu must coincide, if both are matrix valued"))
     end
-    sum(μ) ≈ sum(ν) ||
+    all(sum(μ; dims = 1) .≈ sum(ν; dims = 1)) ||
         throw(ArgumentError("source and target marginals must have the same mass"))
     
     # set default values of tolerances
@@ -198,7 +198,7 @@ function sinkhorn_gibbs(
     tmp1 = K * v
     tmp2 = similar(u)
     
-    norm_μ = sum(abs, μ) # for convergence check
+    norm_μ = sum(abs, μ; dims = 1) # for convergence check
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 0:maxiter
@@ -206,19 +206,19 @@ function sinkhorn_gibbs(
             # check source marginal
             # do not overwrite `tmp1` but reuse it for computing `u` if not converged
             @. tmp2 = u * tmp1
-            norm_uKv = sum(abs, tmp2)
+            norm_uKv = sum(abs, tmp2; dims = 1)
             @. tmp2 = μ - tmp2
-            norm_diff = sum(abs, tmp2)
+            norm_diff = sum(abs, tmp2; dims = 1)
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
                    "/" *
                    string(maxiter) *
                    ": absolute error of source marginal = " *
-                   string(norm_diff)
+                   string(maximum(norm_diff))
 
             # check stopping criterion
-            if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+            if all(@. norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv)))
                 @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
                 isconverged = true
                 break
@@ -284,7 +284,7 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
     K = @. exp(-C / ε)
 
     # compute dual potentials
-    u, v = sinkhorn_gibbs(mu, nu, K; kwargs...)
+    u, v = sinkhorn_gibbs(μ, ν, K; kwargs...)
     return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
 end
 
@@ -323,9 +323,9 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         plan
     end
     cost = if regularization
-        dot(γ, C) + ε * sum(LogExpFunctions.xlogx, γ)
+        dot_matwise(γ, C) + ε * reshape(sum(LogExpFunctions.xlogx, γ; dims = (1, 2)), size(γ)[3:end])
     else
-        dot(γ, C)
+        dot_matwise(γ, C)
     end
 
     return cost

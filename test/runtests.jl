@@ -131,6 +131,8 @@ end
         # compute optimal transport cost
         c = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
 
+        u, v = OptimalTransport.sinkhorn_gibbs(μ, ν, exp.(-C/eps))
+
         # with regularization term
         c_w_regularization = sinkhorn2(μ, ν, C, eps; maxiter=5_000, regularization=true)
         @test c_w_regularization ≈ c + eps * sum(x -> iszero(x) ? x : x * log(x), γ)
