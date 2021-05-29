@@ -549,10 +549,9 @@ with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length
 See also: [`sinkhorn_stabilized`](@ref), [`sinkhorn`](@ref)
 """
 function sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda=0.5, k=5, kwargs...)
-    ε_values = [ε * lambda^(k - j) for j in 1:k]
     α = zero(μ)
     β = zero(ν)
-    for ε_i in ε_values
+    for ε_i in (ε * lambda^(1 - j) for j in k:-1:1)
         @debug "Epsilon-scaling Sinkhorn algorithm: ε = $ε_i"
         α, β = sinkhorn_stabilized(
             μ, ν, C, ε_i; alpha_0=α, beta_0=β, return_duals=true, kwargs...
