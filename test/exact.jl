@@ -145,7 +145,7 @@ Random.seed!(100)
             # manually
             C = pairwise(Euclidean(), μsupport', νsupport'; dims=2)
             c2 = emd2(μprobs, νprobs, C, Tulip.Optimizer())
-            @test c2 ≈ c rtol=1e-6
+            @test c2 ≈ c rtol = 1e-6
 
             # do not use the probabilities of μ and ν to ensure that the provided plan is
             # used
