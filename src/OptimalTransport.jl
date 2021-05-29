@@ -568,12 +568,12 @@ function getK!(K, C, α, β, ε, μ, ν)
 end
 
 """
-    sinkhorn_stabilized(μ, ν, C, ε; absorb_tol = 1e3, alpha_0 = nothing, beta_0 = nothing, maxiter = 1_000, atol = tol, rtol=nothing, return_duals = false)
+    sinkhorn_stabilized(μ, ν, C, ε; absorb_tol = 1e3, alpha_0 = zero(μ), beta = zero(ν), maxiter = 1_000, atol = tol, rtol=nothing, return_duals = false)
 
 Compute the optimal transport plan for the entropically regularized optimal transport problem 
 with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic regularisation parameter `ε`. Employs the log-domain stabilized algorithm of Schmitzer et al. [^S19] 
 
-`alpha_0` and `beta_0` are initial scalings for the stabilized Gibbs kernel. If not specified, `alpha` and `beta` are initialised to zero. 
+`alpha` and `beta` are initial scalings for the stabilized Gibbs kernel. If not specified, `alpha` and `beta` are initialised to zero. 
 
 If `return_duals = true`, then the optimal dual variables `(u, v)` corresponding to `(μ, ν)` are returned. Otherwise, the coupling `γ` is returned. 
 
@@ -614,9 +614,6 @@ function sinkhorn_stabilized(
 
     K = similar(C)
     gamma = similar(C)
-
-    # alpha = (alpha_0 === nothing) ? zeros(eltype(T), size(μ)) : alpha_0
-    # beta = (beta_0 === nothing) ? zeros(eltype(T), size(ν)) : beta_0
 
     getK!(K, C, alpha, beta, ε, μ, ν)
     u = μ ./ sum(K; dims=2)

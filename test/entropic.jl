@@ -122,7 +122,9 @@ Random.seed!(100)
             # compute optimal transport map (Julia implementation + POT)
             eps = 0.001
             γ = sinkhorn_stabilized(μ, ν, C, eps; maxiter=5_000)
-            γ_pot = POT.sinkhorn(μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000)
+            γ_pot = POT.sinkhorn(
+                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
+            )
             @test γ ≈ γ_pot rtol = 1e-6
         end
 
@@ -137,7 +139,9 @@ Random.seed!(100)
             # compute optimal transport map (Julia implementation + POT)
             eps = 0.001
             γ = sinkhorn_stabilized_epsscaling(μ, ν, C, eps; k=5, maxiter=5_000)
-            γ_pot = POT.sinkhorn(μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000)
+            γ_pot = POT.sinkhorn(
+                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
+            )
             @test γ ≈ γ_pot rtol = 1e-6
         end
     end
