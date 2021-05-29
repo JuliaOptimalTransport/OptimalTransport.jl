@@ -563,7 +563,8 @@ function sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda=0.5, k=5, kwargs..
 end
 
 function getK!(K, C, α, β, ε, μ, ν)
-    return K .= (exp.(@. -(C - α - β') / ε) .* μ .* ν')
+    @. K = exp(-(C - α - β') / ε) * μ * ν'
+    return K
 end
 
 """
