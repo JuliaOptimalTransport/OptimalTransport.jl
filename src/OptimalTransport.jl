@@ -644,7 +644,7 @@ function sinkhorn_stabilized(
                    "/" *
                    string(maxiter) *
                    ": error of source marginal = " *
-                   string(err_mu)
+                   string(norm_diff)
 
             if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
                 @debug "Stabilized Sinkhorn algorithm ($iter/$maxiter): converged"
