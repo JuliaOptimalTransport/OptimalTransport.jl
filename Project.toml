@@ -20,8 +20,8 @@ Distributions = "0.25"
 IterativeSolvers = "0.8.4, 0.9"
 LogExpFunctions = "0.2"
 MathOptInterface = "0.9"
-QuadGK = "2"
 PDMats = "0.11"
+QuadGK = "2"
 julia = "1"
 
 [extras]
@@ -29,6 +29,7 @@ PythonOT = "3c485715-4278-42b2-9b5f-8f00e43c12ef"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
+HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
 
 [targets]
-test = ["Tulip", "PythonOT", "Random", "Test"]
+test = ["Tulip", "PythonOT", "Random", "Test", "HCubature"]
