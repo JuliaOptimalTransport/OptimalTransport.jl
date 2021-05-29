@@ -23,6 +23,11 @@ export ot_cost, ot_plan
 const MOI = MathOptInterface
 
 include("distances/bures.jl")
+dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
+function dot_matwise(x::AbstractArray, y::AbstractMatrix)
+    xmat = reshape(x, size(x, 1) * size(x, 2), :)
+    return reshape(reshape(y, 1, :) * xmat, size(x)[3:end])
+end
 
 """
     emd(μ, ν, C, optimizer)
@@ -141,7 +146,6 @@ and ``v`` as
 ```math
 \\gamma = \\operatorname{diag}(u) K \\operatorname{diag}(v).
 ```
-
 Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
 the iterate of the transport plan `G` satisfies
 ```julia
@@ -149,6 +153,12 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 ```
 The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
 the computation is stopped.
+
+Note that for a common kernel `K`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
+as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
+The output are then matrices `u` and `v` such that `u[:, i]` and `v[:, i]` are the dual variables for `μ[:, i]` and `ν[:, i]`.
+
+In addition, the case where one of `μ` or `ν` is a single histogram and the other a matrix of histograms is supported.
 """
 function sinkhorn_gibbs(
     μ,
@@ -173,7 +183,14 @@ function sinkhorn_gibbs(
             :sinkhorn_gibbs,
         )
     end
-    sum(μ) ≈ sum(ν) ||
+    if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
+        throw(
+            DimensionMismatch(
+                "Error: number of columns in μ and ν must coincide, if both are matrix valued",
+            ),
+        )
+    end
+    all(sum(μ; dims=1) .≈ sum(ν; dims=1)) ||
         throw(ArgumentError("source and target marginals must have the same mass"))
 
     # set default values of tolerances
@@ -182,12 +199,17 @@ function sinkhorn_gibbs(
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     # initial iteration
-    u = μ ./ sum(K; dims=2)
+    u = if isequal(size(μ, 2), size(ν, 2))
+        similar(μ)
+    else
+        repeat(similar(μ[:, 1]); outer=(1, max(size(μ, 2), size(ν, 2))))
+    end
+    u .= μ ./ vec(sum(K; dims=2))
     v = ν ./ (K' * u)
     tmp1 = K * v
     tmp2 = similar(u)
 
-    norm_μ = sum(abs, μ) # for convergence check
+    norm_μ = sum(abs, μ; dims=1) # for convergence check
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 0:maxiter
@@ -195,19 +217,19 @@ function sinkhorn_gibbs(
             # check source marginal
             # do not overwrite `tmp1` but reuse it for computing `u` if not converged
             @. tmp2 = u * tmp1
-            norm_uKv = sum(abs, tmp2)
+            norm_uKv = sum(abs, tmp2; dims=1)
             @. tmp2 = μ - tmp2
-            norm_diff = sum(abs, tmp2)
+            norm_diff = sum(abs, tmp2; dims=1)
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
                    "/" *
                    string(maxiter) *
                    ": absolute error of source marginal = " *
-                   string(norm_diff)
+                   string(maximum(norm_diff))
 
             # check stopping criterion
-            if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+            if all(@. norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv)))
                 @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
                 isconverged = true
                 break
@@ -228,6 +250,13 @@ function sinkhorn_gibbs(
     end
 
     return u, v
+end
+
+function add_singleton(x::AbstractArray, ::Val{dim}) where {dim}
+    shape = ntuple(ndims(x) + 1) do i
+        return i < dim ? size(x, i) : (i > dim ? size(x, i - 1) : 1)
+    end
+    return reshape(x, shape)
 end
 
 """
@@ -255,6 +284,11 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
 the computation is stopped.
 
+Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
+as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
+
+The output in this case is an `Array` `γ` of coupling matrices such that `γ[:, :, i]` is a coupling of `μ[:, i]` and `ν[:, i]`.
+
 See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn(μ, ν, C, ε; kwargs...)
@@ -263,8 +297,7 @@ function sinkhorn(μ, ν, C, ε; kwargs...)
 
     # compute dual potentials
     u, v = sinkhorn_gibbs(μ, ν, K; kwargs...)
-
-    return K .* u .* v'
+    return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
 end
 
 """
@@ -289,18 +322,19 @@ function sinkhorn2(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
         sinkhorn(μ, ν, C, ε; kwargs...)
     else
         # check dimensions
-        size(C) == (length(μ), length(ν)) ||
-            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(plan) == size(C) || error(
+        size(C) == (size(μ, 1), size(ν, 1)) || error(
+            "cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`",
+        )
+        (size(plan, 1), size(plan, 2)) == size(C) || error(
             "optimal transport plan `plan` and cost matrix `C` must be of the same size",
         )
         plan
     end
-
     cost = if regularization
-        dot(γ, C) + ε * sum(LogExpFunctions.xlogx, γ)
+        dot_matwise(γ, C) .+
+        ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
     else
-        dot(γ, C)
+        dot_matwise(γ, C)
     end
 
     return cost
@@ -541,166 +575,166 @@ function sinkhorn_unbalanced2(
 end
 
 """
-    sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
+    sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda = 0.5, k = 5, kwargs...)
 
-Compute optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
-Uses stabilized Sinkhorn algorithm with epsilon-scaling (Schmitzer et al., 2019). 
+Compute the optimal transport plan for the entropically regularized optimal transport problem 
+with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic regularisation parameter `ε`. Employs the log-domain stabilized algorithm of Schmitzer et al. [^S19] with ε-scaling. 
 
-`k` epsilon-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn with regularisation parameters 
-`[lambda^(1-k), ..., lambda^(-1), 1]*eps`. 
+`k` ε-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn using `sinkhorn_stabilized` with regularisation parameters  
+``ε_i \\in [λ^{1-k}, \\ldots, λ^{-1}, 1] \\times ε``.
+
+See also: [`sinkhorn_stabilized`](@ref), [`sinkhorn`](@ref)
 """
-function sinkhorn_stabilized_epsscaling(
-    mu, nu, C, eps; absorb_tol=1e3, max_iter=1000, tol=1e-9, lambda=0.5, k=5, verbose=false
-)
-    eps_values = [eps * lambda^(k - j) for j in 1:k]
-    alpha = zeros(size(mu))
-    beta = zeros(size(nu))
-    for eps in eps_values
-        if verbose
-            println(string("Warm start: eps = ", eps))
-        end
-        alpha, beta = sinkhorn_stabilized(
-            mu,
-            nu,
-            C,
-            eps;
-            absorb_tol=absorb_tol,
-            max_iter=max_iter,
-            tol=tol,
-            alpha=alpha,
-            beta=beta,
-            return_duals=true,
-            verbose=verbose,
+function sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda=0.5, k=5, kwargs...)
+    α = zero(μ)
+    β = zero(ν)
+    for ε_i in (ε * lambda^(1 - j) for j in k:-1:1)
+        @debug "Epsilon-scaling Sinkhorn algorithm: ε = $ε_i"
+        α, β = sinkhorn_stabilized(
+            μ, ν, C, ε_i; alpha=α, beta=β, return_duals=true, kwargs...
         )
     end
-    K = exp.(-(C .- alpha .- beta') / eps) .* mu .* nu'
+    gamma = similar(C)
+    getK!(gamma, C, α, β, ε, μ, ν)
+    return gamma
+end
+
+function getK!(K, C, α, β, ε, μ, ν)
+    @. K = exp(-(C - α - β') / ε) * μ * ν'
     return K
 end
 
-function getK(C, alpha, beta, eps, mu, nu)
-    return (exp.(-(C .- alpha .- beta') / eps) .* mu .* nu')
-end
-
 """
-    sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
+    sinkhorn_stabilized(μ, ν, C, ε; absorb_tol = 1e3, alpha_0 = zero(μ), beta = zero(ν), maxiter = 1_000, atol = tol, rtol=nothing, return_duals = false)
 
-Compute optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
-Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
+Compute the optimal transport plan for the entropically regularized optimal transport problem 
+with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic regularisation parameter `ε`. Employs the log-domain stabilized algorithm of Schmitzer et al. [^S19] 
+
+`alpha` and `beta` are initial scalings for the stabilized Gibbs kernel. If not specified, `alpha` and `beta` are initialised to zero. 
+
+If `return_duals = true`, then the optimal dual variables `(u, v)` corresponding to `(μ, ν)` are returned. Otherwise, the coupling `γ` is returned. 
+
+[^S19]: Schmitzer, B., 2019. Stabilized sparse scaling algorithms for entropy regularized transport problems. SIAM Journal on Scientific Computing, 41(3), pp.A1443-A1481.
+
+See also: [`sinkhorn`](@ref)
 """
 function sinkhorn_stabilized(
-    mu,
-    nu,
+    μ,
+    ν,
     C,
-    eps;
+    ε;
     absorb_tol=1e3,
-    max_iter=1000,
-    tol=1e-9,
-    alpha=zeros(size(mu)),
-    beta=zeros(size(nu)),
+    maxiter=1_000,
+    tol=nothing,
+    atol=tol,
+    rtol=nothing,
+    check_convergence=10,
+    alpha=zero(μ),
+    beta=zero(ν),
     return_duals=false,
-    verbose=false,
 )
-    u = ones(size(mu))
-    v = ones(size(nu))
-    K = getK(C, alpha, beta, eps, mu, nu)
-    i = 0
-
-    if !(sum(mu) ≈ sum(nu))
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
+    if tol !== nothing
+        Base.depwarn(
+            "keyword argument `tol` is deprecated, please use `atol` and `rtol`",
+            :sinkhorn_stabilized,
+        )
     end
+    sum(μ) ≈ sum(ν) ||
+        throw(ArgumentError("source and target marginals must have the same mass"))
 
-    while true
-        u = mu ./ (K * v .+ 1e-16)
-        v = nu ./ (K' * u .+ 1e-16)
+    T = float(Base.promote_eltype(μ, ν, C))
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
+
+    norm_μ = sum(abs, μ)
+    isconverged = false
+
+    K = similar(C)
+    gamma = similar(C)
+
+    getK!(K, C, alpha, beta, ε, μ, ν)
+    u = μ ./ sum(K; dims=2)
+    v = ν ./ (K' * u)
+    tmp_u = similar(u)
+    for iter in 0:maxiter
         if (max(norm(u, Inf), norm(v, Inf)) > absorb_tol)
-            if verbose
-                println("Absorbing (u, v) into (alpha, beta)")
-            end
+            @debug "Absorbing (u, v) into (alpha, beta)"
             # absorb into α, β
-            alpha = alpha + eps * log.(u)
-            beta = beta + eps * log.(v)
-            u = ones(size(mu))
-            v = ones(size(nu))
-            K = getK(C, alpha, beta, eps, mu, nu)
+            alpha += ε * log.(u)
+            beta += ε * log.(v)
+            u .= 1
+            v .= 1
+            getK!(K, C, alpha, beta, ε, μ, ν)
         end
-        if i % 10 == 0
+        if iter % check_convergence == 0
             # check marginal
-            gamma = getK(C, alpha, beta, eps, mu, nu) .* (u .* v')
-            err_mu = norm(gamma * ones(size(nu)) - mu, Inf)
-            err_nu = norm(gamma' * ones(size(mu)) - nu, Inf)
-            if verbose
-                println(string("Iteration ", i, ", err = ", 0.5 * (err_mu + err_nu)))
-            end
-            if 0.5 * (err_mu + err_nu) < tol
+            getK!(gamma, C, alpha, beta, ε, μ, ν)
+            @. gamma *= u * v'
+            norm_diff = sum(abs, gamma * ones(size(ν)) - μ)
+            norm_uKv = sum(abs, gamma)
+            @debug "Stabilized Sinkhorn algorithm (" *
+                   string(iter) *
+                   "/" *
+                   string(maxiter) *
+                   ": error of source marginal = " *
+                   string(norm_diff)
+
+            if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+                @debug "Stabilized Sinkhorn algorithm ($iter/$maxiter): converged"
+                isconverged = true
                 break
             end
         end
-
-        if i > max_iter
-            if verbose
-                println("Warning: exited before convergence")
-            end
-            break
-        end
-        i += 1
+        mul!(tmp_u, K, v)
+        u = μ ./ tmp_u
+        mul!(v, K', u)
+        v = ν ./ v
     end
-    alpha = alpha + eps * log.(u)
-    beta = beta + eps * log.(v)
+
+    if !isconverged
+        @warn "Stabilized Sinkhorn algorithm ($maxiter/$maxiter): not converged"
+    end
+
+    alpha = alpha + ε * log.(u)
+    beta = beta + ε * log.(v)
     if return_duals
         return alpha, beta
     end
-    return getK(C, alpha, beta, eps, mu, nu)
+    getK!(gamma, C, alpha, beta, ε, μ, ν)
+    return gamma
 end
 
 """
-    sinkhorn_barycenter(mu_all, C_all, eps, lambda_all; tol = 1e-9, check_marginal_step = 10, max_iter = 1000)
+    sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
 
-Compute the entropically regularised (i.e. Sinkhorn) barycenter for a collection of `N`
-histograms `mu_all` with respective cost matrices `C_all`, relative weights `lambda_all`,
-and entropic regularisation parameter `eps`. 
-
- - `mu_all` is taken to contain `N` histograms `mu_all[i, :]` for `math i = 1, \\ldots, N`.
- - `C_all` is taken to be a list of `N` cost matrices corresponding to the `mu_all[i, :]`.
- - `eps` is the scalar regularisation parameter.
- - `lambda_all` are positive weights.
-
-Returns the entropically regularised barycenter of the `mu_all`, i.e. the distribution that minimises
+Compute the Sinkhorn barycenter for a collection of `N` histograms contained in the columns of `μ`, for a cost matrix `C` of size `(size(μ, 1), size(μ, 1))`, relative weights `w` of size `N`, and entropic regularisation parameter `ε`. 
+Returns the entropically regularised barycenter of the `μ`, i.e. the histogram `ρ` of length `size(μ, 1)` that solves 
 
 ```math
-\\min_{\\mu \\in \\Sigma} \\sum_{i = 1}^N \\lambda_i \\mathrm{entropicOT}^{\\epsilon}_{C_i}(\\mu, \\mu_i)
+\\min_{\\rho \\in \\Sigma} \\sum_{i = 1}^N w_i \\operatorname{OT}_{\\varepsilon}(\\mu_i, \\rho)
 ```
 
-where ``\\mathrm{entropicOT}^{\\epsilon}_{C}`` denotes the entropic optimal transport cost with cost ``C`` and entropic regularisation level ``\\epsilon``.
+where ``\\operatorname{OT}_{ε}(\\mu, \\nu) = \\inf_{\\gamma \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)`` 
+is the entropic optimal transport loss with cost ``C`` and regularisation ``\\epsilon``.
 """
-function sinkhorn_barycenter(
-    mu_all, C_all, eps, lambda_all; tol=1e-9, check_marginal_step=10, max_iter=1000
-)
-    sums = sum(mu_all; dims=2)
+function sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
+    sums = sum(μ; dims=1)
     if !isapprox(extrema(sums)...)
         throw(ArgumentError("Error: marginals are unbalanced"))
     end
-    K_all = [exp.(-C_all[i] / eps) for i in 1:length(C_all)]
+    K = exp.(-C / ε)
     converged = false
-    v_all = ones(size(mu_all))
-    u_all = ones(size(mu_all))
-    N = size(mu_all, 1)
+    v = ones(size(μ))
+    u = ones(size(μ))
+    N = size(μ, 2)
     for n in 1:max_iter
-        for i in 1:N
-            v_all[i, :] = mu_all[i, :] ./ (K_all[i]' * u_all[i, :])
-        end
-        a = ones(size(u_all, 2))
-        for i in 1:N
-            a = a .* ((K_all[i] * v_all[i, :]) .^ (lambda_all[i]))
-        end
-        for i in 1:N
-            u_all[i, :] = a ./ (K_all[i] * v_all[i, :])
-        end
+        v = μ ./ (K' * u)
+        a = ones(size(u, 1))
+        a = prod((K * v)' .^ w; dims=1)'
+        u = a ./ (K * v)
         if n % check_marginal_step == 0
             # check marginal errors
-            err = maximum([
-                maximum(abs.(mu_all[i, :] .- v_all[i, :] .* (K_all[i]' * u_all[i, :]))) for
-                i in 1:N
-            ])
+            err = maximum(abs.(μ .- v .* (K' * u)))
             @debug "Sinkhorn algorithm: iteration $n" err
             if err < tol
                 converged = true
@@ -711,7 +745,7 @@ function sinkhorn_barycenter(
     if !converged
         @warn "Sinkhorn did not converge"
     end
-    return u_all[1, :] .* (K_all[1] * v_all[1, :])
+    return u[:, 1] .* (K * v[:, 1])
 end
 
 """

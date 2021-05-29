@@ -102,7 +102,7 @@ quadreg(μ, ν, C, ε; maxiter=500);
 # [log-stabilised version of the Sinkhorn algorithm](https://doi.org/10.1137/16M1106018).
 
 ε = 0.005
-γ = sinkhorn_stabilized(μ, ν, C, ε; max_iter=5000);
+γ = sinkhorn_stabilized(μ, ν, C, ε; maxiter=5_000);
 
 # Again we can check that the same result is obtained with the POT package:
 
@@ -113,7 +113,7 @@ norm(γ - γ_pot, Inf)
 #
 # In addition to log-stabilisation, we can use [$\epsilon$-scaling](https://doi.org/10.1137/16M1106018):
 
-γ = sinkhorn_stabilized_epsscaling(μ, ν, C, ε; max_iter=5_000);
+γ = sinkhorn_stabilized_epsscaling(μ, ν, C, ε; maxiter=5_000);
 
 # The POT package yields the same result:
 
@@ -206,10 +206,10 @@ heatmap(
 # the entropically regularised **barycenter** in $\mathcal{P}$ is the discrete probability
 # measure $\mu$ that solves
 # ```math
-# \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \mathrm{entropicOT}^{\epsilon}_{C_i}(\mu, \mu_i)
+# \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \operatorname{OT}_{\epsilon}(\mu, \mu_i)
 # ```
-# where $\mathrm{entropicOT}^\epsilon_{C_i}(\mu, \mu_i)$ denotes the entropically regularised
-# optimal transport cost with marginals $\mu$ and $\mu_i$, cost matrix $C_i$, and entropic
+# where $\operatorname{OT}_\epsilon(\mu, \mu_i)$ denotes the entropically regularised
+# optimal transport cost with marginals $\mu$ and $\mu_i$, cost matrix $C$, and entropic
 # regularisation parameter $\epsilon$.
 #
 # We set up two measures and compute the weighted barycenters. We choose weights
@@ -225,9 +225,8 @@ plt = plot(; size=(800, 400), legend=:outertopright)
 plot!(plt, support, mu1; label=raw"$\mu_1$")
 plot!(plt, support, mu2; label=raw"$\mu_2$")
 
-mu = hcat(mu1, mu2)'
-C1 = C2 = pairwise(SqEuclidean(), support'; dims=2)
-C = [C1, C2]
+mu = hcat(mu1, mu2)
+C = pairwise(SqEuclidean(), support'; dims=2)
 for λ1 in (0.25, 0.5, 0.75)
     λ2 = 1 - λ1
     a = sinkhorn_barycenter(mu, C, 0.01, [λ1, λ2]; max_iter=1000)
