@@ -109,19 +109,19 @@ Random.seed!(100)
             eps = 0.01
             γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000)
             γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
-            @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
+            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol = 1e-6) for i in 1:d])
 
             c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
             c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax=5_000)[1] for i in 1:d]
-            @test c_all ≈ c_pot atol = 1e-8 norm = (x -> norm(x, Inf))
+            @test c_all ≈ c_pot rtol = 1e-6
 
             γ_all = sinkhorn(μ[:, 1], ν, C, eps; maxiter=5_000)
             γ_pot = [POT.sinkhorn(μ[:, 1], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
-            @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
+            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol = 1e-6) for i in 1:d])
 
             γ_all = sinkhorn(μ, ν[:, 1], C, eps; maxiter=5_000)
             γ_pot = [POT.sinkhorn(μ[:, i], ν[:, 1], C, eps; numItermax=5_000) for i in 1:d]
-            @test maximum([norm(γ_all[:, :, i] - γ_pot[i], Inf) for i in 1:d]) < 1e-9
+            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol = 1e-6) for i in 1:d])
         end
 
         @testset "deprecations" begin
@@ -206,7 +206,7 @@ Random.seed!(100)
             μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5])
             μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5], stopThr=1e-9)
             # need to use a larger tolerance here because of a quirk with the POT solver 
-            @test norm(μ_interp - μ_interp_pot, Inf) < 1e-9
+            @test μ_interp ≈ μ_interp_pot rtol = 1e-6
         end
     end
 end
