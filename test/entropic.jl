@@ -90,7 +90,9 @@ Random.seed!(100)
                 POT.sinkhorn(μ[:, i], vec(ν), C, eps; numItermax=5_000, stopThr=1e-6) for
                 i in 1:d
             ]
-            @test all([isapprox(Float32.(γ_pot[i]), γ_all[:, :, i]; rtol=1e-3) for i in 1:d])
+            @test all([
+                isapprox(Float32.(γ_pot[i]), γ_all[:, :, i]; rtol=1e-3) for i in 1:d
+            ])
             @test eltype(γ_all) == Float32
         end
 
@@ -109,19 +111,21 @@ Random.seed!(100)
             eps = 0.01
             γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000)
             γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
-            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol = 1e-6) for i in 1:d])
+            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol=1e-6) for i in 1:d])
 
             c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
-            c_pot = [POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax=5_000)[1] for i in 1:d]
+            c_pot = [
+                POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax=5_000)[1] for i in 1:d
+            ]
             @test c_all ≈ c_pot rtol = 1e-6
 
             γ_all = sinkhorn(μ[:, 1], ν, C, eps; maxiter=5_000)
             γ_pot = [POT.sinkhorn(μ[:, 1], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
-            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol = 1e-6) for i in 1:d])
+            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol=1e-6) for i in 1:d])
 
             γ_all = sinkhorn(μ, ν[:, 1], C, eps; maxiter=5_000)
             γ_pot = [POT.sinkhorn(μ[:, i], ν[:, 1], C, eps; numItermax=5_000) for i in 1:d]
-            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol = 1e-6) for i in 1:d])
+            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol=1e-6) for i in 1:d])
         end
 
         @testset "deprecations" begin
