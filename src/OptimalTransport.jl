@@ -928,7 +928,7 @@ function ot_cost(
     return sqeuclidean(μ.μ, ν.μ) + sqbures(μ.Σ, ν.Σ)
 end
 
-
+# Same structure as the one used on bures.jl
 function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
     sqrt_A = sqrt(A)
     return sqrt_A * B * sqrt_A
