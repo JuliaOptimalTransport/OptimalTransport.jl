@@ -554,11 +554,11 @@ function sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda=0.5, k=5, kwargs..
     for ε_i in (ε * lambda^(1 - j) for j in k:-1:1)
         @debug "Epsilon-scaling Sinkhorn algorithm: ε = $ε_i"
         α, β = sinkhorn_stabilized(
-            μ, ν, C, ε_i; alpha_0=α, beta_0=β, return_duals=true, kwargs...
+            μ, ν, C, ε_i; alpha=α, beta=β, return_duals=true, kwargs...
         )
     end
     gamma = similar(C)
-    getK!(gamma, C, α, β, ε_values[end], μ, ν)
+    getK!(gamma, C, α, β, ε, μ, ν)
     return gamma
 end
 
@@ -590,9 +590,9 @@ function sinkhorn_stabilized(
     tol=nothing,
     atol=tol,
     rtol=nothing,
-    check_convergence=nothing,
-    alpha_0=nothing,
-    beta_0=nothing,
+    check_convergence=10,
+    alpha=zero(μ),
+    beta=zero(ν),
     return_duals=false,
 )
     if tol !== nothing
@@ -610,13 +610,12 @@ function sinkhorn_stabilized(
 
     norm_μ = sum(abs, μ)
     isconverged = false
-    check_step = check_convergence === nothing ? 10 : check_convergence
 
     K = similar(C)
     gamma = similar(C)
 
-    alpha = (alpha_0 === nothing) ? zeros(eltype(T), size(μ)) : alpha_0
-    beta = (beta_0 === nothing) ? zeros(eltype(T), size(ν)) : beta_0
+    # alpha = (alpha_0 === nothing) ? zeros(eltype(T), size(μ)) : alpha_0
+    # beta = (beta_0 === nothing) ? zeros(eltype(T), size(ν)) : beta_0
 
     getK!(K, C, alpha, beta, ε, μ, ν)
     u = μ ./ sum(K; dims=2)
@@ -632,7 +631,7 @@ function sinkhorn_stabilized(
             v .= 1
             getK!(K, C, alpha, beta, ε, μ, ν)
         end
-        if iter % check_step == 0
+        if iter % check_convergence == 0
             # check marginal
             getK!(gamma, C, alpha, beta, ε, μ, ν)
             @. gamma *= u * v'
