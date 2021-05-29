@@ -102,7 +102,7 @@ quadreg(μ, ν, C, ε; maxiter=500);
 # [log-stabilised version of the Sinkhorn algorithm](https://doi.org/10.1137/16M1106018).
 
 ε = 0.005
-γ = sinkhorn_stabilized(μ, ν, C, ε; max_iter=5000);
+γ = sinkhorn_stabilized(μ, ν, C, ε; maxiter=5_000);
 
 # Again we can check that the same result is obtained with the POT package:
 
@@ -113,7 +113,7 @@ norm(γ - γ_pot, Inf)
 #
 # In addition to log-stabilisation, we can use [$\epsilon$-scaling](https://doi.org/10.1137/16M1106018):
 
-γ = sinkhorn_stabilized_epsscaling(μ, ν, C, ε; max_iter=5_000);
+γ = sinkhorn_stabilized_epsscaling(μ, ν, C, ε; maxiter=5_000);
 
 # The POT package yields the same result:
 

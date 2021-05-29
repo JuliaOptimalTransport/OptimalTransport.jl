@@ -107,22 +107,43 @@ Random.seed!(100)
         end
     end
 
-    @testset "sinkhorn_stabilized" begin
+    @testset "stabilized sinkhorn" begin
         M = 250
         N = 200
 
-        # create two uniform histograms
-        μ = fill(1 / M, M)
-        ν = fill(1 / N, N)
+        @testset "example" begin
+            # create two uniform histograms
+            μ = fill(1 / M, M)
+            ν = fill(1 / N, N)
 
-        # create random cost matrix
-        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+            # create random cost matrix
+            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
-        # compute optimal transport map (Julia implementation + POT)
-        eps = 0.01
-        γ = sinkhorn_stabilized(μ, ν, C, eps)
-        γ_pot = POT.sinkhorn(μ, ν, C, eps; method="sinkhorn_stabilized")
-        @test γ ≈ γ_pot rtol = 1e-6
+            # compute optimal transport map (Julia implementation + POT)
+            eps = 0.001
+            γ = sinkhorn_stabilized(μ, ν, C, eps; maxiter=5_000)
+            γ_pot = POT.sinkhorn(
+                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
+            )
+            @test γ ≈ γ_pot rtol = 1e-6
+        end
+
+        @testset "epsilon scaling" begin
+            # create two uniform histograms
+            μ = fill(1 / M, M)
+            ν = fill(1 / N, N)
+
+            # create random cost matrix
+            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+
+            # compute optimal transport map (Julia implementation + POT)
+            eps = 0.001
+            γ = sinkhorn_stabilized_epsscaling(μ, ν, C, eps; k=5, maxiter=5_000)
+            γ_pot = POT.sinkhorn(
+                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
+            )
+            @test γ ≈ γ_pot rtol = 1e-6
+        end
     end
 
     @testset "sinkhorn_barycenter" begin

@@ -538,115 +538,133 @@ function sinkhorn_unbalanced2(
 end
 
 """
-    sinkhorn_stabilized_epsscaling(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, lambda = 0.5, k = 5, verbose = false)
+    sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda = 0.5, k = 5, kwargs...)
 
-Compute optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
-Uses stabilized Sinkhorn algorithm with epsilon-scaling (Schmitzer et al., 2019). 
+Compute the optimal transport plan for the entropically regularized optimal transport problem 
+with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic regularisation parameter `ε`. Employs the log-domain stabilized algorithm of Schmitzer et al. [^S19] with ε-scaling. 
 
-`k` epsilon-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn with regularisation parameters 
-`[lambda^(1-k), ..., lambda^(-1), 1]*eps`. 
+`k` ε-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn using `sinkhorn_stabilized` with regularisation parameters  
+``ε_i \\in [λ^{1-k}, \\ldots, λ^{-1}, 1] \\times ε``.
+
+See also: [`sinkhorn_stabilized`](@ref), [`sinkhorn`](@ref)
 """
-function sinkhorn_stabilized_epsscaling(
-    mu, nu, C, eps; absorb_tol=1e3, max_iter=1000, tol=1e-9, lambda=0.5, k=5, verbose=false
-)
-    eps_values = [eps * lambda^(k - j) for j in 1:k]
-    alpha = zeros(size(mu))
-    beta = zeros(size(nu))
-    for eps in eps_values
-        if verbose
-            println(string("Warm start: eps = ", eps))
-        end
-        alpha, beta = sinkhorn_stabilized(
-            mu,
-            nu,
-            C,
-            eps;
-            absorb_tol=absorb_tol,
-            max_iter=max_iter,
-            tol=tol,
-            alpha=alpha,
-            beta=beta,
-            return_duals=true,
-            verbose=verbose,
+function sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda=0.5, k=5, kwargs...)
+    α = zero(μ)
+    β = zero(ν)
+    for ε_i in (ε * lambda^(1 - j) for j in k:-1:1)
+        @debug "Epsilon-scaling Sinkhorn algorithm: ε = $ε_i"
+        α, β = sinkhorn_stabilized(
+            μ, ν, C, ε_i; alpha=α, beta=β, return_duals=true, kwargs...
         )
     end
-    K = exp.(-(C .- alpha .- beta') / eps) .* mu .* nu'
+    gamma = similar(C)
+    getK!(gamma, C, α, β, ε, μ, ν)
+    return gamma
+end
+
+function getK!(K, C, α, β, ε, μ, ν)
+    @. K = exp(-(C - α - β') / ε) * μ * ν'
     return K
 end
 
-function getK(C, alpha, beta, eps, mu, nu)
-    return (exp.(-(C .- alpha .- beta') / eps) .* mu .* nu')
-end
-
 """
-    sinkhorn_stabilized(mu, nu, C, eps; absorb_tol = 1e3, max_iter = 1000, tol = 1e-9, alpha = nothing, beta = nothing, return_duals = false, verbose = false)
+    sinkhorn_stabilized(μ, ν, C, ε; absorb_tol = 1e3, alpha_0 = zero(μ), beta = zero(ν), maxiter = 1_000, atol = tol, rtol=nothing, return_duals = false)
 
-Compute optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and entropic regularisation parameter `eps`. 
-Uses stabilized Sinkhorn algorithm (Schmitzer et al., 2019).
+Compute the optimal transport plan for the entropically regularized optimal transport problem 
+with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic regularisation parameter `ε`. Employs the log-domain stabilized algorithm of Schmitzer et al. [^S19] 
+
+`alpha` and `beta` are initial scalings for the stabilized Gibbs kernel. If not specified, `alpha` and `beta` are initialised to zero. 
+
+If `return_duals = true`, then the optimal dual variables `(u, v)` corresponding to `(μ, ν)` are returned. Otherwise, the coupling `γ` is returned. 
+
+[^S19]: Schmitzer, B., 2019. Stabilized sparse scaling algorithms for entropy regularized transport problems. SIAM Journal on Scientific Computing, 41(3), pp.A1443-A1481.
+
+See also: [`sinkhorn`](@ref)
 """
 function sinkhorn_stabilized(
-    mu,
-    nu,
+    μ,
+    ν,
     C,
-    eps;
+    ε;
     absorb_tol=1e3,
-    max_iter=1000,
-    tol=1e-9,
-    alpha=zeros(size(mu)),
-    beta=zeros(size(nu)),
+    maxiter=1_000,
+    tol=nothing,
+    atol=tol,
+    rtol=nothing,
+    check_convergence=10,
+    alpha=zero(μ),
+    beta=zero(ν),
     return_duals=false,
-    verbose=false,
 )
-    u = ones(size(mu))
-    v = ones(size(nu))
-    K = getK(C, alpha, beta, eps, mu, nu)
-    i = 0
-
-    if !(sum(mu) ≈ sum(nu))
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
+    if tol !== nothing
+        Base.depwarn(
+            "keyword argument `tol` is deprecated, please use `atol` and `rtol`",
+            :sinkhorn_stabilized,
+        )
     end
+    sum(μ) ≈ sum(ν) ||
+        throw(ArgumentError("source and target marginals must have the same mass"))
 
-    while true
-        u = mu ./ (K * v .+ 1e-16)
-        v = nu ./ (K' * u .+ 1e-16)
+    T = float(Base.promote_eltype(μ, ν, C))
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
+
+    norm_μ = sum(abs, μ)
+    isconverged = false
+
+    K = similar(C)
+    gamma = similar(C)
+
+    getK!(K, C, alpha, beta, ε, μ, ν)
+    u = μ ./ sum(K; dims=2)
+    v = ν ./ (K' * u)
+    tmp_u = similar(u)
+    for iter in 0:maxiter
         if (max(norm(u, Inf), norm(v, Inf)) > absorb_tol)
-            if verbose
-                println("Absorbing (u, v) into (alpha, beta)")
-            end
+            @debug "Absorbing (u, v) into (alpha, beta)"
             # absorb into α, β
-            alpha = alpha + eps * log.(u)
-            beta = beta + eps * log.(v)
-            u = ones(size(mu))
-            v = ones(size(nu))
-            K = getK(C, alpha, beta, eps, mu, nu)
+            alpha += ε * log.(u)
+            beta += ε * log.(v)
+            u .= 1
+            v .= 1
+            getK!(K, C, alpha, beta, ε, μ, ν)
         end
-        if i % 10 == 0
+        if iter % check_convergence == 0
             # check marginal
-            gamma = getK(C, alpha, beta, eps, mu, nu) .* (u .* v')
-            err_mu = norm(gamma * ones(size(nu)) - mu, Inf)
-            err_nu = norm(gamma' * ones(size(mu)) - nu, Inf)
-            if verbose
-                println(string("Iteration ", i, ", err = ", 0.5 * (err_mu + err_nu)))
-            end
-            if 0.5 * (err_mu + err_nu) < tol
+            getK!(gamma, C, alpha, beta, ε, μ, ν)
+            @. gamma *= u * v'
+            norm_diff = sum(abs, gamma * ones(size(ν)) - μ)
+            norm_uKv = sum(abs, gamma)
+            @debug "Stabilized Sinkhorn algorithm (" *
+                   string(iter) *
+                   "/" *
+                   string(maxiter) *
+                   ": error of source marginal = " *
+                   string(norm_diff)
+
+            if norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+                @debug "Stabilized Sinkhorn algorithm ($iter/$maxiter): converged"
+                isconverged = true
                 break
             end
         end
-
-        if i > max_iter
-            if verbose
-                println("Warning: exited before convergence")
-            end
-            break
-        end
-        i += 1
+        mul!(tmp_u, K, v)
+        u = μ ./ tmp_u
+        mul!(v, K', u)
+        v = ν ./ v
     end
-    alpha = alpha + eps * log.(u)
-    beta = beta + eps * log.(v)
+
+    if !isconverged
+        @warn "Stabilized Sinkhorn algorithm ($maxiter/$maxiter): not converged"
+    end
+
+    alpha = alpha + ε * log.(u)
+    beta = beta + ε * log.(v)
     if return_duals
         return alpha, beta
     end
-    return getK(C, alpha, beta, eps, mu, nu)
+    getK!(gamma, C, alpha, beta, ε, μ, ν)
+    return gamma
 end
 
 """
