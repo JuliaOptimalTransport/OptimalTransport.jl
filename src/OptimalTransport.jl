@@ -907,11 +907,20 @@ end
 
 """
     ot_cost(c,mu::MvNormal,nu::MvNormal; plan=nothing)
-Compute the optimal transport cost between μ to ν, where
-both are Normal or Multivariate Normal distributions and the cost
-function ``c(x,y) = (||x-y||)^2``
+Compute the square 2-Wasserstein distance between multivariate Gaussian
+distributions `μ \\sim MvnGaussian(m_\\mu, \\Sigma_\\mu)` and
+`ν \\sim MvnGaussian(m_\\mu, \\Sigma_\\mu)` as source and target marginal.
 
-Return optimal transport cost.
+In this setting, the optimal transport cost can be computed as
+```math
+W_2^2(\\mu,\\nu) = 
+||m_\\mu - m_\\nu||^2 + \\mathcal{B}(\\Sigma_\\mu, \\Sigma_\\nu)^2,
+```
+where ``\\mathcal{B}`` is the Bures metric.
+
+A pre-computed optimal transport `plan` may be provided.
+
+See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
 function ot_cost(
     c::SqEuclidean, μ::MvNormal, ν::MvNormal; plan=nothing
@@ -920,19 +929,6 @@ function ot_cost(
 end
 
 
-"""
-    _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
-Compute
-```math
-\\Sigma_\\mu^{-1/2}
-(
-\\Sigma_\\mu^{1/2}
-\\Sigma_\\nu
-\\Sigma_\\mu^{1/2}
-)
-\\Sigma_\\mu^{-1/2}
-```
-"""
 function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
     sqrt_A = sqrt(A)
     return sqrt_A * B * sqrt_A
