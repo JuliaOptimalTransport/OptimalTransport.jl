@@ -544,11 +544,10 @@ Compute the optimal transport plan for the entropically regularized optimal tran
 with source and target marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic regularisation parameter `ε`. Employs the log-domain stabilized algorithm of Schmitzer et al. [^S19] with ε-scaling. 
 
 `k` ε-scaling steps are used with scaling factor `lambda`, i.e. sequentially solve Sinkhorn using `sinkhorn_stabilized` with regularisation parameters  
-``ε_i \\in [λ^{1-k}, \\ldots, λ^{-1}, 1]*ε``.
+``ε_i \\in [λ^{1-k}, \\ldots, λ^{-1}, 1] \\times ε``.
 
 See also: [`sinkhorn_stabilized`](@ref), [`sinkhorn`](@ref)
 """
-
 function sinkhorn_stabilized_epsscaling(μ, ν, C, ε; lambda=0.5, k=5, kwargs...)
     ε_values = [ε * lambda^(k - j) for j in 1:k]
     α = zero(μ)
