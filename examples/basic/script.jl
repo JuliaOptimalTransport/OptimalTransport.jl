@@ -206,10 +206,10 @@ heatmap(
 # the entropically regularised **barycenter** in $\mathcal{P}$ is the discrete probability
 # measure $\mu$ that solves
 # ```math
-# \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \mathrm{entropicOT}^{\epsilon}_{C_i}(\mu, \mu_i)
+# \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \operatorname{OT}_{\epsilon}(\mu, \mu_i)
 # ```
-# where $\mathrm{entropicOT}^\epsilon_{C_i}(\mu, \mu_i)$ denotes the entropically regularised
-# optimal transport cost with marginals $\mu$ and $\mu_i$, cost matrix $C_i$, and entropic
+# where $\operatorname{OT}_\epsilon(\mu, \mu_i)$ denotes the entropically regularised
+# optimal transport cost with marginals $\mu$ and $\mu_i$, cost matrix $C$, and entropic
 # regularisation parameter $\epsilon$.
 #
 # We set up two measures and compute the weighted barycenters. We choose weights
@@ -225,9 +225,8 @@ plt = plot(; size=(800, 400), legend=:outertopright)
 plot!(plt, support, mu1; label=raw"$\mu_1$")
 plot!(plt, support, mu2; label=raw"$\mu_2$")
 
-mu = hcat(mu1, mu2)'
-C1 = C2 = pairwise(SqEuclidean(), support'; dims=2)
-C = [C1, C2]
+mu = hcat(mu1, mu2)
+C = pairwise(SqEuclidean(), support'; dims=2)
 for λ1 in (0.25, 0.5, 0.75)
     λ2 = 1 - λ1
     a = sinkhorn_barycenter(mu, C, 0.01, [λ1, λ2]; max_iter=1000)
