@@ -922,9 +922,7 @@ A pre-computed optimal transport `plan` may be provided.
 
 See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
-function ot_cost(
-    c::SqEuclidean, μ::MvNormal, ν::MvNormal; plan=nothing
-)
+function ot_cost(c::SqEuclidean, μ::MvNormal, ν::MvNormal; plan=nothing)
     return sqeuclidean(μ.μ, ν.μ) + sqbures(μ.Σ, ν.Σ)
 end
 
@@ -943,7 +941,6 @@ _gaussian_ot_A(A::PDMats.PDMat, B::PDMats.PDMat) = _gaussian_ot_A(A.mat, B)
 _gaussian_ot_A(A::AbstractMatrix, B::PDMats.PDiagMat) = _gaussian_ot_A(B, A)
 _gaussian_ot_A(A::PDMats.PDMat, B::StridedMatrix) = _gaussian_ot_A(B, A)
 
-
 """
     ot_plan(c,mu::MvNormal,nu::MvNormal; plan=nothing)
 Compute the optimal transport plan between μ to ν, where
@@ -952,13 +949,10 @@ function ``c(x,y) = (||x-y||)^2``
 
 Return optimal transport plan.
 """
-function ot_plan(
-    c::SqEuclidean, μ::MvNormal, ν::MvNormal
-)
-    Σμsqrt = μ.Σ^(-1/2)
-    T(x)   = ν.μ + (Σμsqrt*sqrt(_gaussian_ot_A(μ.Σ,ν.Σ))*Σμsqrt)*(x - μ.μ)
+function ot_plan(c::SqEuclidean, μ::MvNormal, ν::MvNormal)
+    Σμsqrt = μ.Σ^(-1 / 2)
+    T(x) = ν.μ + (Σμsqrt * sqrt(_gaussian_ot_A(μ.Σ, ν.Σ)) * Σμsqrt) * (x - μ.μ)
     return T
 end
-
 
 end
