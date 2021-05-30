@@ -702,8 +702,9 @@ function sinkhorn_stabilized(
     return gamma
 end
 
+
 """
-    sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
+    sinkhorn_barycenter(μ, C, ε, w; atol = 0, rtol = atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000)
 
 Compute the Sinkhorn barycenter for a collection of `N` histograms contained in the columns of `μ`, for a cost matrix `C` of size `(size(μ, 1), size(μ, 1))`, relative weights `w` of size `N`, and entropic regularisation parameter `ε`. 
 Returns the entropically regularised barycenter of the `μ`, i.e. the histogram `ρ` of length `size(μ, 1)` that solves 
@@ -715,7 +716,7 @@ Returns the entropically regularised barycenter of the `μ`, i.e. the histogram 
 where ``\\operatorname{OT}_{ε}(\\mu, \\nu) = \\inf_{\\gamma \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)`` 
 is the entropic optimal transport loss with cost ``C`` and regularisation ``\\epsilon``.
 """
-function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothing, check_marginal_step=nothing, check_convergence = check_marginal_step, max_iter=nothing, maxiter = nothing)
+function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothing, check_marginal_step=nothing, check_convergence = 10, max_iter=nothing, maxiter = 1_000)
     if tol !== nothing
         Base.depwarn("keyword argument `tol` is deprecated, please use `atol` and `rtol`", 
                      :sinkhorn_barycenter)
@@ -728,8 +729,7 @@ function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothi
         Base.depwarn("keyword argument `max_iter` is deprecated, please use `maxiter`", 
                      :sinkhorn_barycenter)
     end
-    sums = sum(μ; dims=1)
-    if !isapprox(extrema(sums)...)
+    if !isapprox(extrema(sum(μ; dims = 1))...)
         throw(ArgumentError("Error: input marginals must have the same mass"))
     end
 
@@ -738,28 +738,42 @@ function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothi
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
     K = exp.(-C / ε)
-    converged = false
-    v = similar(μ)
-    u = similar(μ)
-    fill!(u, one(eltype(u)))
+    v = similar(μ, T)
+    u = similar(μ, T)
+    fill!(u, one(T))
+    a = similar(u, T, size(u, 1), 1)
+    tmp = similar(u)
     N = size(μ, 2)
-    for n in 1:max_iter
-        v = μ ./ (K' * u)
-        a = ones(size(u, 1))
-        a = prod((K * v)' .^ w; dims=1)'
-        u = a ./ (K * v)
-        if n % check_marginal_step == 0
+    # norm of inputs for convergence check
+    norm_μ = sum(abs, μ; dims = 1)
+    isconverged = false
+    for iter in 1:maxiter
+        mul!(tmp, K', u)
+        @. v = μ / tmp 
+        mul!(tmp, K, v)
+        a .= prod(tmp' .^ w; dims=1)'
+        @. u = a / tmp 
+        if iter % check_convergence == 0
             # check marginal errors
-            err = maximum(abs.(μ .- v .* (K' * u)))
-            @debug "Sinkhorn algorithm: iteration $n" err
-            if err < tol
-                converged = true
+            mul!(tmp, K', u)
+            norm_diff = sum(abs, @. μ - v * tmp; dims = 1)
+            mul!(tmp, K, v)
+            norm_uKv = sum(abs, @. u * tmp; dims = 1)
+            @debug "Sinkhorn barycenter algorithm (" * 
+                    string(iter) * 
+                    "/" * 
+                    string(maxiter) * 
+                    ": absolute error of source marginal = " * 
+                    string(maximum(norm_diff))
+            if all(@. norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv)))
+                @debug "Sinkhorn barycenter algorithm ($iter/$maxiter): converged"
+                isconverged = true
                 break
             end
         end
     end
-    if !converged
-        @warn "Sinkhorn did not converge"
+    if !isconverged
+        @warn "Sinkhorn barycenter algorithm ($maxiter/$maxiter): not converged"
     end
     return u[:, 1] .* (K * v[:, 1])
 end
