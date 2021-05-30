@@ -29,25 +29,6 @@ dot_matwise(x::AbstractMatrix, y::AbstractArray) = dot_matwise(y, x)
 
 Check if arrays `x` and `y` are compatible, then return a tuple of its broadcasted second
 dimension.
-
-# Examples
-
-```jldoctest
-julia> x = rand(5); y = rand(10);
-
-julia> OptimalTransport.checksize2(x, y)
-()
-
-julia> x = rand(5); y = rand(10, 4);
-
-julia> OptimalTransport.checksize2(x, y)
-(4,)
-
-julia> x = rand(5, 4); y = rand(10, 1);
-
-julia> OptimalTransport.checksize2(x, y)
-(4,)
-```
 """
 checksize2(::AbstractVector, ::AbstractVector) = ()
 function checksize2(μ::AbstractVecOrMat, ν::AbstractVecOrMat)
@@ -65,12 +46,11 @@ end
 Check that source and target marginals `μ` and `ν` are balanced.
 """
 function checkbalanced(μ::AbstractVector, ν::AbstractVector)
-    sum(μ) ≈ sum(ν) ||
-        throw(ArgumentError("source and target marginals are not balanced"))
+    sum(μ) ≈ sum(ν) || throw(ArgumentError("source and target marginals are not balanced"))
     return nothing
 end
 function checkbalanced(x::AbstractVecOrMat, y::AbstractVecOrMat)
-    all(isapprox.(sum(x; dims=1), sum(y; dims=2))) ||
+    all(isapprox.(sum(x; dims=1), sum(y; dims=1))) ||
         throw(ArgumentError("source and target marginals are not balanced"))
     return nothing
 end

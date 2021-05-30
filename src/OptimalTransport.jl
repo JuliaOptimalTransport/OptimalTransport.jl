@@ -191,11 +191,19 @@ function sinkhorn_gibbs(
     u = similar(μ, T, size(μ, 1), size2...)
     v = similar(ν, T, size(ν, 1), size2...)
     fill!(v, one(T))
-    Kv = similar(u)
-    mul!(Kv, K, v)
 
-    norm_μ = sum(abs, μ; dims=1) # for convergence check
+    # for convergence check
+    Kv = similar(u)
     tmp = similar(u)
+    norm_μ = μ isa AbstractVector ? sum(abs, μ) : sum(abs, μ; dims=1)
+    if u isa AbstractMatrix
+        tmp2 = similar(u)
+        norm_uKv = similar(u, 1, size2...)
+        norm_diff = similar(u, 1, size2...)
+        _isconverged = similar(u, Bool, 1, size2...)
+    end
+
+    mul!(Kv, K, v)
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
     for iter in 1:maxiter
@@ -210,9 +218,18 @@ function sinkhorn_gibbs(
             # check source marginal
             # do not overwrite `Kv` but reuse it for computing `u` if not converged
             tmp .= u .* Kv
-            norm_uKv = sum(abs, tmp; dims=1)
-            tmp .= μ .- tmp
-            norm_diff = sum(abs, tmp; dims=1)
+            if u isa AbstractMatrix
+                tmp2 .= abs.(tmp)
+                sum!(norm_uKv, tmp2)
+            else
+                norm_uKv = sum(abs, tmp)
+            end
+            tmp .= abs.(μ .- tmp)
+            if u isa AbstractMatrix
+                sum!(norm_diff, tmp)
+            else
+                norm_diff = sum(tmp)
+            end
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
@@ -222,9 +239,14 @@ function sinkhorn_gibbs(
                    string(maximum(norm_diff))
 
             # check stopping criterion
-            if all(@. norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv)))
+            isconverged = if u isa AbstractMatrix
+                @. _isconverged = norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+                all(_isconverged)
+            else
+                norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+            end
+            if isconverged
                 @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
-                isconverged = true
                 break
             end
         elseif iter < maxiter
