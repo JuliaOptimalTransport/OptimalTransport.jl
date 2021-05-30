@@ -61,7 +61,7 @@ Random.seed!(100)
 
                 # compute optimal transport cost and check that it is consistent with the
                 # cost for individual histograms
-                c_all = sinkhorn2(μ_batch, ν_batch, cu_C, ε; maxiter=5_000, rtol=1e-9)
+                c_all = sinkhorn2(μ_batch, ν_batch, cu_C, ε)
                 @test c_all isa CuArray{Float32,1}
                 @test size(c_all) == (d,)
                 @test all(ci ≈ c for ci in convert(Array, c_all))
