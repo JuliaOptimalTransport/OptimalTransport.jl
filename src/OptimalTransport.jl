@@ -192,8 +192,9 @@ function sinkhorn_gibbs(
     v = similar(ν, T, size(ν, 1), size2...)
     fill!(v, one(T))
 
-    # for convergence check
+    # arrays for convergence check
     Kv = similar(u)
+    mul!(Kv, K, v)
     tmp = similar(u)
     norm_μ = μ isa AbstractVector ? sum(abs, μ) : sum(abs, μ; dims=1)
     if u isa AbstractMatrix
@@ -203,19 +204,25 @@ function sinkhorn_gibbs(
         _isconverged = similar(u, Bool, 1, size2...)
     end
 
-    mul!(Kv, K, v)
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
+    to_check_step = check_step
     for iter in 1:maxiter
+        # reduce counter
+        to_check_step -= 1
+
         # compute next iterate
         u .= μ ./ Kv
         mul!(v, K', u)
         v .= ν ./ v
+        mul!(Kv, K, v)
 
-        if iter % check_step == 0
-            mul!(Kv, K, v)
+        # check source marginal
+        # always check convergence after the final iteration
+        if to_check_step <= 0 || iter == maxiter
+            # reset counter
+            to_check_step = check_step
 
-            # check source marginal
             # do not overwrite `Kv` but reuse it for computing `u` if not converged
             tmp .= u .* Kv
             if u isa AbstractMatrix
@@ -249,9 +256,6 @@ function sinkhorn_gibbs(
                 @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
                 break
             end
-        elseif iter < maxiter
-            # not required in the final iteration
-            mul!(Kv, K, v)
         end
     end
 
