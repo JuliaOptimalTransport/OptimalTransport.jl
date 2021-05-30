@@ -1,6 +1,10 @@
 using OptimalTransport
 
 using LinearAlgebra
+using Random
+using Test
+
+Random.seed!(100)
 
 @testset "utils.jl" begin
     @testset "add_singleton" begin
@@ -34,7 +38,7 @@ using LinearAlgebra
         @test OptimalTransport.dot_matwise(x, y) == dot(x, y)
 
         y = rand(l, m, n)
-        @test OptimalTransport.dot_matwise(x, y) ==
+        @test OptimalTransport.dot_matwise(x, y) ≈
               mapreduce(vcat, (view(y, :, :, i) for i in axes(y, 3))) do yi
             dot(x, yi)
         end
