@@ -715,15 +715,33 @@ Returns the entropically regularised barycenter of the `μ`, i.e. the histogram 
 where ``\\operatorname{OT}_{ε}(\\mu, \\nu) = \\inf_{\\gamma \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)`` 
 is the entropic optimal transport loss with cost ``C`` and regularisation ``\\epsilon``.
 """
-function sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
+function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothing, check_marginal_step=nothing, check_convergence = check_marginal_step, max_iter=nothing, maxiter = nothing)
+    if tol !== nothing
+        Base.depwarn("keyword argument `tol` is deprecated, please use `atol` and `rtol`", 
+                     :sinkhorn_barycenter)
+    end
+    if check_marginal_step !== nothing
+        Base.depwarn("keyword argument `check_marginal_step` is deprecated, please use `check_convergence`", 
+                     :sinkhorn_barycenter)
+    end
+    if max_iter !== nothing
+        Base.depwarn("keyword argument `max_iter` is deprecated, please use `maxiter`", 
+                     :sinkhorn_barycenter)
+    end
     sums = sum(μ; dims=1)
     if !isapprox(extrema(sums)...)
-        throw(ArgumentError("Error: marginals are unbalanced"))
+        throw(ArgumentError("Error: input marginals must have the same mass"))
     end
+
+    T = float(Base.promote_eltype(μ, C))
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
+
     K = exp.(-C / ε)
     converged = false
-    v = ones(size(μ))
-    u = ones(size(μ))
+    v = similar(μ)
+    u = similar(μ)
+    fill!(u, one(eltype(u)))
     N = size(μ, 2)
     for n in 1:max_iter
         v = μ ./ (K' * u)
