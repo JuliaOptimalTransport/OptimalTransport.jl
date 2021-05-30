@@ -37,6 +37,27 @@ Random.seed!(100)
             # compare with results on the CPU
             @test γ ≈ cu(sinkhorn(μ, ν, C, ε))
             @test c ≈ cu(sinkhorn2(μ, ν, C, ε))
+
+            # batches of histograms
+            d = 10
+            for (size2_μ, size2_ν) in
+                (((), (d,)), ((1,), (d,)), ((d,), ()), ((d,), (1,)), ((d,), (d,)))
+                # generate uniform histograms
+                μ_batch = repeat(μ, 1, size2_μ...)
+                ν_batch = repeat(ν, 1, size2_ν...)
+
+                # compute optimal transport plan and check that it is consistent with the
+                # plan for individual histograms
+                γ_all = sinkhorn(μ_batch, ν_batch, C, ε)
+                @test size(γ_all) == (m, n, d)
+                @test all(isapprox.(γ_all, γ))
+
+                # compute optimal transport cost and check that it is consistent with the
+                # cost for individual histograms
+                c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
+                @test size(c_all) == (d,)
+                @test all(isapprox.(c_all, c))
+            end
         end
 
         @testset "sinkhorn_unbalanced" begin
