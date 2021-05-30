@@ -1,6 +1,8 @@
 using OptimalTransport
 
 using Distances
+using ForwardDiff
+using LogExpFunctions
 using PythonOT: PythonOT
 
 using Random
@@ -122,6 +124,29 @@ Random.seed!(100)
                 @test eltype(c_all) === Float32
                 @test size(c_all) == (d,)
                 @test all(x ≈ c for x in c_all)
+            end
+        end
+
+        # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/86
+        @testset "AD" begin
+            # uniform histograms with random cost matrix
+            μ = fill(1 / M, M)
+            ν = fill(1 / N, N)
+            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+
+            # compute gradients with respect to source and target marginals separately and
+            # together
+            ε = 0.01
+            ForwardDiff.gradient(zeros(N)) do xs
+                sinkhorn2(μ, softmax(xs), C, ε; regularization=true)
+            end
+            ForwardDiff.gradient(zeros(M)) do xs
+                sinkhorn2(softmax(xs), ν, C, ε; regularization=true)
+            end
+            ForwardDiff.gradient(zeros(M + N)) do xs
+                sinkhorn2(
+                    softmax(xs[1:M]), softmax(xs[(M + 1):end]), C, ε; regularization=true
+                )
             end
         end
 
