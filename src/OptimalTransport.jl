@@ -148,11 +148,12 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
 the computation is stopped.
 
-Note that for a common kernel `K`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
-as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
-The output are then matrices `u` and `v` such that `u[:, i]` and `v[:, i]` are the dual variables for `μ[:, i]` and `ν[:, i]`.
-
-In addition, the case where one of `μ` or `ν` is a single histogram and the other a matrix of histograms is supported.
+Batch computations for multiple histograms with a common Gibbs kernel `K` can be performed
+by passing `μ` or `ν` as matrices whose columns correspond to histograms. It is required
+that the number of source and target marginals is equal or that a single source or single
+target marginal is provided (either as matrix or as vector). The optimal transport plans are
+returned as three-dimensional array where `γ[:, :, i]` is the optimal transport plan for the
+`i`th pair of source and target marginals.
 """
 function sinkhorn_gibbs(
     μ,
@@ -291,10 +292,12 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
 the computation is stopped.
 
-Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
-as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
-
-The output in this case is an `Array` `γ` of coupling matrices such that `γ[:, :, i]` is a coupling of `μ[:, i]` and `ν[:, i]`.
+Batch computations for multiple histograms with a common cost matrix `C` can be performed by
+passing `μ` or `ν` as matrices whose columns correspond to histograms. It is required that
+the number of source and target marginals is equal or that a single source or single target
+marginal is provided (either as matrix or as vector). The optimal transport plans are
+returned as three-dimensional array where `γ[:, :, i]` is the optimal transport plan for the
+`i`th pair of source and target marginals.
 
 See also: [`sinkhorn2`](@ref)
 """
