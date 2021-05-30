@@ -702,7 +702,6 @@ function sinkhorn_stabilized(
     return gamma
 end
 
-
 """
     sinkhorn_barycenter(μ, C, ε, w; atol = 0, rtol = atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000)
 
@@ -716,20 +715,38 @@ Returns the entropically regularised barycenter of the `μ`, i.e. the histogram 
 where ``\\operatorname{OT}_{ε}(\\mu, \\nu) = \\inf_{\\gamma \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)`` 
 is the entropic optimal transport loss with cost ``C`` and regularisation ``\\epsilon``.
 """
-function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothing, check_marginal_step=nothing, check_convergence = 10, max_iter=nothing, maxiter = 1_000)
+function sinkhorn_barycenter(
+    μ,
+    C,
+    ε,
+    w;
+    tol=nothing,
+    atol=tol,
+    rtol=nothing,
+    check_marginal_step=nothing,
+    check_convergence=10,
+    max_iter=nothing,
+    maxiter=1_000,
+)
     if tol !== nothing
-        Base.depwarn("keyword argument `tol` is deprecated, please use `atol` and `rtol`", 
-                     :sinkhorn_barycenter)
+        Base.depwarn(
+            "keyword argument `tol` is deprecated, please use `atol` and `rtol`",
+            :sinkhorn_barycenter,
+        )
     end
     if check_marginal_step !== nothing
-        Base.depwarn("keyword argument `check_marginal_step` is deprecated, please use `check_convergence`", 
-                     :sinkhorn_barycenter)
+        Base.depwarn(
+            "keyword argument `check_marginal_step` is deprecated, please use `check_convergence`",
+            :sinkhorn_barycenter,
+        )
     end
     if max_iter !== nothing
-        Base.depwarn("keyword argument `max_iter` is deprecated, please use `maxiter`", 
-                     :sinkhorn_barycenter)
+        Base.depwarn(
+            "keyword argument `max_iter` is deprecated, please use `maxiter`",
+            :sinkhorn_barycenter,
+        )
     end
-    if !isapprox(extrema(sum(μ; dims = 1))...)
+    if !isapprox(extrema(sum(μ; dims=1))...)
         throw(ArgumentError("Error: input marginals must have the same mass"))
     end
 
@@ -745,26 +762,26 @@ function sinkhorn_barycenter(μ, C, ε, w; tol=nothing, atol = tol, rtol = nothi
     tmp = similar(u)
     N = size(μ, 2)
     # norm of inputs for convergence check
-    norm_μ = sum(abs, μ; dims = 1)
+    norm_μ = sum(abs, μ; dims=1)
     isconverged = false
     for iter in 1:maxiter
         mul!(tmp, K', u)
-        @. v = μ / tmp 
+        @. v = μ / tmp
         mul!(tmp, K, v)
         a .= prod(tmp' .^ w; dims=1)'
-        @. u = a / tmp 
+        @. u = a / tmp
         if iter % check_convergence == 0
             # check marginal errors
             mul!(tmp, K', u)
-            norm_diff = sum(abs, @. μ - v * tmp; dims = 1)
+            norm_diff = sum(abs, @. μ - v * tmp; dims=1)
             mul!(tmp, K, v)
-            norm_uKv = sum(abs, @. u * tmp; dims = 1)
-            @debug "Sinkhorn barycenter algorithm (" * 
-                    string(iter) * 
-                    "/" * 
-                    string(maxiter) * 
-                    ": absolute error of source marginal = " * 
-                    string(maximum(norm_diff))
+            norm_uKv = sum(abs, @. u * tmp; dims=1)
+            @debug "Sinkhorn barycenter algorithm (" *
+                   string(iter) *
+                   "/" *
+                   string(maxiter) *
+                   ": absolute error of source marginal = " *
+                   string(maximum(norm_diff))
             if all(@. norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv)))
                 @debug "Sinkhorn barycenter algorithm ($iter/$maxiter): converged"
                 isconverged = true
