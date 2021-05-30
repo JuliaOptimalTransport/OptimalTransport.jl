@@ -21,11 +21,7 @@ export ot_cost, ot_plan
 
 const MOI = MathOptInterface
 
-dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
-function dot_matwise(x::AbstractArray, y::AbstractMatrix)
-    xmat = reshape(x, size(x, 1) * size(x, 2), :)
-    return reshape(reshape(y, 1, :) * xmat, size(x)[3:end])
-end
+include("utils.jl")
 
 """
     emd(μ, ν, C, optimizer)
@@ -181,43 +177,42 @@ function sinkhorn_gibbs(
             :sinkhorn_gibbs,
         )
     end
-    if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
-        throw(
-            DimensionMismatch(
-                "Error: number of columns in μ and ν must coincide, if both are matrix valued",
-            ),
-        )
-    end
-    all(sum(μ; dims=1) .≈ sum(ν; dims=1)) ||
-        throw(ArgumentError("source and target marginals must have the same mass"))
+
+    # checks
+    size2 = checksize2(μ, ν)
+    checkbalanced(μ, ν)
 
     # set default values of tolerances
     T = float(Base.promote_eltype(μ, ν, K))
     _atol = atol === nothing ? 0 : atol
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
-    # initial iteration
-    u = if isequal(size(μ, 2), size(ν, 2))
-        similar(μ)
-    else
-        repeat(similar(μ[:, 1]); outer=(1, max(size(μ, 2), size(ν, 2))))
-    end
-    u .= μ ./ vec(sum(K; dims=2))
-    v = ν ./ (K' * u)
-    tmp1 = K * v
-    tmp2 = similar(u)
+    # initialize iterates
+    u = similar(μ, T, size(μ, 1), size2...)
+    v = similar(ν, T, size(ν, 1), size2...)
+    fill!(v, one(T))
+    Kv = similar(u)
+    mul!(Kv, K, v)
 
     norm_μ = sum(abs, μ; dims=1) # for convergence check
+    tmp = similar(u)
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
-    for iter in 0:maxiter
+    for iter in 1:maxiter
+        # compute next iterate
+        u .= μ ./ Kv
+        mul!(v, K', u)
+        v .= ν ./ v
+
         if iter % check_step == 0
+            mul!(Kv, K, v)
+
             # check source marginal
-            # do not overwrite `tmp1` but reuse it for computing `u` if not converged
-            @. tmp2 = u * tmp1
-            norm_uKv = sum(abs, tmp2; dims=1)
-            @. tmp2 = μ - tmp2
-            norm_diff = sum(abs, tmp2; dims=1)
+            # do not overwrite `Kv` but reuse it for computing `u` if not converged
+            tmp .= u .* Kv
+            norm_uKv = sum(abs, tmp; dims=1)
+            tmp .= μ .- tmp
+            norm_diff = sum(abs, tmp; dims=1)
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
@@ -232,14 +227,9 @@ function sinkhorn_gibbs(
                 isconverged = true
                 break
             end
-        end
-
-        # perform next iteration
-        if iter < maxiter
-            @. u = μ / tmp1
-            mul!(v, K', u)
-            @. v = ν / v
-            mul!(tmp1, K, v)
+        elseif iter < maxiter
+            # not required in the final iteration
+            mul!(Kv, K, v)
         end
     end
 
@@ -248,13 +238,6 @@ function sinkhorn_gibbs(
     end
 
     return u, v
-end
-
-function add_singleton(x::AbstractArray, ::Val{dim}) where {dim}
-    shape = ntuple(ndims(x) + 1) do i
-        return i < dim ? size(x, i) : (i > dim ? size(x, i - 1) : 1)
-    end
-    return reshape(x, shape)
 end
 
 """
