@@ -136,6 +136,7 @@ Random.seed!(100)
             @test sum(W) ≈ 1
             @test sort(unique(I)) == 1:m
             @test sort(unique(J)) == 1:n
+            @test sort(I .+ J) == 2:(m + n)
 
             # compute OT cost
             c = @inferred(ot_cost(euclidean, μ, ν))

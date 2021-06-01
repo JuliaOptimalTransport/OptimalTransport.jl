@@ -182,8 +182,9 @@ function Discrete1DOTIterator(μ, ν)
 end
 
 Base.IteratorEltype(::Type{<:Discrete1DOTIterator}) = Base.HasEltype()
-Base.IteratorSize(::Type{<:Discrete1DOTIterator}) = Base.SizeUnknown()
 Base.eltype(::Type{<:Discrete1DOTIterator{T}}) where {T} = Tuple{Int,Int,T}
+
+Base.length(d::Discrete1DOTIterator) = length(d.mu) + length(d.nu) - 1
 
 # we iterate through the source and target histograms
 function Base.iterate(
@@ -240,21 +241,16 @@ function ot_plan(_, μ::DiscreteNonParametric, ν::DiscreteNonParametric)
 
     # create arrays for the indices of the two histograms and the optimal flow between the
     # corresponding points
-    I = Int[]
-    J = Int[]
-    W = Vector{Base.promote_eltype(μprobs, νprobs)}(undef, 0)
-
-    # pre-allocate some space to speed up `push!` in the iteration below
-    minsize = length(μprobs) + length(νprobs)
-    sizehint!(I, minsize)
-    sizehint!(J, minsize)
-    sizehint!(W, minsize)
+    n = length(iter)
+    I = Vector{Int}(undef, n)
+    J = Vector{Int}(undef, n)
+    W = Vector{Base.promote_eltype(μprobs, νprobs)}(undef, n)
 
     # compute the sparse optimal transport plan
-    for (i, j, w) in iter
-        push!(I, i)
-        push!(J, j)
-        push!(W, w)
+    @inbounds for (idx, (i, j, w)) in enumerate(iter)
+        I[idx] = i
+        J[idx] = j
+        W[idx] = w
     end
     γ = sparse(I, J, W, length(μprobs), length(νprobs))
 
