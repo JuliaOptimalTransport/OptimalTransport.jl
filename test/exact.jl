@@ -149,18 +149,15 @@ Random.seed!(100)
             νprobs = pdf(ν, νsupp')
             νprobs = νprobs ./ sum(νprobs)
             C = pairwise(SqEuclidean(), μsupp', νsupp')
-            @test isapprox(
-                emd2(μprobs, νprobs, C, Tulip.Optimizer()),
-                ot_cost(SqEuclidean(), μ, ν);
-                rtol=1e-3,
-            )
+            @test emd2(μprobs, νprobs, C, Tulip.Optimizer()) ≈ ot_cost(SqEuclidean(), μ, ν) rtol=1e-3
 
             # Use hcubature integration to perform ``\\int c(x,T(x)) d\\mu``
             T = ot_plan(SqEuclidean(), μ, ν)
-            f(x) = sqeuclidean(x, T(x)) * pdf(μ, x)
-            @test isapprox(
-                hcubature(f, [-10, -10], [10, 10])[1], ot_cost(SqEuclidean(), μ, ν); rtol=1e-3
-            )
+            c_hcubature, _ = hcubature([-10, -10], [10, 10]) do x
+                return sqeuclidean(x, T(x)) * pdf(μ, x)
+            end
+            @test ot_cost(SqEuclidean(), μ, ν) ≈ c_hcubature rtol=1e-3
+
         end
     end
 
