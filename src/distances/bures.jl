@@ -50,6 +50,9 @@ end
 
 # diagonal matrix
 function sqbures(A::PDMats.PDiagMat, B::PDMats.PDiagMat)
+    if !(A.dim == B.dim)
+        throw(ArgumentError("Matrices must have the same dimensions."))
+    end
     return sum(zip(A.diag, B.diag)) do (x, y)
         abs2(sqrt(x) - sqrt(y))
     end
