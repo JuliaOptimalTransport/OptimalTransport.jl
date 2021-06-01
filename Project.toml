@@ -1,7 +1,7 @@
 name = "OptimalTransport"
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 authors = ["zsteve <stephenz@student.unimelb.edu.au>"]
-version = "0.3.5"
+version = "0.3.6"
 
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
@@ -13,6 +13,7 @@ MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 PDMats = "90014a1f-27ba-587c-ab20-58faa44d9150"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 Distances = "0.9.0, 0.10"
@@ -22,6 +23,7 @@ LogExpFunctions = "0.2"
 MathOptInterface = "0.9"
 PDMats = "0.11"
 QuadGK = "2"
+StatsBase = "0.33.8"
 julia = "1"
 
 [extras]

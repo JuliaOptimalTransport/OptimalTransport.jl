@@ -9,6 +9,7 @@ using HCubature
 
 using LinearAlgebra
 using Random
+using SparseArrays
 
 const MOI = MathOptInterface
 const POT = PythonOT
@@ -107,6 +108,61 @@ Random.seed!(100)
             C = pairwise(Euclidean(), xs', (1:length(νprobs))'; dims=2)
             c2 = emd2(μdiscrete, νprobs, C, Tulip.Optimizer())
             @test c2 ≈ c rtol = 1e-1
+        end
+
+        @testset "discrete case" begin
+            # random source and target marginal
+            m = 30
+            μprobs = rand(m)
+            μprobs ./= sum(μprobs)
+            μsupport = randn(m)
+            μ = DiscreteNonParametric(μsupport, μprobs)
+
+            n = 50
+            νprobs = rand(n)
+            νprobs ./= sum(νprobs)
+            νsupport = randn(n)
+            ν = DiscreteNonParametric(νsupport, νprobs)
+
+            # compute OT plan
+            γ = @inferred(ot_plan(euclidean, μ, ν))
+            @test γ isa SparseMatrixCSC
+            @test size(γ) == (m, n)
+            @test vec(sum(γ; dims=2)) ≈ μ.p
+            @test vec(sum(γ; dims=1)) ≈ ν.p
+
+            # consistency checks
+            I, J, W = findnz(γ)
+            @test all(w > zero(w) for w in W)
+            @test sum(W) ≈ 1
+            @test sort(unique(I)) == 1:m
+            @test sort(unique(J)) == 1:n
+            @test sort(I .+ J) == 2:(m + n)
+
+            # compute OT cost
+            c = @inferred(ot_cost(euclidean, μ, ν))
+
+            # compare with computation with explicit cost matrix
+            # DiscreteNonParametric sorts the support automatically, here we have to sort
+            # manually
+            C = pairwise(Euclidean(), μsupport', νsupport'; dims=2)
+            c2 = emd2(μprobs, νprobs, C, Tulip.Optimizer())
+            @test c2 ≈ c rtol = 1e-6
+
+            # compare with POT
+            # disabled currently since https://github.com/PythonOT/POT/issues/169 causes bounds
+            # error
+            # @test γ ≈ POT.emd_1d(μ.support, ν.support; a=μ.p, b=μ.p, metric="euclidean")
+            # @test c ≈ POT.emd2_1d(μ.support, ν.support; a=μ.p, b=μ.p, metric="euclidean")
+
+            # do not use the probabilities of μ and ν to ensure that the provided plan is
+            # used
+            μ2 = DiscreteNonParametric(μsupport, reverse(μprobs))
+            ν2 = DiscreteNonParametric(νsupport, reverse(νprobs))
+            c2 = @inferred(ot_cost(euclidean, μ2, ν2; plan=γ))
+            @test c2 ≈ c
+            c2 = @inferred(ot_cost(euclidean, μ2, ν2; plan=Matrix(γ)))
+            @test c2 ≈ c
         end
     end
 
