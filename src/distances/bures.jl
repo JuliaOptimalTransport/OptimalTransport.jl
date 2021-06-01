@@ -12,25 +12,46 @@ tr_sqrt(A::PDMats.PDiagMat) = sum(sqrt, A.diag)
 tr_sqrt(A::PDMats.ScalMat) = A.dim * sqrt(A.value)
 
 """
-    _sqbures_kernel(A::AbstractMatrix, B::AbstractMatrix)
+    _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
 Compute
 ```math
-tr(sqrt(sqrt(A) B sqrt(A)))
+sqrt(sqrt(A) B sqrt(A))
 ```
 """
-function _sqbures_kernel(A::AbstractMatrix, B::AbstractMatrix)
+function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
     sqrt_A = sqrt(A)
-    return tr_sqrt(sqrt_A * B * sqrt_A)
+    return sqrt_A * B * sqrt_A
 end
-function _sqbures_kernel(A::PDMats.PDiagMat, B::AbstractMatrix)
-    return tr_sqrt(sqrt.(A.diag) .* B .* sqrt.(A.diag'))
+function _gaussian_ot_A(A::PDMats.PDiagMat, B::AbstractMatrix)
+    return sqrt.(A.diag) .* B .* sqrt.(A.diag')
 end
-function _sqbures_kernel(A::StridedMatrix, B::PDMats.PDMat)
-    return tr_sqrt(PDMats.X_A_Xt(B, sqrt(A)))
+function _gaussian_ot_A(A::StridedMatrix, B::PDMats.PDMat)
+    return PDMats.X_A_Xt(B, sqrt(A))
 end
-_sqbures_kernel(A::PDMats.PDMat, B::PDMats.PDMat) = _sqbures_kernel(A.mat, B)
-_sqbures_kernel(A::AbstractMatrix, B::PDMats.PDiagMat) = _sqbures_kernel(B, A)
-_sqbures_kernel(A::PDMats.PDMat, B::StridedMatrix) = _sqbures_kernel(B, A)
+_gaussian_ot_A(A::PDMats.PDMat, B::PDMats.PDMat) = _gaussian_ot_A(A.mat, B)
+_gaussian_ot_A(A::AbstractMatrix, B::PDMats.PDiagMat) = _gaussian_ot_A(B, A)
+_gaussian_ot_A(A::PDMats.PDMat, B::StridedMatrix) = _gaussian_ot_A(B, A)
+
+# """
+#     _sqbures_kernel(A::AbstractMatrix, B::AbstractMatrix)
+# Compute
+# ```math
+# tr(sqrt(sqrt(A) B sqrt(A)))
+# ```
+# """
+# function _sqbures_kernel(A::AbstractMatrix, B::AbstractMatrix)
+#     sqrt_A = sqrt(A)
+#     return tr_sqrt(sqrt_A * B * sqrt_A)
+# end
+# function _sqbures_kernel(A::PDMats.PDiagMat, B::AbstractMatrix)
+#     return tr_sqrt(sqrt.(A.diag) .* B .* sqrt.(A.diag'))
+# end
+# function _sqbures_kernel(A::StridedMatrix, B::PDMats.PDMat)
+#     return tr_sqrt(PDMats.X_A_Xt(B, sqrt(A)))
+# end
+# _sqbures_kernel(A::PDMats.PDMat, B::PDMats.PDMat) = _sqbures_kernel(A.mat, B)
+# _sqbures_kernel(A::AbstractMatrix, B::PDMats.PDiagMat) = _sqbures_kernel(B, A)
+# _sqbures_kernel(A::PDMats.PDMat, B::StridedMatrix) = _sqbures_kernel(B, A)
 
 """
     sqbures(A::AbstractMatrix, B::AbstractMatrix)
@@ -40,7 +61,8 @@ tr(A) + tr(B) - 2 tr(sqrt(sqrt(A) B sqrt(A))).
 ```
 """
 function sqbures(A::AbstractMatrix, B::AbstractMatrix)
-    return LinearAlgebra.tr(A) + LinearAlgebra.tr(B) - 2 * _sqbures_kernel(A, B)
+    # return LinearAlgebra.tr(A) + LinearAlgebra.tr(B) - 2 * _sqbures_kernel(A, B)
+    return LinearAlgebra.tr(A) + LinearAlgebra.tr(B) - 2 * tr_sqrt(_gaussian_ot_A(A, B))
 end
 
 # diagonal matrix
