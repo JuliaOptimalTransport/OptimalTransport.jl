@@ -148,8 +148,10 @@ Random.seed!(100)
             @test c2 ≈ c rtol = 1e-6
 
             # compare with POT
-            @test γ ≈ POT.emd_1d(μ.support, ν.support; a=μ.p, b=μ.p, metric="euclidean")
-            @test c ≈ POT.emd2_1d(μ.support, ν.support; a=μ.p, b=μ.p, metric="euclidean")
+            # disabled currently since https://github.com/PythonOT/POT/issues/169 causes bounds
+            # error
+            # @test γ ≈ POT.emd_1d(μ.support, ν.support; a=μ.p, b=μ.p, metric="euclidean")
+            # @test c ≈ POT.emd2_1d(μ.support, ν.support; a=μ.p, b=μ.p, metric="euclidean")
 
             # do not use the probabilities of μ and ν to ensure that the provided plan is
             # used
