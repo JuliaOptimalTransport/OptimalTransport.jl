@@ -8,6 +8,8 @@ emd
 emd2
 ot_plan
 ot_cost
+wasserstein
+squared2wasserstein
 ```
 
 ## Entropically regularised optimal transport
