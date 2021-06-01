@@ -20,9 +20,6 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Unbalanced OT" begin
             include("unbalanced.jl")
         end
-        @safetestset "Multivariate Gaussians OT" begin
-            include("mvgaussian.jl")
-        end
     end
 
     # CUDA requires Julia >= 1.6
