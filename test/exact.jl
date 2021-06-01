@@ -127,8 +127,8 @@ Random.seed!(100)
             γ = @inferred(ot_plan(euclidean, μ, ν))
             @test γ isa SparseMatrixCSC
             @test size(γ) == (m, n)
-            @test vec(sum(γ; dims=2)) ≈ μprobs[sortperm(μsupport)]
-            @test vec(sum(γ; dims=1)) ≈ νprobs[sortperm(νsupport)]
+            @test vec(sum(γ; dims=2)) ≈ μ.p
+            @test vec(sum(γ; dims=1)) ≈ ν.p
 
             # consistency checks
             I, J, W = findnz(γ)
@@ -146,6 +146,10 @@ Random.seed!(100)
             C = pairwise(Euclidean(), μsupport', νsupport'; dims=2)
             c2 = emd2(μprobs, νprobs, C, Tulip.Optimizer())
             @test c2 ≈ c rtol = 1e-6
+
+            # compare with POT
+            @test γ ≈ POT.emd_1d(μ.support, ν.support; a=μ.p, b=μ.p, distance="euclidean")
+            @test c ≈ POT.emd2_1d(μ.support, ν.support; a=μ.p, b=μ.p, distance="euclidean")
 
             # do not use the probabilities of μ and ν to ensure that the provided plan is
             # used
