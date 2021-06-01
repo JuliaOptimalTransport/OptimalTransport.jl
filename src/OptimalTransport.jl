@@ -11,6 +11,7 @@ using LogExpFunctions: LogExpFunctions
 using MathOptInterface
 using Distributions
 using QuadGK
+using StatsBase: StatsBase
 
 export sinkhorn, sinkhorn2
 export emd, emd2
@@ -28,104 +29,6 @@ dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
 function dot_matwise(x::AbstractArray, y::AbstractMatrix)
     xmat = reshape(x, size(x, 1) * size(x, 2), :)
     return reshape(reshape(y, 1, :) * xmat, size(x)[3:end])
-end
-
-"""
-    emd(μ, ν, C, optimizer)
-
-Compute the optimal transport plan `γ` for the Monge-Kantorovich problem with source
-histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
-which solves
-```math
-\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
-```
-
-The corresponding linear programming problem is solved with the user-provided `optimizer`.
-Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
-packages, respectively.
-"""
-function emd(μ, ν, C, model::MOI.ModelLike)
-    # check size of cost matrix
-    nμ = length(μ)
-    nν = length(ν)
-    size(C) == (nμ, nν) || error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-    nC = length(C)
-
-    # define variables
-    x = MOI.add_variables(model, nC)
-    xmat = reshape(x, nμ, nν)
-
-    # define objective function
-    T = float(eltype(C))
-    zero_T = zero(T)
-    MOI.set(
-        model,
-        MOI.ObjectiveFunction{MOI.ScalarAffineFunction{T}}(),
-        MOI.ScalarAffineFunction(MOI.ScalarAffineTerm.(float.(vec(C)), x), zero_T),
-    )
-    MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
-
-    # add non-negativity constraints
-    for xi in x
-        MOI.add_constraint(model, MOI.SingleVariable(xi), MOI.GreaterThan(zero_T))
-    end
-
-    # add constraints for source
-    for (i, μi) in zip(axes(xmat, 1), μ) # eachrow(xmat) is not available on Julia 1.0
-        f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(μi), xi) for xi in view(xmat, i, :)], zero(μi)
-        )
-        MOI.add_constraint(model, f, MOI.EqualTo(μi))
-    end
-
-    # add constraints for target
-    for (i, νi) in zip(axes(xmat, 2), ν) # eachcol(xmat) is not available on Julia 1.0
-        f = MOI.ScalarAffineFunction(
-            [MOI.ScalarAffineTerm(one(νi), xi) for xi in view(xmat, :, i)], zero(νi)
-        )
-        MOI.add_constraint(model, f, MOI.EqualTo(νi))
-    end
-
-    # compute optimal solution
-    MOI.optimize!(model)
-    status = MOI.get(model, MOI.TerminationStatus())
-    status === MOI.OPTIMAL || error("failed to compute optimal transport plan: ", status)
-    p = MOI.get(model, MOI.VariablePrimal(), x)
-    γ = reshape(p, nμ, nν)
-
-    return γ
-end
-
-"""
-    emd2(μ, ν, C, optimizer; plan=nothing)
-
-Compute the optimal transport cost (a scalar) for the Monge-Kantorovich problem with source
-histogram `μ`, target histogram `ν`, and cost matrix `C` of size `(length(μ), length(ν))`
-which is given by
-```math
-\\inf_{γ ∈ Π(μ, ν)} \\langle γ, C \\rangle.
-```
-
-The corresponding linear programming problem is solved with the user-provided `optimizer`.
-Possible choices are `Tulip.Optimizer()` and `Clp.Optimizer()` in the `Tulip` and `Clp`
-packages, respectively.
-
-A pre-computed optimal transport `plan` may be provided.
-"""
-function emd2(μ, ν, C, optimizer; plan=nothing)
-    γ = if plan === nothing
-        # compute optimal transport plan
-        emd(μ, ν, C, optimizer)
-    else
-        # check dimensions
-        size(C) == (length(μ), length(ν)) ||
-            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(plan) == size(C) || error(
-            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
-        )
-        plan
-    end
-    return dot(γ, C)
 end
 
 """
