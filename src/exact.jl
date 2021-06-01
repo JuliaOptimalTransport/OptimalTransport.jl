@@ -12,7 +12,7 @@ where ``\\Pi(\\mu, \\nu)`` denotes the couplings of ``\\mu`` and ``\\nu``.
 
 See also: [`ot_cost`](@ref)
 """
-ot_plan
+function ot_plan end
 
 """
     ot_cost(c, μ, ν; kwargs...)
@@ -28,7 +28,7 @@ where ``\\Pi(\\mu, \\nu)`` denotes the couplings of ``\\mu`` and ``\\nu``.
 
 See also: [`ot_plan`](@ref)
 """
-ot_cost
+function ot_cost end
 
 #############
 # Discrete OT
