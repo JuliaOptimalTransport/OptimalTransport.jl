@@ -17,6 +17,7 @@ export sinkhorn, sinkhorn2
 export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
+export sinkhorn_divergence
 export quadreg
 export ot_cost, ot_plan, wasserstein, squared2wasserstein
 
@@ -786,48 +787,39 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
 end
 
 """
-    sinkhorn_divergence(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
+    sinkhorn_divergence(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric, ε; regularization=false, kwargs...)
 
-Solve the entropically regularized optimal transport problem with source and target
-marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic
-regularization parameter `ε`, and return the optimal cost.
+Compute the Sinkhorn Divergence between finite discrete
+measures `μ` and `ν` with respect to a cost function `c`
+and entropic regularization parameter `ε`.
 
-A pre-computed optimal transport `plan` may be provided. The other keyword arguments
-supported here are the same as those in the [`sinkhorn`](@ref) function.
+The Sinkhorn Divergence is computed as:
+```math
+S_{c,ε}(μ,ν) := OT_{c,ε}(μ,ν) - \\frac{1}{2}(OT_{c,ε}(μ,μ) + OT_{c,ε}(ν,ν)),
+```
+where `OT_{c,ε}(μ,ν)`, `OT_{c,ε}(μ,μ)` and `OT_{c,ε}(ν,ν)` are the entropically
+regularized optimal transport cost between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively.
 
-!!! note
-    As the `sinkhorn2` function in the Python Optimal Transport package, this function
-    returns the optimal transport cost without the regularization term. The cost
-    with the regularization term can be computed by setting `regularization=true`.
+The formulation for the Sinkhorn Divergence may have slight variations depending on the paper consulted.
+The Sinkhorn Divergence was initially proposed by [^GPC18], although, this package uses the formulation given by
+[^FeydyP19], which is also the one used on the Python Optimal Transport package.
 
-See also: [`sinkhorn`](@ref)
+[^GPC18]: Aude Genevay, Gabriel Peyré, Marco Cuturi, Learning Generative Models with Sinkhorn Divergences,
+Proceedings of the Twenty-First International Conference on Artficial Intelligence and Statistics, (AISTATS) 21, 2018
+
+[^FeydyP19]: Jean Feydy, Thibault Séjourné, François-Xavier Vialard, Shun-ichi
+Amari, Alain Trouvé, and Gabriel Peyré. Interpolating between op-
+timal transport and mmd using sinkhorn divergences. In The 22nd In-
+ternational Conference on Artificial Intelligence and Statistics, pages
+2681–2690. PMLR, 2019.
+
+See also: [`sinkhorn2`](@ref)
 """
-function sinkhorn2(μ, ν, C, ε; regularization=false, kwargs...)
-    γ = if plan === nothing
-        sinkhorn(μ, ν, C, ε; kwargs...)
-    else
-        # check dimensions
-        size(C) == (size(μ, 1), size(ν, 1)) || error(
-            "cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`",
-        )
-        (size(plan, 1), size(plan, 2)) == size(C) || error(
-            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
-        )
-        plan
-    end
-    cost = if regularization
-        dot_matwise(γ, C) .+
-        ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
-    else
-        dot_matwise(γ, C)
-    end
-
-    return cost
+function sinkhorn_divergence(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric, ε; regularization=false, kwargs...)
+    OTμν = sinkhorn2(μ.p, ν.p, pairwise(c,μ.support, ν.support),ε,regularization=regularization, kwargs...)
+    OTμμ = sinkhorn2(μ.p, μ.p, pairwise(c,μ.support,symmetric=true),ε,regularization=regularization, kwargs...)
+    OTνν = sinkhorn2(ν.p, ν.p, pairwise(c,ν.support,symmetric=true),ε,regularization=regularization, kwargs...)
+    return max(0,OTμν - 0.5*(OTμμ + OTνν))
 end
-function sinkhorn_divergence(μ, ν, C, ε; regularization=false, kwargs...)
-    cost = ot_cost(p2distance(metric, p), μ, ν; kwargs...)
-    return prt(cost, p)
-end
-
 
 end
