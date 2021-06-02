@@ -23,6 +23,9 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Unbalanced OT" begin
             include("unbalanced.jl")
         end
+        @safetestset "Wasserstein distance" begin
+            include("wasserstein.jl")
+        end
     end
 
     # CUDA requires Julia >= 1.6

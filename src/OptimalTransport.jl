@@ -18,12 +18,13 @@ export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
-export ot_cost, ot_plan
+export ot_cost, ot_plan, wasserstein, squared2wasserstein
 
 const MOI = MathOptInterface
 
 include("utils.jl")
 include("exact.jl")
+include("wasserstein.jl")
 
 """
     sinkhorn_gibbs(

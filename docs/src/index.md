@@ -7,7 +7,13 @@
 emd
 emd2
 ot_plan
+ot_plan(::Any, ::ContinuousUnivariateDistribution, ::UnivariateDistribution)
+ot_plan(::Any, ::DiscreteNonParametric, ::DiscreteNonParametric)
 ot_cost
+ot_cost(::Any, ::ContinuousUnivariateDistribution, ::UnivariateDistribution)
+ot_cost(::Any, ::DiscreteNonParametric, ::DiscreteNonParametric)
+wasserstein
+squared2wasserstein
 ```
 
 ## Entropically regularised optimal transport
