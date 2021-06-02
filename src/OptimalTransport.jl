@@ -787,68 +787,11 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
 end
 
 """
-    ot_cost(
-        c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
-    )
-
-Compute the optimal transport cost for the Monge-Kantorovich problem with univariate
-distributions `μ` and `ν` as source and target marginals and cost function `c` of
-the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function.
-
-In this setting, the optimal transport cost can be computed as
-```math
-\\int_0^1 c(F_\\mu^{-1}(x), F_\\nu^{-1}(x)) \\mathrm{d}x
-```
-where ``F_\\mu^{-1}`` and ``F_\\nu^{-1}`` are the quantile functions of `μ` and `ν`,
-respectively.
-
-A pre-computed optimal transport `plan` may be provided.
-
-See also: [`ot_plan`](@ref), [`emd2`](@ref)
-"""
-function ot_cost(
-    c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution; plan=nothing
-)
-    cost, _ = if plan === nothing
-        quadgk(0, 1) do q
-            return c(quantile(μ, q), quantile(ν, q))
-        end
-    else
-        quadgk(0, 1) do q
-            x = quantile(μ, q)
-            return c(x, plan(x))
-        end
-    end
-    return cost
-end
-
-"""
-    ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
-
-Compute the optimal transport plan for the Monge-Kantorovich problem with univariate
-distributions `μ` and `ν` as source and target marginals and cost function `c` of
-the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function.
-
-In this setting, the optimal transport plan is the Monge map
-```math
-T = F_\\nu^{-1} \\circ F_\\mu
-```
-where ``F_\\mu`` is the cumulative distribution function of `μ` and ``F_\\nu^{-1}`` is the
-quantile function of `ν`.
-
-See also: [`ot_cost`](@ref), [`emd`](@ref)
-"""
-function ot_plan(c, μ::ContinuousUnivariateDistribution, ν::UnivariateDistribution)
-    # Use T instead of γ to indicate that this is a Monge map.
-    T(x) = quantile(ν, cdf(μ, x))
-    return T
-end
-
-"""
     ot_cost(c::SqEuclidean, μ::Union{Normal,MvNormal}, ν::Union{Normal,MvNormal})
     
 Compute the squared 2-Wasserstein distance between multivariate Gaussian
 distributions `μ` and `ν` as source and target marginal.
+
 In this setting, the optimal transport cost can be computed as
 ```math
 W_2^2(\\mu, \\nu) = \\|m_\\mu - m_\\nu \\|^2 + \\mathcal{B}(\\Sigma_\\mu, \\Sigma_\\nu)^2,
@@ -856,7 +799,6 @@ W_2^2(\\mu, \\nu) = \\|m_\\mu - m_\\nu \\|^2 + \\mathcal{B}(\\Sigma_\\mu, \\Sigm
 where ``\\mu = \\mathcal{N}(m_\\mu, \\Sigma_\\mu)``,
 ``\\nu = \\mathcal{N}(m_\\nu, \\Sigma_\\nu)``, and ``\\mathcal{B}`` is the Bures metric.
 where ``\\mathcal{B}`` is the Bures metric.
-
 
 See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
@@ -870,6 +812,7 @@ end
 Compute the optimal transport plan for the Monge-Kantorovich problem with multivariate
 normal distributions `μ` and `ν` as source and target marginals and cost function
 ``c(x, y) = \\|x - y\\|_2^2``.
+
 In this setting, for ``\\mu = \\mathcal{N}(m_\\mu, \\Sigma_\\mu)`` and
 ``\\nu = \\mathcal{N}(m_\\nu, \\Sigma_\\nu)``, the optimal transport plan is the Monge
 map
