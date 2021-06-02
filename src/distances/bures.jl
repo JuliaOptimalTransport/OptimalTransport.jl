@@ -17,7 +17,7 @@ tr_sqrt(A::PDMats.ScalMat) = A.dim * sqrt(A.value)
 
 Compute
 ```math
-sqrt(sqrt(A) B sqrt(A))
+{\\big(A^{1/2} B A^{1/2}\\big)}^{1/2}.
 ```
 """
 function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
@@ -51,7 +51,7 @@ end
 # diagonal matrix
 function sqbures(A::PDMats.PDiagMat, B::PDMats.PDiagMat)
     if !(A.dim == B.dim)
-        throw(ArgumentError("Matrices must have the same dimensions."))
+        throw(ArgumentError("matrices must have the same dimensions."))
     end
     return sum(zip(A.diag, B.diag)) do (x, y)
         abs2(sqrt(x) - sqrt(y))
