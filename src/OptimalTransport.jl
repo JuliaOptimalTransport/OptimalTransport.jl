@@ -784,4 +784,49 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
     return sparse(γ')
 end
 
+"""
+    sinkhorn_divergence(μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
+
+Solve the entropically regularized optimal transport problem with source and target
+marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic
+regularization parameter `ε`, and return the optimal cost.
+
+A pre-computed optimal transport `plan` may be provided. The other keyword arguments
+supported here are the same as those in the [`sinkhorn`](@ref) function.
+
+!!! note
+    As the `sinkhorn2` function in the Python Optimal Transport package, this function
+    returns the optimal transport cost without the regularization term. The cost
+    with the regularization term can be computed by setting `regularization=true`.
+
+See also: [`sinkhorn`](@ref)
+"""
+function sinkhorn2(μ, ν, C, ε; regularization=false, kwargs...)
+    γ = if plan === nothing
+        sinkhorn(μ, ν, C, ε; kwargs...)
+    else
+        # check dimensions
+        size(C) == (size(μ, 1), size(ν, 1)) || error(
+            "cost matrix `C` must be of size `(size(μ, dims = 1), size(ν, dims = 1))`",
+        )
+        (size(plan, 1), size(plan, 2)) == size(C) || error(
+            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
+        )
+        plan
+    end
+    cost = if regularization
+        dot_matwise(γ, C) .+
+        ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
+    else
+        dot_matwise(γ, C)
+    end
+
+    return cost
+end
+function sinkhorn_divergence(μ, ν, C, ε; regularization=false, kwargs...)
+    cost = ot_cost(p2distance(metric, p), μ, ν; kwargs...)
+    return prt(cost, p)
+end
+
+
 end
