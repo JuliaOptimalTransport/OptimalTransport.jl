@@ -2,6 +2,10 @@ using OptimalTransport
 
 using Distances
 using PythonOT: PythonOT
+using Distributions
+
+using PyCall
+PYCALLPOT = pyimport("ot")
 
 using Random
 using Test
@@ -211,6 +215,28 @@ Random.seed!(100)
             μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5], stopThr=1e-9)
             # need to use a larger tolerance here because of a quirk with the POT solver 
             @test μ_interp ≈ μ_interp_pot rtol = 1e-6
+        end
+    end
+
+    @testset "sinkhorn divergence" begin
+        @testset "example" begin
+            # create distributions 
+            N = 100
+            μ = DiscreteNonParametric(rand(N), ones(N) / N)
+            ν = DiscreteNonParametric(rand(N), ones(N) / N)
+
+            for (ε, metric) in Iterators.product(
+                [0.1, 1.0, 10.0], [sqeuclidean, euclidean, totalvariation]
+            )
+                @test sinkhorn_divergence(metric, μ, μ, ε) ≈ 0.0
+                @test sinkhorn_divergence(metric, ν, ν, ε) ≈ 0.0
+
+                sd = sinkhorn_divergence(metric, μ, ν, ε)
+                sd_pot = PYCALLPOT.bregman.empirical_sinkhorn_divergence(
+                    reshape(μ.support, :, 1), reshape(ν.support, :, 1), ε; metric=metric
+                )[1]
+                @test sd ≈ sd_pot rtol = 1e-5
+            end
         end
     end
 end

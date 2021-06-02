@@ -815,11 +815,39 @@ ternational Conference on Artificial Intelligence and Statistics, pages
 
 See also: [`sinkhorn2`](@ref)
 """
-function sinkhorn_divergence(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric, ε; regularization=false, kwargs...)
-    OTμν = sinkhorn2(μ.p, ν.p, pairwise(c,μ.support, ν.support),ε,regularization=regularization, kwargs...)
-    OTμμ = sinkhorn2(μ.p, μ.p, pairwise(c,μ.support,symmetric=true),ε,regularization=regularization, kwargs...)
-    OTνν = sinkhorn2(ν.p, ν.p, pairwise(c,ν.support,symmetric=true),ε,regularization=regularization, kwargs...)
-    return max(0,OTμν - 0.5*(OTμμ + OTνν))
+function sinkhorn_divergence(
+    c,
+    μ::DiscreteNonParametric,
+    ν::DiscreteNonParametric,
+    ε;
+    regularization=false,
+    kwargs...,
+)
+    OTμν = sinkhorn2(
+        μ.p,
+        ν.p,
+        pairwise(c, μ.support, ν.support),
+        ε;
+        regularization=regularization,
+        kwargs...,
+    )
+    OTμμ = sinkhorn2(
+        μ.p,
+        μ.p,
+        pairwise(c, μ.support; symmetric=true),
+        ε;
+        regularization=regularization,
+        kwargs...,
+    )
+    OTνν = sinkhorn2(
+        ν.p,
+        ν.p,
+        pairwise(c, ν.support; symmetric=true),
+        ε;
+        regularization=regularization,
+        kwargs...,
+    )
+    return max(0, OTμν - 0.5 * (OTμμ + OTνν))
 end
 
 end
