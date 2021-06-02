@@ -1,4 +1,6 @@
 using OptimalTransport
+using Distributions
+
 using Literate: Literate
 using Pkg: Pkg
 
