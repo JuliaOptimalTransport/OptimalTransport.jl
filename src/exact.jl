@@ -425,6 +425,6 @@ T \\colon x \\mapsto m_\\nu
 (x - m_\\mu).
 """
 function ot_plan(::SqEuclidean, μ::Normal, ν::Normal)
-    T(x) = ν.μ + (ν.σ/μ.σ)*(x - μ.μ)
+    T(x) = ν.μ + (ν.σ / μ.σ) * (x - μ.μ)
     return T
 end
