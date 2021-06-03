@@ -39,12 +39,12 @@ Random.seed!(7)
     @testset "Creating cost matrices from μ to itself" begin
         N = 10
         μ = FiniteDiscreteMeasure(rand(N,2), rand(N))
-        c(x,y) = sum((x-y).^2)
+        c(x,y) = sqrt(sum((x-y).^2))
         C1 = cost_matrix(Euclidean(), μ, symmetric=true)
         C2 = cost_matrix(euclidean, μ, symmetric=true)
         C3 = cost_matrix(c, μ)
-        @test C1 ≈ pairwise(SqEuclidean(), μ.support, μ.support, dims=1)
-        @test C2 ≈ pairwise(SqEuclidean(), μ.support, μ.support, dims=1)
-        @test C3 ≈ pairwise(SqEuclidean(), μ.support, μ.support, dims=1)
+        @test C1 ≈ pairwise(Euclidean(), μ.support, μ.support, dims=1)
+        @test C2 ≈ pairwise(Euclidean(), μ.support, μ.support, dims=1)
+        @test C3 ≈ pairwise(Euclidean(), μ.support, μ.support, dims=1)
     end
 end

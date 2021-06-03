@@ -236,7 +236,7 @@ Random.seed!(100)
                 Cμ  = cost_matrix(metric, μ, symmetric=true)
                 Cν  = cost_matrix(metric, ν, symmetric=true)
 
-                sd_C = sinkhorn_divergence(Cμν, Cμ, Cμ, μ, ν, ε)
+                sd_C = sinkhorn_divergence(Cμν, Cμ, Cν, μ, ν, ε)
 
                 # the empirical_sinkhorn_divergence returns an error if the weights are not all equal
                 # so instead, it's more realiable to calculate using sinkhorn2
