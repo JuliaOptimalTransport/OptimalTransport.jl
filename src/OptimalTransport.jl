@@ -68,7 +68,7 @@ Construct a finite discrete probability measure with support `support` and equal
 function FiniteDiscreteMeasure(support::AbstractArray)
     p = ones(size(support)[1]) ./  size(support)[1]
     if size(support, 2) == 1
-        return DiscreteNonParametric(support, p)
+        return DiscreteNonParametric(vec(support), p)
     else
         return FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
     end
@@ -93,7 +93,7 @@ or even `cost_matrix(sqeuclidean, μ, ν)`.
 
 For custom cost functions, it is necessary to guarantee that the function `c` works
 on vectors, i.e., if one wants to compute the squared Euclidean distance,
-the one must define `c(x,y) = sum(x - y).^2`.
+the one must define `c(x,y) = sum((x - y).^2)`.
 
 # Example
 ```julia
@@ -103,6 +103,19 @@ c = TotalVariation()
 C = cost_matrix(c, μ, ν)
 ```
 """
+function cost_matrix(
+    c,
+    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+    ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric}
+)
+    if typeof(c) <: PreMetric && size(μ.support,2) == 1
+        return pairwise(c, μ.support, ν.support)
+    elseif typeof(c) <: PreMetric && size(μ.support,2) > 1
+        return pairwise(c, μ.support, ν.support, dims=1)
+    else
+        return pairwise(c, eachrow(μ.support), eachrow(ν.support))
+    end
+end
 
 """
     cost_matrix(
@@ -117,7 +130,7 @@ to increase performance.
 """
 function cost_matrix(
     c,
-    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric};
     symmetric = false
 )
     if typeof(c) <: PreMetric && size(μ.support,2) == 1
@@ -129,19 +142,6 @@ function cost_matrix(
     end
 end
 
-function cost_matrix(
-    c,
-    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
-    ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric}
-)
-    if typeof(c) <: PreMetric && size(μ.support,2) == 1
-        return pairwise(c, μ.support, ν.support)
-    elseif typeof(c) <: PreMetric && size(μ.support,2) > 1
-        return pairwise(c, μ.support, ν.support, dims=1)
-    else
-        return pairwise(c, eachrow(μ.support), eachrow(ν.support))
-    end
-end
 
 dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
 function dot_matwise(x::AbstractArray, y::AbstractMatrix)
@@ -953,8 +953,8 @@ function sinkhorn_divergence(
 
     return sinkhorn_divergence(
         cost_matrix(c, μ, ν),
-        cost_matrix(c, μ, μ),
-        cost_matrix(c, ν, ν),
+        cost_matrix(c, μ),
+        cost_matrix(c, ν),
         μ,
         ν,
         ε;
