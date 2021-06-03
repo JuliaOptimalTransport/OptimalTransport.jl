@@ -362,7 +362,6 @@ W_2^2(\\mu, \\nu) = \\|m_\\mu - m_\\nu \\|^2 + \\mathcal{B}(\\Sigma_\\mu, \\Sigm
 ```
 where ``\\mu = \\mathcal{N}(m_\\mu, \\Sigma_\\mu)``,
 ``\\nu = \\mathcal{N}(m_\\nu, \\Sigma_\\nu)``, and ``\\mathcal{B}`` is the Bures metric.
-where ``\\mathcal{B}`` is the Bures metric.
 
 See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
