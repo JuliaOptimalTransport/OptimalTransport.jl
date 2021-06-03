@@ -23,13 +23,13 @@ Random.seed!(100)
         @test all(ν.p .>= 0)
         @test all(probs(ν) .>= 0)
         # check if it assigns to DiscreteNonParametric when Vector/Matrix is 1D
-        @test typeof(μ) <: :DiscreteNonParametric
-        @test typeof(ν) <: :DiscreteNonParametric
+        @test typeof(μ) <: DiscreteNonParametric
+        @test typeof(ν) <: DiscreteNonParametric
         # check if support is correctly assinged
-        @test μsupp == μ.support
-        @test μsupp == support(μ)
-        @test νsupp == ν.support
-        @test νsupp == support(ν)
+        @test sort(μsupp) == μ.support
+        @test sort(μsupp) == support(μ)
+        @test sort(vec(νsupp)) == ν.support
+        @test sort(vec(νsupp)) == support(ν)
     end
     @testset "Multivariate Finite Discrete Measure" begin
         n = 10

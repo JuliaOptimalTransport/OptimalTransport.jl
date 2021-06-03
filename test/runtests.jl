@@ -23,6 +23,9 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Wasserstein distance" begin
             include("wasserstein.jl")
         end
+        @safetestset "Finite Discrete Measure" begin
+            include("finitediscretemeasure.jl")
+        end
     end
 
     # CUDA requires Julia >= 1.6

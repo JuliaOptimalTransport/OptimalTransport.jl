@@ -4,6 +4,7 @@
 
 module OptimalTransport
 
+using LinearAlgebra: AbstractMatrix
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
@@ -50,8 +51,8 @@ function FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
     P = sum(p)
     if size(support, 2) == 1
         return P ≈ 1 ?
-            DiscreteNonParametric(support, p) : 
-            DiscreteNonParametric(support, p ./ P)
+            DiscreteNonParametric(vec(support), p) : 
+            DiscreteNonParametric(vec(support), p ./ P)
     else
         return P ≈ 1 ?
             FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p) :
