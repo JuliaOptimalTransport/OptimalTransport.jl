@@ -40,7 +40,7 @@ Random.seed!(100)
 
             # compare with POT
             c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-            @test c_pot ≈ c rtol=1e-7
+            @test c_pot ≈ c rtol = 1e-7
 
             # ensure that provided plan is used and correct
             c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
