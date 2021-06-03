@@ -417,6 +417,9 @@ normal distributions `μ` and `ν` as source and target marginals and cost funct
 See also: [`ot_cost`](@ref), [`emd`](@ref)
 """
 function ot_plan(::SqEuclidean, μ::Normal, ν::Normal)
-    T(x) = ν.μ + (ν.σ / μ.σ) * (x - μ.μ)
+    mμ = μ.μ
+    mν = ν.μ
+    a = ν.σ / μ.σ
+    T(x) = mν + a * (x - mμ)
     return T
 end
