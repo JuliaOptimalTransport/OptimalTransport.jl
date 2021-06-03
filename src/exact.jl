@@ -405,7 +405,10 @@ See also: [`ot_cost`](@ref), [`emd`](@ref)
 """
 function ot_plan(::SqEuclidean, μ::MvNormal, ν::MvNormal)
     Σμsqrt = μ.Σ^(-1 / 2)
-    T(x) = ν.μ + (Σμsqrt * sqrt(_gaussian_ot_A(μ.Σ, ν.Σ)) * Σμsqrt) * (x - μ.μ)
+    A = Σμsqrt * sqrt(_gaussian_ot_A(μ.Σ, ν.Σ)) * Σμsqrt
+    mμ = μ.μ
+    mν = ν.μ
+    T(x) = mν + A * (x - mμ)
     return T
 end
 
