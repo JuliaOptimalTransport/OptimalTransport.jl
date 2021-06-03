@@ -45,10 +45,15 @@ end
 Construct a finite discrete probability measure with support `support` and corresponding weights `p`.
 """
 function FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
+    P = sum(p)
     if size(support, 2) == 1
-        return DiscreteNonParametric(support, p)
+        return P ≈ 1 ?
+            DiscreteNonParametric(support, p) : 
+            DiscreteNonParametric(support, p ./ P)
     else
-        return FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
+        return P ≈ 1 ?
+            FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p) :
+            FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p ./ P)
     end
 end
 
