@@ -374,11 +374,6 @@ end
 Compute the squared 2-Wasserstein distance between univariate normal distributions `μ` and
 `ν` as source and target marginals.
 
-In this setting, the optimal transport cost can be computed as
-```math
-W_2^2(\\mu, \\nu) = \\|m_\\mu - m_\\nu \\|^2 + \\|\\sigma_\\mu - \\sigma_\\nu \\|^2
-```
-
 See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
 function ot_cost(::SqEuclidean, μ::Normal, ν::Normal)
