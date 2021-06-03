@@ -884,16 +884,29 @@ function sinkhorn_divergence(
     kwargs...,
 )
 
-    return sinkhorn_divergence(
-        pairwise(c, μ.support, ν.support),
-        pairwise(c, μ.support, μ.support),
-        pairwise(c, ν.support, ν.support),
-        μ,
-        ν,
-        ε;
-        regularization=regularization,
-        kwargs...
-    )
+    if typeof(c) <: PreMetric
+        return sinkhorn_divergence(
+            pairwise(c, μ.support, ν.support, dims=1),
+            pairwise(c, μ.support, μ.support, dims=1),
+            pairwise(c, ν.support, ν.support, dims=1),
+            μ,
+            ν,
+            ε;
+            regularization=regularization,
+            kwargs...
+        )
+    else
+        return sinkhorn_divergence(
+            pairwise(c, eachrow(μ.support), eachrow(ν.support)),
+            pairwise(c, eachrow(μ.support), eachrow(μ.support)),
+            pairwise(c, eachrow(ν.support), eachrow(ν.support)),
+            μ,
+            ν,
+            ε;
+            regularization=regularization,
+            kwargs...
+        )
+    end
 
 end
 
