@@ -40,7 +40,7 @@ Random.seed!(100)
 
             # compare with POT
             c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-            @test c_pot ≈ c
+            @test c_pot ≈ c rtol=1e-7
 
             # ensure that provided plan is used and correct
             c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
@@ -231,7 +231,7 @@ Random.seed!(100)
             eps = 0.01
             μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5])
             μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5], stopThr=1e-9)
-            # need to use a larger tolerance here because of a quirk with the POT solver 
+            # need to use a larger tolerance here because of a quirk with the POT solver
             @test μ_interp ≈ μ_interp_pot rtol = 1e-6
         end
     end
