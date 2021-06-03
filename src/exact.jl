@@ -369,7 +369,7 @@ function ot_cost(::SqEuclidean, μ::MvNormal, ν::MvNormal)
 end
 
 """
-    ot_cost(c::SqEuclidean, μ::Normal, ν::Normal)
+    ot_cost(::SqEuclidean, μ::Normal, ν::Normal)
 
 Compute the squared 2-Wasserstein distance between multivariate Normal
 distributions `μ` and `ν` as source and target marginal.
