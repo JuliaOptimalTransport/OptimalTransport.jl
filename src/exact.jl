@@ -384,7 +384,7 @@ end
     ot_plan(::SqEuclidean, μ::MvNormal, ν::MvNormal)
 
 Compute the optimal transport plan for the Monge-Kantorovich problem with multivariate
-Normal distributions `μ` and `ν` as source and target marginals and cost function
+normal distributions `μ` and `ν` as source and target marginals and cost function
 ``c(x, y) = \\|x - y\\|_2^2``.
 
 In this setting, for ``\\mu = \\mathcal{N}(m_\\mu, \\Sigma_\\mu)`` and
