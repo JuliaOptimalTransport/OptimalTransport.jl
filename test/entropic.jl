@@ -216,11 +216,12 @@ Random.seed!(100)
     end
 
     @testset "sinkhorn divergence" begin
-        @testset "using cost function" begin
+        @testset "univariate exmaples" begin
             # create distributions 
             N = 20
-            μ = FiniteDiscreteMeasure(rand(N,2), rand(N))
-            ν = FiniteDiscreteMeasure(rand(N,2), rand(N))
+            M = 10
+            μ = FiniteDiscreteMeasure(rand(N), rand(N))
+            ν = FiniteDiscreteMeasure(rand(M))
 
             for (ε, metric) in Iterators.product(
                 [0.1, 1.0, 10.0], [sqeuclidean, euclidean, totalvariation]
@@ -228,17 +229,29 @@ Random.seed!(100)
                 @test sinkhorn_divergence(metric, μ, μ, ε) ≈ 0.0
                 @test sinkhorn_divergence(metric, ν, ν, ε) ≈ 0.0
 
-                sd = sinkhorn_divergence(metric, μ, ν, ε)
-                sd_pot = POT.empirical_sinkhorn_divergence(μ.support, ν.support, ε; metric=metric)[1]
-                @test sd ≈ sd_pot rtol = 1e-5
+                sd_c = sinkhorn_divergence(metric, μ, ν, ε)
+
+                # calculating cost matrices to use in POT.sinkhorn2
+                Cμν = cost_matrix(metric, μ, ν)
+                Cμ  = cost_matrix(metric, μ, symmetric=true)
+                Cν  = cost_matrix(metric, ν, symmetric=true)
+
+                sd_C = sinkhorn_divergence(Cμν, Cμ, Cμ, μ, ν, ε)
+
+                # the empirical_sinkhorn_divergence returns an error if the weights are not all equal
+                # so instead, it's more realiable to calculate using sinkhorn2
+                sd_pot = POT.sinkhorn2(μ.p, ν.p, Cμν, ε) - (POT.sinkhorn2(μ.p, μ.p, Cμ, ε) + POT.sinkhorn2(ν.p, ν.p, Cν, ε))/2
+
+                @test sd_c ≈ sd_pot[1] rtol = 1e-5
+                @test sd_C ≈ sd_pot[1] rtol = 1e-5
             end
         end
-        @testset "using cost matrices" begin
+        @testset "multivariate exmaples" begin
             # create distributions 
-            N = 20
-            μ = FiniteDiscreteMeasure(rand(N,3), rand(N))
-            ν = FiniteDiscreteMeasure(rand(N,3), rand(N))
-            Cμν = pairwise(sqeuclidean, support(μ),support(ν))
+            N = 30
+            M = 17
+            μ = FiniteDiscreteMeasure(rand(N,2), rand(N))
+            ν = FiniteDiscreteMeasure(rand(M,2), rand(M))
 
             for (ε, metric) in Iterators.product(
                 [0.1, 1.0, 10.0], [sqeuclidean, euclidean, totalvariation]
@@ -246,9 +259,21 @@ Random.seed!(100)
                 @test sinkhorn_divergence(metric, μ, μ, ε) ≈ 0.0
                 @test sinkhorn_divergence(metric, ν, ν, ε) ≈ 0.0
 
-                sd = sinkhorn_divergence(metric, μ, ν, ε)
-                sd_pot = POT.empirical_sinkhorn_divergence(μ.support, ν.support, ε; metric=metric)[1]
-                @test sd ≈ sd_pot rtol = 1e-5
+                sd_c = sinkhorn_divergence(metric, μ, ν, ε)
+
+                # calculating cost matrices to use in POT.sinkhorn2
+                Cμν = cost_matrix(metric, μ, ν)
+                Cμ  = cost_matrix(metric, μ, symmetric=true)
+                Cν  = cost_matrix(metric, ν, symmetric=true)
+
+                sd_C = sinkhorn_divergence(Cμν, Cμ, Cν, μ, ν, ε)
+
+                # the empirical_sinkhorn_divergence returns an error if the weights are not all equal
+                # so instead, it's more realiable to calculate using sinkhorn2
+                sd_pot = POT.sinkhorn2(μ.p, ν.p, Cμν, ε) - (POT.sinkhorn2(μ.p, μ.p, Cμ, ε) + POT.sinkhorn2(ν.p, ν.p, Cν, ε))/2
+
+                @test sd_c ≈ sd_pot[1] rtol = 1e-5
+                @test sd_C ≈ sd_pot[1] rtol = 1e-5
             end
         end
     end

@@ -1,3 +1,4 @@
+using LinearAlgebra: symmetric
 using OptimalTransport
 using Pkg: Pkg
 using SafeTestsets
@@ -25,6 +26,9 @@ const GROUP = get(ENV, "GROUP", "All")
         end
         @safetestset "Finite Discrete Measure" begin
             include("finitediscretemeasure.jl")
+        end
+        @safetestset "Cost matrix computation" begin
+            include("costmatrix.jl")
         end
     end
 
