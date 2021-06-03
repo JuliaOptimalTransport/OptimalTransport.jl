@@ -216,11 +216,29 @@ Random.seed!(100)
     end
 
     @testset "sinkhorn divergence" begin
-        @testset "example" begin
+        @testset "using cost function" begin
             # create distributions 
-            N = 100
-            μ = FiniteDiscreteMeasure(rand(N), rand(N))
-            ν = FiniteDiscreteMeasure(rand(N), rand(N))
+            N = 20
+            μ = FiniteDiscreteMeasure(rand(N,2), rand(N))
+            ν = FiniteDiscreteMeasure(rand(N,2), rand(N))
+
+            for (ε, metric) in Iterators.product(
+                [0.1, 1.0, 10.0], [sqeuclidean, euclidean, totalvariation]
+            )
+                @test sinkhorn_divergence(metric, μ, μ, ε) ≈ 0.0
+                @test sinkhorn_divergence(metric, ν, ν, ε) ≈ 0.0
+
+                sd = sinkhorn_divergence(metric, μ, ν, ε)
+                sd_pot = POT.empirical_sinkhorn_divergence(μ.support, ν.support, ε; metric=metric)[1]
+                @test sd ≈ sd_pot rtol = 1e-5
+            end
+        end
+        @testset "using cost matrices" begin
+            # create distributions 
+            N = 20
+            μ = FiniteDiscreteMeasure(rand(N,3), rand(N))
+            ν = FiniteDiscreteMeasure(rand(N,3), rand(N))
+            Cμν = pairwise(sqeuclidean, support(μ),support(ν))
 
             for (ε, metric) in Iterators.product(
                 [0.1, 1.0, 10.0], [sqeuclidean, euclidean, totalvariation]

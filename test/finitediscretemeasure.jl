@@ -1,4 +1,4 @@
-using Distributions: FiniteSupport
+using Distributions: DiscreteNonParametric
 using OptimalTransport
 using Distributions
 using Random

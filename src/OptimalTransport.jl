@@ -22,6 +22,7 @@ export sinkhorn_divergence
 export quadreg
 export ot_cost, ot_plan, wasserstein, squared2wasserstein
 export FiniteDiscreteMeasure
+export cost_matrix
 
 const MOI = MathOptInterface
 
@@ -75,6 +76,72 @@ end
 
 Distributions.support(d::FiniteDiscreteMeasure) = d.support
 Distributions.probs(d::FiniteDiscreteMeasure) = d.p
+
+"""
+    cost_matrix(
+        c,
+        μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+        ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric}
+    )
+
+Compute cost matrix from Finite Discrete Measures `μ` and `ν` using cost function  `c`.
+
+Note that the use of functions such as `SqEuclidean()` from `Distances.jl` have
+better performance than generic functions. Thus, it's prefered to use
+`cost_matrix(SqEuclidean(), μ, ν)`, instead of `cost_matrix((x,y)->sum((x-y).^2), μ, ν)`
+or even `cost_matrix(sqeuclidean, μ, ν)`.
+
+For custom cost functions, it is necessary to guarantee that the function `c` works
+on vectors, i.e., if one wants to compute the squared Euclidean distance,
+the one must define `c(x,y) = sum(x - y).^2`.
+
+# Example
+```julia
+μ = FiniteDiscreteMeasure(rand(10),rand(10))
+ν = FiniteDiscreteMeasure(rand(8))
+c = TotalVariation()
+C = cost_matrix(c, μ, ν)
+```
+"""
+
+"""
+    cost_matrix(
+        c,
+        μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+        symmetric = false
+    )
+
+Compute cost matrix from Finite Discrete Measures `μ` to itself using cost function  `c`.
+If the cost function is symmetric, set the argument `symmetric` to `true` in order
+to increase performance.
+"""
+function cost_matrix(
+    c,
+    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+    symmetric = false
+)
+    if typeof(c) <: PreMetric && size(μ.support,2) == 1
+        return pairwise(c, μ.support)
+    elseif typeof(c) <: PreMetric && size(μ.support,2) > 1
+        return pairwise(c, μ.support, dims=1)
+    else
+        return pairwise(c, eachrow(μ.support), symmetric=symmetric)
+    end
+end
+
+function cost_matrix(
+    c,
+    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+    ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric}
+)
+    if typeof(c) <: PreMetric && size(μ.support,2) == 1
+        return pairwise(c, μ.support, ν.support)
+    elseif typeof(c) <: PreMetric && size(μ.support,2) > 1
+        return pairwise(c, μ.support, ν.support, dims=1)
+    else
+        return pairwise(c, eachrow(μ.support), eachrow(ν.support))
+    end
+end
 
 dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
 function dot_matwise(x::AbstractArray, y::AbstractMatrix)
@@ -884,29 +951,16 @@ function sinkhorn_divergence(
     kwargs...,
 )
 
-    if typeof(c) <: PreMetric
-        return sinkhorn_divergence(
-            pairwise(c, μ.support, ν.support, dims=1),
-            pairwise(c, μ.support, μ.support, dims=1),
-            pairwise(c, ν.support, ν.support, dims=1),
-            μ,
-            ν,
-            ε;
-            regularization=regularization,
-            kwargs...
-        )
-    else
-        return sinkhorn_divergence(
-            pairwise(c, eachrow(μ.support), eachrow(ν.support)),
-            pairwise(c, eachrow(μ.support), eachrow(μ.support)),
-            pairwise(c, eachrow(ν.support), eachrow(ν.support)),
-            μ,
-            ν,
-            ε;
-            regularization=regularization,
-            kwargs...
-        )
-    end
+    return sinkhorn_divergence(
+        cost_matrix(c, μ, ν),
+        cost_matrix(c, μ, μ),
+        cost_matrix(c, ν, ν),
+        μ,
+        ν,
+        ε;
+        regularization=regularization,
+        kwargs...
+    )
 
 end
 
@@ -971,7 +1025,6 @@ function sinkhorn_divergence(
     )
     return max(0, OTμν - (OTμμ + OTνν) / 2)
 end
-
 
 
 end
