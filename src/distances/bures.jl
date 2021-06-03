@@ -5,7 +5,7 @@
 """
     tr_sqrt(A::AbstractMatrix)
 
-Compute `\\operatorname{tr}\\Big({\\big(A^{1/2} B A^{1/2}\\big)}^{1/2}\\Big)`.
+Compute ``\\operatorname{tr}\\Big({\\big(A^{1/2} B A^{1/2}\\big)}^{1/2}\\Big)``.
 """
 tr_sqrt(A::AbstractMatrix) = LinearAlgebra.tr(sqrt(A))
 tr_sqrt(A::PDMats.PDMat) = tr_sqrt(A.mat)
