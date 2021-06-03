@@ -22,14 +22,9 @@ export ot_cost, ot_plan, wasserstein, squared2wasserstein
 
 const MOI = MathOptInterface
 
+include("utils.jl")
 include("exact.jl")
 include("wasserstein.jl")
-
-dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
-function dot_matwise(x::AbstractArray, y::AbstractMatrix)
-    xmat = reshape(x, size(x, 1) * size(x, 2), :)
-    return reshape(reshape(y, 1, :) * xmat, size(x)[3:end])
-end
 
 """
     sinkhorn_gibbs(
@@ -58,11 +53,12 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `K`. After `maxiter` iterations,
 the computation is stopped.
 
-Note that for a common kernel `K`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
-as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
-The output are then matrices `u` and `v` such that `u[:, i]` and `v[:, i]` are the dual variables for `μ[:, i]` and `ν[:, i]`.
-
-In addition, the case where one of `μ` or `ν` is a single histogram and the other a matrix of histograms is supported.
+Batch computations for multiple histograms with a common Gibbs kernel `K` can be performed
+by passing `μ` or `ν` as matrices whose columns correspond to histograms. It is required
+that the number of source and target marginals is equal or that a single source or single
+target marginal is provided (either as matrix or as vector). The optimal transport plans are
+returned as three-dimensional array where `γ[:, :, i]` is the optimal transport plan for the
+`i`th pair of source and target marginals.
 """
 function sinkhorn_gibbs(
     μ,
@@ -87,43 +83,66 @@ function sinkhorn_gibbs(
             :sinkhorn_gibbs,
         )
     end
-    if (size(μ, 2) != size(ν, 2)) && (min(size(μ, 2), size(ν, 2)) > 1)
-        throw(
-            DimensionMismatch(
-                "Error: number of columns in μ and ν must coincide, if both are matrix valued",
-            ),
-        )
-    end
-    all(sum(μ; dims=1) .≈ sum(ν; dims=1)) ||
-        throw(ArgumentError("source and target marginals must have the same mass"))
+
+    # checks
+    size2 = checksize2(μ, ν)
+    checkbalanced(μ, ν)
 
     # set default values of tolerances
     T = float(Base.promote_eltype(μ, ν, K))
     _atol = atol === nothing ? 0 : atol
     _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
 
-    # initial iteration
-    u = if isequal(size(μ, 2), size(ν, 2))
-        similar(μ)
-    else
-        repeat(similar(μ[:, 1]); outer=(1, max(size(μ, 2), size(ν, 2))))
-    end
-    u .= μ ./ vec(sum(K; dims=2))
-    v = ν ./ (K' * u)
-    tmp1 = K * v
-    tmp2 = similar(u)
+    # initialize iterates
+    u = similar(μ, T, size(μ, 1), size2...)
+    v = similar(ν, T, size(ν, 1), size2...)
+    fill!(v, one(T))
 
-    norm_μ = sum(abs, μ; dims=1) # for convergence check
+    # arrays for convergence check
+    Kv = similar(u)
+    mul!(Kv, K, v)
+    tmp = similar(u)
+    norm_μ = μ isa AbstractVector ? sum(abs, μ) : sum(abs, μ; dims=1)
+    if u isa AbstractMatrix
+        tmp2 = similar(u)
+        norm_uKv = similar(u, 1, size2...)
+        norm_diff = similar(u, 1, size2...)
+        _isconverged = similar(u, Bool, 1, size2...)
+    end
+
     isconverged = false
     check_step = check_convergence === nothing ? 10 : check_convergence
-    for iter in 0:maxiter
-        if iter % check_step == 0
-            # check source marginal
-            # do not overwrite `tmp1` but reuse it for computing `u` if not converged
-            @. tmp2 = u * tmp1
-            norm_uKv = sum(abs, tmp2; dims=1)
-            @. tmp2 = μ - tmp2
-            norm_diff = sum(abs, tmp2; dims=1)
+    to_check_step = check_step
+    for iter in 1:maxiter
+        # reduce counter
+        to_check_step -= 1
+
+        # compute next iterate
+        u .= μ ./ Kv
+        mul!(v, K', u)
+        v .= ν ./ v
+        mul!(Kv, K, v)
+
+        # check source marginal
+        # always check convergence after the final iteration
+        if to_check_step <= 0 || iter == maxiter
+            # reset counter
+            to_check_step = check_step
+
+            # do not overwrite `Kv` but reuse it for computing `u` if not converged
+            tmp .= u .* Kv
+            if u isa AbstractMatrix
+                tmp2 .= abs.(tmp)
+                sum!(norm_uKv, tmp2)
+            else
+                norm_uKv = sum(abs, tmp)
+            end
+            tmp .= abs.(μ .- tmp)
+            if u isa AbstractMatrix
+                sum!(norm_diff, tmp)
+            else
+                norm_diff = sum(tmp)
+            end
 
             @debug "Sinkhorn algorithm (" *
                    string(iter) *
@@ -133,19 +152,16 @@ function sinkhorn_gibbs(
                    string(maximum(norm_diff))
 
             # check stopping criterion
-            if all(@. norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv)))
+            isconverged = if u isa AbstractMatrix
+                @. _isconverged = norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+                all(_isconverged)
+            else
+                norm_diff < max(_atol, _rtol * max(norm_μ, norm_uKv))
+            end
+            if isconverged
                 @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
-                isconverged = true
                 break
             end
-        end
-
-        # perform next iteration
-        if iter < maxiter
-            @. u = μ / tmp1
-            mul!(v, K', u)
-            @. v = ν / v
-            mul!(tmp1, K, v)
         end
     end
 
@@ -154,13 +170,6 @@ function sinkhorn_gibbs(
     end
 
     return u, v
-end
-
-function add_singleton(x::AbstractArray, ::Val{dim}) where {dim}
-    shape = ntuple(ndims(x) + 1) do i
-        return i < dim ? size(x, i) : (i > dim ? size(x, i - 1) : 1)
-    end
-    return reshape(x, shape)
 end
 
 """
@@ -188,10 +197,12 @@ isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
 The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
 the computation is stopped.
 
-Note that for a common cost `C`, multiple histograms may be provided for a batch computation by passing `μ` and `ν`
-as matrices whose columns `μ[:, i]` and `ν[:, i]` correspond to pairs of histograms. 
-
-The output in this case is an `Array` `γ` of coupling matrices such that `γ[:, :, i]` is a coupling of `μ[:, i]` and `ν[:, i]`.
+Batch computations for multiple histograms with a common cost matrix `C` can be performed by
+passing `μ` or `ν` as matrices whose columns correspond to histograms. It is required that
+the number of source and target marginals is equal or that a single source or single target
+marginal is provided (either as matrix or as vector). The optimal transport plans are
+returned as three-dimensional array where `γ[:, :, i]` is the optimal transport plan for the
+`i`th pair of source and target marginals.
 
 See also: [`sinkhorn2`](@ref)
 """

@@ -8,6 +8,9 @@ const GROUP = get(ENV, "GROUP", "All")
 
 @testset "OptimalTransport" begin
     if GROUP == "All" || GROUP == "OptimalTransport"
+        @safetestset "Utilities" begin
+            include("utils.jl")
+        end
         @safetestset "Exact OT" begin
             include("exact.jl")
         end

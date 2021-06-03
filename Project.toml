@@ -1,7 +1,7 @@
 name = "OptimalTransport"
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 authors = ["zsteve <stephenz@student.unimelb.edu.au>"]
-version = "0.3.7"
+version = "0.3.8"
 
 [deps]
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
@@ -25,6 +25,7 @@ StatsBase = "0.33.8"
 julia = "1"
 
 [extras]
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PythonOT = "3c485715-4278-42b2-9b5f-8f00e43c12ef"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -33,4 +34,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
 
 [targets]
-test = ["Pkg", "PythonOT", "Random", "SafeTestsets", "Test", "Tulip"]
+test = ["ForwardDiff", "Pkg", "PythonOT", "Random", "SafeTestsets", "Test", "Tulip"]
