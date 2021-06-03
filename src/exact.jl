@@ -419,13 +419,7 @@ Compute the optimal transport plan for the Monge-Kantorovich problem with
 normal distributions `μ` and `ν` as source and target marginals and cost function
 ``c(x, y) = \\|x - y\\|_2^2``.
 
-In this setting, for ``\\mu = \\mathcal{N}(m_\\mu, \\sigma_\\mu)`` and
-``\\nu = \\mathcal{N}(m_\\nu, \\sigma_\\nu)``, the optimal transport plan is the Monge
-map
-```math
-T \\colon x \\mapsto m_\\nu
-+ \\frac{\\sigma_\\nu}{\\sigma_\\mu}
-(x - m_\\mu).
+See also: [`ot_cost`](@ref), [`emd`](@ref)
 """
 function ot_plan(::SqEuclidean, μ::Normal, ν::Normal)
     T(x) = ν.μ + (ν.σ / μ.σ) * (x - μ.μ)
