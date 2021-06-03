@@ -26,6 +26,25 @@ const MOI = MathOptInterface
 include("exact.jl")
 include("wasserstein.jl")
 
+# struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
+#     xs::X
+#     ps::P
+
+#     function FiniteDiscreteMeasure{X,P}(xs::X, ps::P) where {X,P}
+#         length(xs) == length(ps) ||
+#             error("length of support `xs` and probabilities `ps` must be equal")
+#         return new{X,P}(xs, ps)
+#     end
+# end
+
+# """
+#     DiscreteMeasure(xs::AbstractVector, ps::AbstractVector)
+# Construct a discrete measure with support `xs` and corresponding weights `ps`.
+# """
+# function FiniteDiscreteMeasure(xs::AbstractVector, ps::AbstractVector)
+#     return FiniteDiscreteMeasure{typeof(xs),typeof(ps)}(xs, ps)
+# end
+
 dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
 function dot_matwise(x::AbstractArray, y::AbstractMatrix)
     xmat = reshape(x, size(x, 1) * size(x, 2), :)
@@ -787,18 +806,22 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
 end
 
 """
-    sinkhorn_divergence(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric, ε; regularization=false, kwargs...)
+    sinkhorn_divergence(c, μ, ν, ε; regularization=false, plan=nothing, kwargs...)
 
 Compute the Sinkhorn Divergence between finite discrete
 measures `μ` and `ν` with respect to a cost function `c`
 and entropic regularization parameter `ε`.
 
+A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
+
 The Sinkhorn Divergence is computed as:
 ```math
-S_{c,ε}(μ,ν) := OT_{c,ε}(μ,ν) - \\frac{1}{2}(OT_{c,ε}(μ,μ) + OT_{c,ε}(ν,ν)),
+\\operatorname{S}_{c,ε}(μ,ν) := \\operatorname{OT}_{c,ε}(μ,ν)
+- \\frac{1}{2}(\\operatorname{OT}_{c,ε}(μ,μ) + \\operatorname{OT}_{c,ε}(ν,ν)),
 ```
-where `OT_{c,ε}(μ,ν)`, `OT_{c,ε}(μ,μ)` and `OT_{c,ε}(ν,ν)` are the entropically
-regularized optimal transport cost between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively.
+where ``\\operatorname{OT}_{c,ε}(μ,ν)``, ``\\operatorname{OT}_{c,ε}(μ,μ)`` and
+``\\operatorname{OT}_{c,ε}(ν,ν)`` are the entropically regularized optimal transport cost
+between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively.
 
 The formulation for the Sinkhorn Divergence may have slight variations depending on the paper consulted.
 The Sinkhorn Divergence was initially proposed by [^GPC18], although, this package uses the formulation given by
@@ -817,37 +840,74 @@ See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn_divergence(
     c,
-    μ::DiscreteNonParametric,
-    ν::DiscreteNonParametric,
+    μ,
+    ν,
     ε;
-    regularization=false,
+    regularization=nothing,
+    plan=nothing,
     kwargs...,
 )
+
+    return sinkhorn_divergence(
+        pairwise(c, μ.support, ν.support),
+        pairwise(c, μ.support, μ.support),
+        pairwise(c, ν.support, ν.support),
+        μ,
+        ν,
+        ε;
+        regularization=regularization,
+        kwargs...
+    )
+
+end
+
+"""
+    sinkhorn_divergence(c, μ, ν, ε; regularization=false, plan=nothing, kwargs...)
+
+Compute the Sinkhorn Divergence between finite discrete
+measures `μ` and `ν` with respect to the precomputed cost matrices `Cμν`,
+`Cμμ` and `Cνν`, and entropic regularization parameter `ε`.
+
+A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
+
+See also: [`sinkhorn2`](@ref)
+"""
+function sinkhorn_divergence(Cμν, Cμμ, Cνν, μ, ν, ε; regularization=nothing, plan=nothing, kwargs...)
+
+    if regularization !== nothing
+        @warn "`sinkhorn_divergence` does not support the `regularization` keyword argument"
+    end
+
     OTμν = sinkhorn2(
         μ.p,
         ν.p,
-        pairwise(c, μ.support, ν.support),
+        Cμν,
         ε;
-        regularization=regularization,
+        plan=plan,
+        regularization = false,
         kwargs...,
     )
     OTμμ = sinkhorn2(
         μ.p,
         μ.p,
-        pairwise(c, μ.support; symmetric=true),
+        Cμμ,
         ε;
-        regularization=regularization,
+        plan=nothing,
+        regularization = false,
         kwargs...,
     )
     OTνν = sinkhorn2(
         ν.p,
         ν.p,
-        pairwise(c, ν.support; symmetric=true),
+        Cνν,
         ε;
-        regularization=regularization,
+        plan=nothing,
+        regularization = false,
         kwargs...,
     )
-    return max(0, OTμν - 0.5 * (OTμμ + OTνν))
+    return max(0, OTμν - (OTμμ + OTνν) / 2)
 end
+
+
 
 end
