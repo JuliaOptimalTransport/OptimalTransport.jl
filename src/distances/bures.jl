@@ -17,7 +17,7 @@ tr_sqrt(A::PDMats.ScalMat) = A.dim * sqrt(A.value)
 
 Compute
 ```math
-{\\big(A^{1/2} B A^{1/2}\\big)}^{1/2}.
+A^{1/2} B A^{1/2}.
 ```
 """
 function _gaussian_ot_A(A::AbstractMatrix, B::AbstractMatrix)
