@@ -44,7 +44,6 @@ Compute the squared Bures metric
 ```
 """
 function sqbures(A::AbstractMatrix, B::AbstractMatrix)
-    # return LinearAlgebra.tr(A) + LinearAlgebra.tr(B) - 2 * _sqbures_kernel(A, B)
     return LinearAlgebra.tr(A) + LinearAlgebra.tr(B) - 2 * tr_sqrt(_gaussian_ot_A(A, B))
 end
 
