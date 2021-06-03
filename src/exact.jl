@@ -381,7 +381,7 @@ function ot_cost(::SqEuclidean, μ::Normal, ν::Normal)
 end
 
 """
-    ot_plan(c::SqEuclidean, μ::MvNormal, ν::MvNormal)
+    ot_plan(::SqEuclidean, μ::MvNormal, ν::MvNormal)
 
 Compute the optimal transport plan for the Monge-Kantorovich problem with multivariate
 Normal distributions `μ` and `ν` as source and target marginals and cost function
