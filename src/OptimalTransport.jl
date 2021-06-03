@@ -20,30 +20,53 @@ export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export sinkhorn_divergence
 export quadreg
 export ot_cost, ot_plan, wasserstein, squared2wasserstein
+export FiniteDiscreteMeasure
 
 const MOI = MathOptInterface
 
 include("exact.jl")
 include("wasserstein.jl")
 
-# struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
-#     xs::X
-#     ps::P
+struct FiniteDiscreteMeasure{X<:AbstractArray,P<:AbstractVector}
+    support::X
+    p::P
 
-#     function FiniteDiscreteMeasure{X,P}(xs::X, ps::P) where {X,P}
-#         length(xs) == length(ps) ||
-#             error("length of support `xs` and probabilities `ps` must be equal")
-#         return new{X,P}(xs, ps)
-#     end
-# end
+    function FiniteDiscreteMeasure{X,P}(support::X, p::P) where {X,P}
+        size(support, 1) == length(p) ||
+            error("number of rows of `support` and `p` must be equal")
+        sum(p) ≈ 1 ||
+            error("`p` must sum to 1")
+        return new{X,P}(support, p)
+    end
+end
 
-# """
-#     DiscreteMeasure(xs::AbstractVector, ps::AbstractVector)
-# Construct a discrete measure with support `xs` and corresponding weights `ps`.
-# """
-# function FiniteDiscreteMeasure(xs::AbstractVector, ps::AbstractVector)
-#     return FiniteDiscreteMeasure{typeof(xs),typeof(ps)}(xs, ps)
-# end
+"""
+    FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
+Construct a finite discrete probability measure with support `support` and corresponding weights `p`.
+"""
+function FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
+    if size(support, 2) == 1
+        return DiscreteNonParametric(support, p)
+    else
+        return FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
+    end
+end
+
+"""
+    FiniteDiscreteMeasure(support::AbstractArray)
+Construct a finite discrete probability measure with support `support` and equal probability for each point.
+"""
+function FiniteDiscreteMeasure(support::AbstractArray)
+    p = ones(size(support)[1]) ./  size(support)[1]
+    if size(support, 2) == 1
+        return DiscreteNonParametric(support, p)
+    else
+        return FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
+    end
+end
+
+Distributions.support(d::FiniteDiscreteMeasure) = d.support
+Distributions.probs(d::FiniteDiscreteMeasure) = d.p
 
 dot_matwise(x::AbstractMatrix, y::AbstractMatrix) = dot(x, y)
 function dot_matwise(x::AbstractArray, y::AbstractMatrix)
@@ -806,7 +829,12 @@ function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
 end
 
 """
-    sinkhorn_divergence(c, μ, ν, ε; regularization=false, plan=nothing, kwargs...)
+    sinkhorn_divergence(
+        c,
+        μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+        ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+        ε; regularization=false, plan=nothing, kwargs...
+    )
 
 Compute the Sinkhorn Divergence between finite discrete
 measures `μ` and `ν` with respect to a cost function `c`
@@ -862,7 +890,12 @@ function sinkhorn_divergence(
 end
 
 """
-    sinkhorn_divergence(c, μ, ν, ε; regularization=false, plan=nothing, kwargs...)
+    sinkhorn_divergence(
+        Cμν, Cμμ, Cνν,
+        μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+        ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+        ε; regularization=false, plan=nothing, kwargs...
+    )
 
 Compute the Sinkhorn Divergence between finite discrete
 measures `μ` and `ν` with respect to the precomputed cost matrices `Cμν`,
@@ -872,7 +905,17 @@ A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
 
 See also: [`sinkhorn2`](@ref)
 """
-function sinkhorn_divergence(Cμν, Cμμ, Cνν, μ, ν, ε; regularization=nothing, plan=nothing, kwargs...)
+function sinkhorn_divergence(
+    Cμν,
+    Cμμ,
+    Cνν,
+    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+    ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
+    ε;
+    regularization=nothing,
+    plan=nothing,
+    kwargs...
+)
 
     if regularization !== nothing
         @warn "`sinkhorn_divergence` does not support the `regularization` keyword argument"
