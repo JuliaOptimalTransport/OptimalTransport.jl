@@ -377,7 +377,7 @@ Compute the squared 2-Wasserstein distance between univariate normal distributio
 See also: [`ot_plan`](@ref), [`emd2`](@ref)
 """
 function ot_cost(::SqEuclidean, μ::Normal, ν::Normal)
-    return sqeuclidean(μ.μ, ν.μ) + (μ.σ - ν.σ)^2
+    return (μ.μ - ν.μ)^2 + (μ.σ - ν.σ)^2
 end
 
 """
