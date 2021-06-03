@@ -393,7 +393,7 @@ map
 ```math
 T \\colon x \\mapsto m_\\nu
 + \\Sigma_\\mu^{-1/2}
-{\\big(\\Sigma_\\mu^{1/2} \\Si    ot_cost(c::SqEuclidean, μ::Normal, ν::Normal)gma_\\nu \\Sigma_\\mu^{1/2}\\big)}^{1/2}\\Sigma_\\mu^{-1/2}
+{\\big(\\Sigma_\\mu^{1/2} \\Sigma_\\nu \\Sigma_\\mu^{1/2}\\big)}^{1/2}\\Sigma_\\mu^{-1/2}
 (x - m_\\mu).
 
 See also: [`ot_cost`](@ref), [`emd`](@ref)
