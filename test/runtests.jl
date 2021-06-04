@@ -9,6 +9,9 @@ const GROUP = get(ENV, "GROUP", "All")
 
 @testset "OptimalTransport" begin
     if GROUP == "All" || GROUP == "OptimalTransport"
+        @safetestset "Utilities" begin
+            include("utils.jl")
+        end
         @safetestset "Exact OT" begin
             include("exact.jl")
         end
@@ -23,12 +26,6 @@ const GROUP = get(ENV, "GROUP", "All")
         end
         @safetestset "Wasserstein distance" begin
             include("wasserstein.jl")
-        end
-        @safetestset "Finite Discrete Measure" begin
-            include("finitediscretemeasure.jl")
-        end
-        @safetestset "Cost matrix computation" begin
-            include("costmatrix.jl")
         end
     end
 

@@ -24,7 +24,6 @@ sinkhorn2
 sinkhorn_stabilized_epsscaling
 sinkhorn_stabilized
 sinkhorn_barycenter
-sinkhorn_divergence
 ```
 
 ## Unbalanced optimal transport
