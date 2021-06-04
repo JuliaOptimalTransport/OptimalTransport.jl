@@ -236,5 +236,4 @@ Random.seed!(100)
             @test μ_interp ≈ μ_interp_pot rtol = 1e-6
         end
     end
-
 end

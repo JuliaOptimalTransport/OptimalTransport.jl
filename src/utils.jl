@@ -62,10 +62,8 @@ struct FiniteDiscreteMeasure{X<:AbstractArray,P<:AbstractVector}
     function FiniteDiscreteMeasure{X,P}(support::X, p::P) where {X,P}
         size(support, 1) == length(p) ||
             error("number of rows of `support` and `p` must be equal")
-        sum(p) ≈ 1 ||
-            error("`p` must sum to 1")
-        all(p .>= 0) ||
-            error("values of `p` must be greater of equal than 0")
+        sum(p) ≈ 1 || error("`p` must sum to 1")
+        all(p .>= 0) || error("values of `p` must be greater of equal than 0")
         return new{X,P}(support, p)
     end
 end
@@ -77,13 +75,17 @@ Construct a finite discrete probability measure with support `support` and corre
 function FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
     P = sum(p)
     if size(support, 2) == 1
-        return P ≈ 1 ?
-            DiscreteNonParametric(vec(support), p) : 
+        return if P ≈ 1
+            DiscreteNonParametric(vec(support), p)
+        else
             DiscreteNonParametric(vec(support), p ./ P)
+        end
     else
-        return P ≈ 1 ?
-            FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p) :
+        return if P ≈ 1
+            FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
+        else
             FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p ./ P)
+        end
     end
 end
 
@@ -92,7 +94,7 @@ end
 Construct a finite discrete probability measure with support `support` and equal probability for each point.
 """
 function FiniteDiscreteMeasure(support::AbstractArray)
-    p = ones(size(support)[1]) ./  size(support)[1]
+    p = ones(size(support)[1]) ./ size(support)[1]
     if size(support, 2) == 1
         return DiscreteNonParametric(vec(support), p)
     else
