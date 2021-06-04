@@ -83,13 +83,13 @@ C = cost_matrix(c, μ, ν)
 """
 function cost_matrix(
     c,
-    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
-    ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric}
+    μ::Union{FiniteDiscreteMeasure,DiscreteNonParametric},
+    ν::Union{FiniteDiscreteMeasure,DiscreteNonParametric},
 )
-    if typeof(c) <: PreMetric && size(μ.support,2) == 1
+    if typeof(c) <: PreMetric && size(μ.support, 2) == 1
         return pairwise(c, μ.support, ν.support)
-    elseif typeof(c) <: PreMetric && size(μ.support,2) > 1
-        return pairwise(c, μ.support, ν.support, dims=1)
+    elseif typeof(c) <: PreMetric && size(μ.support, 2) > 1
+        return pairwise(c, μ.support, ν.support; dims=1)
     else
         return pairwise(c, eachrow(μ.support), eachrow(ν.support))
     end
@@ -107,15 +107,13 @@ If the cost function is symmetric, set the argument `symmetric` to `true` in ord
 to increase performance.
 """
 function cost_matrix(
-    c,
-    μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric};
-    symmetric = false
+    c, μ::Union{FiniteDiscreteMeasure,DiscreteNonParametric}; symmetric=false
 )
-    if typeof(c) <: PreMetric && size(μ.support,2) == 1
+    if typeof(c) <: PreMetric && size(μ.support, 2) == 1
         return pairwise(c, μ.support)
-    elseif typeof(c) <: PreMetric && size(μ.support,2) > 1
-        return pairwise(c, μ.support, dims=1)
+    elseif typeof(c) <: PreMetric && size(μ.support, 2) > 1
+        return pairwise(c, μ.support; dims=1)
     else
-        return pairwise(c, eachrow(μ.support), symmetric=symmetric)
+        return pairwise(c, eachrow(μ.support); symmetric=symmetric)
     end
 end
