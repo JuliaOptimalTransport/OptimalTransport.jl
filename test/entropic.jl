@@ -1,6 +1,8 @@
 using OptimalTransport
 
 using Distances
+using ForwardDiff
+using LogExpFunctions
 using PythonOT: PythonOT
 
 using Random
@@ -23,7 +25,7 @@ Random.seed!(100)
             # create random cost matrix
             C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
-            # compute optimal transport map (Julia implementation + POT)
+            # compute optimal transport plan (Julia implementation + POT)
             eps = 0.01
             γ = sinkhorn(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
             γ_pot = POT.sinkhorn(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)
@@ -38,15 +40,36 @@ Random.seed!(100)
 
             # compare with POT
             c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-9)[1]
-            @test c_pot ≈ c
+            @test c_pot ≈ c rtol = 1e-7
 
-            # ensure that provided map is used and correct
+            # ensure that provided plan is used and correct
             c2 = sinkhorn2(similar(μ), similar(ν), C, rand(); plan=γ)
             @test c2 ≈ c
             c2_w_regularization = sinkhorn2(
                 similar(μ), similar(ν), C, eps; plan=γ, regularization=true
             )
             @test c2_w_regularization ≈ c_w_regularization
+
+            # batches of histograms
+            d = 10
+            for (size2_μ, size2_ν) in
+                (((), (d,)), ((1,), (d,)), ((d,), ()), ((d,), (1,)), ((d,), (d,)))
+                # generate uniform histograms
+                μ = fill(1 / M, (M, size2_μ...))
+                ν = fill(1 / N, (N, size2_ν...))
+
+                # compute optimal transport plan and check that it is consistent with the
+                # plan for individual histograms
+                γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
+                @test size(γ_all) == (M, N, d)
+                @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
+
+                # compute optimal transport cost and check that it is consistent with the
+                # cost for individual histograms
+                c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-9)
+                @test size(c_all) == (d,)
+                @test all(x ≈ c for x in c_all)
+            end
         end
 
         # different element type
@@ -58,7 +81,7 @@ Random.seed!(100)
             # create random cost matrix
             C = pairwise(SqEuclidean(), rand(Float32, 1, M), rand(Float32, 1, N); dims=2)
 
-            # compute optimal transport map (Julia implementation + POT)
+            # compute optimal transport plan (Julia implementation + POT)
             eps = 0.01f0
             γ = sinkhorn(μ, ν, C, eps; maxiter=5_000, rtol=1e-6)
             @test eltype(γ) === Float32
@@ -80,52 +103,51 @@ Random.seed!(100)
             c_pot = POT.sinkhorn2(μ, ν, C, eps; numItermax=5_000, stopThr=1e-6)[1]
             @test Float32(c_pot) ≈ c rtol = 1e-3
 
-            # batch
+            # batches of histograms
             d = 10
-            μ = fill(Float32(1 / M), (M, d))
-            ν = fill(Float32(1 / N), N)
+            for (size2_μ, size2_ν) in
+                (((), (d,)), ((1,), (d,)), ((d,), ()), ((d,), (1,)), ((d,), (d,)))
+                # generate uniform histograms
+                μ = fill(Float32(1 / M), (M, size2_μ...))
+                ν = fill(Float32(1 / N), (N, size2_ν...))
 
-            γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000, rtol=1e-6)
-            γ_pot = [
-                POT.sinkhorn(μ[:, i], vec(ν), C, eps; numItermax=5_000, stopThr=1e-6) for
-                i in 1:d
-            ]
-            @test all([
-                isapprox(Float32.(γ_pot[i]), γ_all[:, :, i]; rtol=1e-3) for i in 1:d
-            ])
-            @test eltype(γ_all) == Float32
+                # compute optimal transport plan and check that it is consistent with the
+                # plan for individual histograms
+                γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000, rtol=1e-6)
+                @test eltype(γ_all) === Float32
+                @test size(γ_all) == (M, N, d)
+                @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
+
+                # compute optimal transport cost and check that it is consistent with the
+                # cost for individual histograms
+                c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000, rtol=1e-6)
+                @test eltype(c_all) === Float32
+                @test size(c_all) == (d,)
+                @test all(x ≈ c for x in c_all)
+            end
         end
 
-        @testset "batch" begin
-            # create two sets of batch histograms 
-            d = 10
-            μ = rand(Float64, (M, d))
-            μ = μ ./ sum(μ; dims=1)
-            ν = rand(Float64, (N, d))
-            ν = ν ./ sum(ν; dims=1)
-
-            # create random cost matrix
+        # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/86
+        @testset "AD" begin
+            # uniform histograms with random cost matrix
+            μ = fill(1 / M, M)
+            ν = fill(1 / N, N)
             C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
-            # compute optimal transport map (Julia implementation + POT)
-            eps = 0.01
-            γ_all = sinkhorn(μ, ν, C, eps; maxiter=5_000)
-            γ_pot = [POT.sinkhorn(μ[:, i], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
-            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol=1e-6) for i in 1:d])
-
-            c_all = sinkhorn2(μ, ν, C, eps; maxiter=5_000)
-            c_pot = [
-                POT.sinkhorn2(μ[:, i], ν[:, i], C, eps; numItermax=5_000)[1] for i in 1:d
-            ]
-            @test c_all ≈ c_pot rtol = 1e-6
-
-            γ_all = sinkhorn(μ[:, 1], ν, C, eps; maxiter=5_000)
-            γ_pot = [POT.sinkhorn(μ[:, 1], ν[:, i], C, eps; numItermax=5_000) for i in 1:d]
-            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol=1e-6) for i in 1:d])
-
-            γ_all = sinkhorn(μ, ν[:, 1], C, eps; maxiter=5_000)
-            γ_pot = [POT.sinkhorn(μ[:, i], ν[:, 1], C, eps; numItermax=5_000) for i in 1:d]
-            @test all([isapprox(γ_all[:, :, i], γ_pot[i]; rtol=1e-6) for i in 1:d])
+            # compute gradients with respect to source and target marginals separately and
+            # together
+            ε = 0.01
+            ForwardDiff.gradient(zeros(N)) do xs
+                sinkhorn2(μ, softmax(xs), C, ε; regularization=true)
+            end
+            ForwardDiff.gradient(zeros(M)) do xs
+                sinkhorn2(softmax(xs), ν, C, ε; regularization=true)
+            end
+            ForwardDiff.gradient(zeros(M + N)) do xs
+                sinkhorn2(
+                    softmax(xs[1:M]), softmax(xs[(M + 1):end]), C, ε; regularization=true
+                )
+            end
         end
 
         @testset "deprecations" begin
@@ -209,7 +231,7 @@ Random.seed!(100)
             eps = 0.01
             μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5])
             μ_interp_pot = POT.barycenter(μ_all, C, eps; weights=[0.5, 0.5], stopThr=1e-9)
-            # need to use a larger tolerance here because of a quirk with the POT solver 
+            # need to use a larger tolerance here because of a quirk with the POT solver
             @test μ_interp ≈ μ_interp_pot rtol = 1e-6
         end
     end
