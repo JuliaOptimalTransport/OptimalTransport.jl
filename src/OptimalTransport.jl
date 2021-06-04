@@ -21,8 +21,6 @@ export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export sinkhorn_divergence
 export quadreg
 export ot_cost, ot_plan, wasserstein, squared2wasserstein
-export FiniteDiscreteMeasure
-export cost_matrix
 
 const MOI = MathOptInterface
 
