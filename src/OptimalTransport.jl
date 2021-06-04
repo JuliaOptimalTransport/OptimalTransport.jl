@@ -18,7 +18,6 @@ export sinkhorn, sinkhorn2
 export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
-export sinkhorn_divergence
 export quadreg
 export ot_cost, ot_plan, wasserstein, squared2wasserstein
 
