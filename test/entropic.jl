@@ -4,7 +4,6 @@ using Distances
 using ForwardDiff
 using LogExpFunctions
 using PythonOT: PythonOT
-using Distributions
 
 using Random
 using Test
