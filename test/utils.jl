@@ -101,12 +101,12 @@ Random.seed!(100)
         @testset "Univariate Finite Discrete Measure" begin
             n = 100
             m = 80
-            μsupp    = rand(n)
-            νsupp    = rand(m)
-            μprobs   = rand(n)
+            μsupp = rand(n)
+            νsupp = rand(m)
+            μprobs = rand(n)
             μprobs ./= sum(μprobs)
-            νprobs   = rand(m)
-            νprobs ./= sum(μprobs)
+            νprobs = rand(m)
+            νprobs ./= sum(νprobs)
 
             μ = discretemeasure(μsupp, μprobs)
             ν = discretemeasure(νsupp, νprobs)

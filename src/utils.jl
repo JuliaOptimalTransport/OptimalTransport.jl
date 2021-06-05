@@ -60,8 +60,7 @@ struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
     p::P
 
     function FiniteDiscreteMeasure{X,P}(support::X, p::P) where {X,P}
-        length(support) == length(p) ||
-            error("length of `support` and `p` must be equal")
+        length(support) == length(p) || error("length of `support` and `p` must be equal")
         isprobvec(p) ≈ 1 || error("`p` must be a probability vector")
         return new{X,P}(support, p)
     end
