@@ -20,10 +20,8 @@ Random.seed!(100)
     @testset "Earth-Movers Distance" begin
         M = 200
         N = 250
-        μ = rand(M)
-        ν = rand(N)
-        μ ./= sum(μ)
-        ν ./= sum(ν)
+        μ = normalize!(rand(M), 1)
+        ν = normalize!(rand(N), 1)
 
         @testset "example" begin
             # create random cost matrix
@@ -87,8 +85,7 @@ Random.seed!(100)
 
         @testset "semidiscrete case" begin
             μ = Normal(randn(), rand())
-            νprobs = rand(30)
-            νprobs ./= sum(νprobs)
+            νprobs = normalize!(rand(30), 1)
             ν = Categorical(νprobs)
 
             # compute OT plan
@@ -113,14 +110,12 @@ Random.seed!(100)
         @testset "discrete case" begin
             # random source and target marginal
             m = 30
-            μprobs = rand(m)
-            μprobs ./= sum(μprobs)
+            μprobs = normalize!(rand(m), 1)
             μsupport = randn(m)
             μ = DiscreteNonParametric(μsupport, μprobs)
 
             n = 50
-            νprobs = rand(n)
-            νprobs ./= sum(νprobs)
+            νprobs = normalize!(rand(n), 1)
             νsupport = randn(n)
             ν = DiscreteNonParametric(νsupport, νprobs)
 
@@ -200,11 +195,9 @@ Random.seed!(100)
             end
 
             # Create discretized distribution
-            μprobs = pdf(μ, μsupp')
-            μprobs = μprobs ./ sum(μprobs)
-            νprobs = pdf(ν, νsupp')
-            νprobs = νprobs ./ sum(νprobs)
-            C = pairwise(SqEuclidean(), μsupp', νsupp')
+            μprobs = normalize!(pdf(μ, μsupp'), 1)
+            νprobs = normalize!(pdf(ν, νsupp'), 1)
+            C = pairwise(SqEuclidean(), μsupp', νsupp'; dims=2)
             @test emd2(μprobs, νprobs, C, Tulip.Optimizer()) ≈ ot_cost(SqEuclidean(), μ, ν) rtol =
                 1e-3
 
