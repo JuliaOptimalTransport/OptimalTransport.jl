@@ -345,3 +345,82 @@ end
 function _ot_cost(c, μ::DiscreteNonParametric, ν::DiscreteNonParametric, plan)
     return dot(plan, StatsBase.pairwise(c, support(μ), support(ν)))
 end
+
+################
+# OT Gaussians
+################
+
+"""
+    ot_cost(::SqEuclidean, μ::MvNormal, ν::MvNormal)
+
+Compute the squared 2-Wasserstein distance between normal distributions `μ` and `ν` as
+source and target marginals.
+
+In this setting, the optimal transport cost can be computed as
+```math
+W_2^2(\\mu, \\nu) = \\|m_\\mu - m_\\nu \\|^2 + \\mathcal{B}(\\Sigma_\\mu, \\Sigma_\\nu)^2,
+```
+where ``\\mu = \\mathcal{N}(m_\\mu, \\Sigma_\\mu)``,
+``\\nu = \\mathcal{N}(m_\\nu, \\Sigma_\\nu)``, and ``\\mathcal{B}`` is the Bures metric.
+
+See also: [`ot_plan`](@ref), [`emd2`](@ref)
+"""
+function ot_cost(::SqEuclidean, μ::MvNormal, ν::MvNormal)
+    return sqeuclidean(μ.μ, ν.μ) + sqbures(μ.Σ, ν.Σ)
+end
+
+"""
+    ot_cost(::SqEuclidean, μ::Normal, ν::Normal)
+
+Compute the squared 2-Wasserstein distance between univariate normal distributions `μ` and
+`ν` as source and target marginals.
+
+See also: [`ot_plan`](@ref), [`emd2`](@ref)
+"""
+function ot_cost(::SqEuclidean, μ::Normal, ν::Normal)
+    return (μ.μ - ν.μ)^2 + (μ.σ - ν.σ)^2
+end
+
+"""
+    ot_plan(::SqEuclidean, μ::MvNormal, ν::MvNormal)
+
+Compute the optimal transport plan for the Monge-Kantorovich problem with multivariate
+normal distributions `μ` and `ν` as source and target marginals and cost function
+``c(x, y) = \\|x - y\\|_2^2``.
+
+In this setting, for ``\\mu = \\mathcal{N}(m_\\mu, \\Sigma_\\mu)`` and
+``\\nu = \\mathcal{N}(m_\\nu, \\Sigma_\\nu)``, the optimal transport plan is the Monge
+map
+```math
+T \\colon x \\mapsto m_\\nu
++ \\Sigma_\\mu^{-1/2}
+{\\big(\\Sigma_\\mu^{1/2} \\Sigma_\\nu \\Sigma_\\mu^{1/2}\\big)}^{1/2}\\Sigma_\\mu^{-1/2}
+(x - m_\\mu).
+
+See also: [`ot_cost`](@ref), [`emd`](@ref)
+"""
+function ot_plan(::SqEuclidean, μ::MvNormal, ν::MvNormal)
+    Σμsqrt = μ.Σ^(-1 / 2)
+    A = Σμsqrt * sqrt(_gaussian_ot_A(μ.Σ, ν.Σ)) * Σμsqrt
+    mμ = μ.μ
+    mν = ν.μ
+    T(x) = mν + A * (x - mμ)
+    return T
+end
+
+"""
+    ot_plan(::SqEuclidean, μ::Normal, ν::Normal)
+
+Compute the optimal transport plan for the Monge-Kantorovich problem with
+normal distributions `μ` and `ν` as source and target marginals and cost function
+``c(x, y) = \\|x - y\\|_2^2``.
+
+See also: [`ot_cost`](@ref), [`emd`](@ref)
+"""
+function ot_plan(::SqEuclidean, μ::Normal, ν::Normal)
+    mμ = μ.μ
+    mν = ν.μ
+    a = ν.σ / μ.σ
+    T(x) = mν + a * (x - mμ)
+    return T
+end

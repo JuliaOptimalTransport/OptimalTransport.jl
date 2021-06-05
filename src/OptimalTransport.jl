@@ -10,6 +10,7 @@ using IterativeSolvers, SparseArrays
 using LogExpFunctions: LogExpFunctions
 using MathOptInterface
 using Distributions
+using PDMats
 using QuadGK
 using StatsBase: StatsBase
 
@@ -23,6 +24,7 @@ export discretemeasure
 
 const MOI = MathOptInterface
 
+include("distances/bures.jl")
 include("utils.jl")
 include("exact.jl")
 include("wasserstein.jl")
