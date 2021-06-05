@@ -78,6 +78,7 @@ equal probability is assigned to each entry in the support.
 
 # Examples
 ```julia
+using KernelFunctions
 # rows correspond to samples
 μ = discretemeasure(RowVecs(rand(7,3)), normalize!(rand(10),1))
 
