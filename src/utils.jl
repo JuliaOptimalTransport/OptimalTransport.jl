@@ -69,24 +69,16 @@ struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
 end
 
 """
-    FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
-Construct a finite discrete probability measure with support `support` and corresponding weights `p`.
+    discretemeasure(support::AbstractVector, probabilities::AbstractVector{<:Real})
+
+Construct a finite discrete probability measure with `support` and corresponding 
+`probabilities`.
 """
-function FiniteDiscreteMeasure(support::AbstractArray, p::AbstractVector)
-    P = sum(p)
-    if size(support, 2) == 1
-        return if P ≈ 1
-            DiscreteNonParametric(vec(support), p)
-        else
-            DiscreteNonParametric(vec(support), p ./ P)
-        end
-    else
-        return if P ≈ 1
-            FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
-        else
-            FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p ./ P)
-        end
-    end
+function discretemeasure(support::AbstractVector{<:Real}, probs::AbstractVector{<:Real})
+    return DiscreteNonParametric(support, probs)
+end
+function discretemeasure(support::AbstractVector, probs::AbstractVector{<:Real})
+    return FiniteDiscreteMeasure(support, probs)
 end
 
 """
