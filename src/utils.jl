@@ -81,18 +81,5 @@ function discretemeasure(support::AbstractVector, probs::AbstractVector{<:Real})
     return FiniteDiscreteMeasure(support, probs)
 end
 
-"""
-    FiniteDiscreteMeasure(support::AbstractArray)
-Construct a finite discrete probability measure with support `support` and equal probability for each point.
-"""
-function FiniteDiscreteMeasure(support::AbstractArray)
-    p = ones(size(support)[1]) ./ size(support)[1]
-    if size(support, 2) == 1
-        return DiscreteNonParametric(vec(support), p)
-    else
-        return FiniteDiscreteMeasure{typeof(support),typeof(p)}(support, p)
-    end
-end
-
 Distributions.support(d::FiniteDiscreteMeasure) = d.support
 Distributions.probs(d::FiniteDiscreteMeasure) = d.p
