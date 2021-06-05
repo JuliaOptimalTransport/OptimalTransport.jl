@@ -4,6 +4,7 @@ using LinearAlgebra
 using Random
 using Test
 using Distributions
+using KernelFunctions
 
 Random.seed!(100)
 
@@ -105,16 +106,14 @@ Random.seed!(100)
             νsupp = rand(m)
             μprobs = rand(n)
             μprobs ./= sum(μprobs)
-            νprobs = rand(m)
-            νprobs ./= sum(νprobs)
 
             μ = discretemeasure(μsupp, μprobs)
-            ν = discretemeasure(νsupp, νprobs)
+            ν = discretemeasure(νsupp)
             # check if it vectors are indeed probabilities
             @test isprobvec(μ.p)
-            @test isprobvec(ν.p)
             @test isprobvec(probs(μ))
-            @test isprobvec(probs(ν))
+            @test ν.p == ones(m) ./ m
+            @test probs(ν) == ones(m) ./ m
 
             # check if it assigns to DiscreteNonParametric when Vector/Matrix is 1D
             @test typeof(μ) <: DiscreteNonParametric
@@ -126,28 +125,26 @@ Random.seed!(100)
             @test sort(vec(νsupp)) == ν.support
             @test sort(vec(νsupp)) == support(ν)
         end
-        # @testset "Multivariate Finite Discrete Measure" begin
-        #     n = 10
-        #     m = 3
-        #     μsupp = rand(n, m)
-        #     νsupp = rand(m, m)
-        #     μprobs   = rand(n)
-        #     μprobs ./= sum(μprobs)
-        #     νprobs   = rand(m)
-        #     νprobs ./= sum(μprobs)
-        #     μ = discretemeasure(μsupp, μprobs)
-        #     ν = discretemeasure(νsupp, νprobs)
-        #     # check if it vectors are indeed probabilities
-        #     @test isprobvec(μ.p)
-        #     @test isprobvec(ν.p)
-        #     @test isprobvec(probs(μ))
-        #     @test isprobvec(probs(ν))
+        @testset "Multivariate Finite Discrete Measure" begin
+            n = 10
+            m = 3
+            μsupp = rand(n, m)
+            νsupp = rand(n, m)
+            μprobs = rand(n)
+            μprobs ./= sum(μprobs)
+            μ = discretemeasure(RowVecs(μsupp), μprobs)
+            ν = discretemeasure(ColVecs(νsupp))
+            # check if it vectors are indeed probabilities
+            @test isprobvec(μ.p)
+            @test isprobvec(probs(μ))
+            @test ν.p == ones(m) ./ m
+            @test probs(ν) == ones(m) ./ m
 
-        #     # check if support is correctly assinged
-        #     @test μsupp == μ.support
-        #     @test μsupp == support(μ)
-        #     @test νsupp == ν.support
-        #     @test νsupp == support(ν)
-        # end
+            # check if support is correctly assinged
+            @test μsupp == μ.support.X
+            @test μsupp == support(μ).X
+            @test νsupp == ν.support.X
+            @test νsupp == support(ν).X
+        end
     end
 end
