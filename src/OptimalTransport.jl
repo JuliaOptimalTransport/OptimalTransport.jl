@@ -19,6 +19,7 @@ export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
 export ot_cost, ot_plan, wasserstein, squared2wasserstein
+export discretemeasure
 
 const MOI = MathOptInterface
 
