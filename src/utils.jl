@@ -60,8 +60,8 @@ struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
     p::P
 
     function FiniteDiscreteMeasure{X,P}(support::X, p::P) where {X,P}
-        size(support, 1) == length(p) ||
-            error("number of rows of `support` and `p` must be equal")
+        length(support) == length(p) ||
+            error("length of `support` and `p` must be equal")
         sum(p) ≈ 1 || error("`p` must sum to 1")
         all(x -> x >= zero(x), p) || error("values of `p` must be greater of equal than 0")
         return new{X,P}(support, p)
