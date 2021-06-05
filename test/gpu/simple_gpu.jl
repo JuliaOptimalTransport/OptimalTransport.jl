@@ -67,6 +67,34 @@ Random.seed!(100)
             end
         end
 
+        @testset "sinkhorn_stabilized (with and without ε-scaling)" begin
+            # source histogram
+            m = 200
+            μ = normalize!(rand(Float32, m), 1)
+            cu_μ = cu(μ)
+
+            # target histogram
+            n = 250
+            ν = normalize!(rand(Float32, n), 1)
+            cu_ν = cu(ν)
+
+            # random cost matrix
+            C = pairwise(SqEuclidean(), randn(Float32, 1, m), randn(Float32, 1, n); dims=2)
+            cu_C = cu(C)
+
+            # with and without ε-scaling
+            for f in (sinkhorn_stabilized, sinkhorn_stabilized_epsscaling)
+                # compute transport plan and cost on the GPU
+                ε = 0.01f0
+                γ = f(cu_μ, cu_ν, cu_C, ε)
+                @test γ isa CuArray{Float32,2}
+
+                # compare with results on the CPU
+                γ_cpu = f(μ, ν, C, ε)
+                @test convert(Array, γ) ≈ γ_cpu
+            end
+        end
+
         @testset "sinkhorn_unbalanced" begin
             # source histogram
             m = 200
