@@ -39,5 +39,5 @@ quadreg
 
 ## Auxiliary functions
 ```@docs
-FiniteDiscreteMeasure
+discretemeasure
 ```

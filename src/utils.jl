@@ -62,8 +62,7 @@ struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
     function FiniteDiscreteMeasure{X,P}(support::X, p::P) where {X,P}
         length(support) == length(p) ||
             error("length of `support` and `p` must be equal")
-        sum(p) ≈ 1 || error("`p` must sum to 1")
-        all(x -> x >= zero(x), p) || error("values of `p` must be greater of equal than 0")
+        isprobvec(p) ≈ 1 || error("`p` must be a probability vector")
         return new{X,P}(support, p)
     end
 end
@@ -73,6 +72,11 @@ end
 
 Construct a finite discrete probability measure with `support` and corresponding 
 `probabilities`.
+
+!!! note
+    If `support` is a 1D vector, the constructed measure will be sorted,
+    e.g. for `mu = discretemeasure([3, 1, 2],[0.5, 0.2, 0.3])`, then
+    `mu.support` will be `[1, 2, 3]` and `mu.p` will be `[0.2, 0.3, 0.5]`.
 """
 function discretemeasure(support::AbstractVector{<:Real}, probs::AbstractVector{<:Real})
     return DiscreteNonParametric(support, probs)
