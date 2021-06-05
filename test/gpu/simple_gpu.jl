@@ -3,6 +3,7 @@ using OptimalTransport
 using CUDA
 using Distances
 
+using LinearAlgebra
 using Random
 using Test
 
@@ -18,14 +19,12 @@ Random.seed!(100)
         @testset "sinkhorn" begin
             # source histogram
             m = 200
-            μ = rand(Float32, m)
-            μ ./= sum(μ)
+            μ = normalize!(rand(Float32, m), 1)
             cu_μ = cu(μ)
 
             # target histogram
             n = 250
-            ν = rand(Float32, n)
-            ν ./= sum(ν)
+            ν = normalize!(rand(Float32, n), 1)
             cu_ν = cu(ν)
 
             # random cost matrix
@@ -71,13 +70,12 @@ Random.seed!(100)
         @testset "sinkhorn_unbalanced" begin
             # source histogram
             m = 200
-            μ = rand(Float32, m)
-            μ ./= 1.5f0 * sum(μ)
+            μ = normalize!(rand(Float32, m), 1)
+            μ .*= 1.5f0
 
             # target histogram
             n = 250
-            ν = rand(Float32, n)
-            ν ./= sum(ν)
+            ν = normalize!(rand(Float32, n), 1)
 
             # random cost matrix
             C = pairwise(SqEuclidean(), randn(Float32, 1, m), randn(Float32, 1, n); dims=2)
