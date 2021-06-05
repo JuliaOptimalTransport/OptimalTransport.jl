@@ -102,7 +102,7 @@ Random.seed!(100)
             n = 100
             m = 80
             μsupp    = rand(n)
-            νsupp    = rand(m, 1)
+            νsupp    = rand(m)
             μprobs   = rand(n)
             μprobs ./= sum(μprobs)
             νprobs   = rand(m)
