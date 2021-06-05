@@ -13,7 +13,7 @@ const POT = PythonOT
 
 Random.seed!(100)
 
-@testset "entropic.jl" begin
+@testset "sinkhorn.jl" begin
     @testset "sinkhorn" begin
         M = 250
         N = 200

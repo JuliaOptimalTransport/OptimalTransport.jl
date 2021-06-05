@@ -15,7 +15,7 @@ const GROUP = get(ENV, "GROUP", "All")
             include("exact.jl")
         end
         @safetestset "Entropically regularized OT" begin
-            include("entropic.jl")
+            include(joinpath("entropic", "sinkhorn.jl"))
         end
         @safetestset "Quadratically regularized OT" begin
             include("quadratic.jl")
