@@ -55,7 +55,7 @@ function checkbalanced(x::AbstractVecOrMat, y::AbstractVecOrMat)
     return nothing
 end
 
-struct FiniteDiscreteMeasure{X<:AbstractArray,P<:AbstractVector}
+struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
     support::X
     p::P
 
