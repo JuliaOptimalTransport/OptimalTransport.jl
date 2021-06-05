@@ -92,7 +92,7 @@ sinkhorn2(μ, ν, C, ε)
 # ```
 # One property of the quadratically regularised optimal transport problem is that the
 # resulting transport plan $\gamma$ is *sparse*. We take advantage of this and represent it as
-# a sparse matrix. 
+# a sparse matrix.
 
 quadreg(μ, ν, C, ε; maxiter=500);
 
@@ -120,7 +120,7 @@ norm(γ - γ_pot, Inf)
 γpot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_epsilon_scaling", numItermax=5000)
 norm(γ - γpot, Inf)
 
-# ## Unbalanced optimal transport 
+# ## Unbalanced optimal transport
 #
 # [Unbalanced optimal transport](https://doi.org/10.1090/mcom/3303) deals with general
 # positive measures which do not necessarily have the same total mass. For unbalanced
@@ -166,10 +166,8 @@ norm(γ - γpot, Inf)
 
 μsupport = νsupport = range(-2, 2; length=100)
 C = pairwise(SqEuclidean(), μsupport', νsupport'; dims=2)
-μ = exp.(-μsupport .^ 2 ./ 0.5^2)
-μ ./= sum(μ)
-ν = νsupport .^ 2 .* exp.(-νsupport .^ 2 ./ 0.5^2)
-ν ./= sum(ν)
+μ = normalize!(exp.(-μsupport .^ 2 ./ 0.5^2), 1)
+ν = normalize!(νsupport .^ 2 .* exp.(-νsupport .^ 2 ./ 0.5^2), 1)
 
 plot(μsupport, μ; label=raw"$\mu$", size=(600, 400))
 plot!(νsupport, ν; label=raw"$\nu$")
@@ -216,10 +214,8 @@ heatmap(
 # $\lambda_1 \in \{0.25, 0.5, 0.75\}$.
 
 support = range(-1, 1; length=250)
-mu1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
-mu1 ./= sum(mu1)
-mu2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
-mu2 ./= sum(mu2)
+mu1 = normalize!(exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2), 1)
+mu2 = normalize!(exp.(-(support .- 0.5) .^ 2 ./ 0.1^2), 1)
 
 plt = plot(; size=(800, 400), legend=:outertopright)
 plot!(plt, support, mu1; label=raw"$\mu_1$")

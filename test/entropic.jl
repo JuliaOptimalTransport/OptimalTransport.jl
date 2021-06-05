@@ -5,6 +5,7 @@ using ForwardDiff
 using LogExpFunctions
 using PythonOT: PythonOT
 
+using LinearAlgebra
 using Random
 using Test
 
@@ -219,10 +220,8 @@ Random.seed!(100)
         @testset "example" begin
             # set up support
             support = range(-1; stop=1, length=250)
-            μ1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
-            μ1 ./= sum(μ1)
-            μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
-            μ2 ./= sum(μ2)
+            μ1 = normalize!(exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2), 1)
+            μ2 = normalize!(exp.(-(support .- 0.5) .^ 2 ./ 0.1^2), 1)
             μ_all = hcat(μ1, μ2)
             # create cost matrix
             C = pairwise(SqEuclidean(), support'; dims=2)

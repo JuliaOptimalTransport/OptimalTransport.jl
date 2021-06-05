@@ -4,7 +4,7 @@ using LinearAlgebra
 using Random
 using Test
 using Distributions
-using KernelFunctions
+using ArraysOfArrays
 
 Random.seed!(100)
 
@@ -68,10 +68,10 @@ Random.seed!(100)
     @testset "checkbalanced" begin
         mass = rand()
 
-        x1 = rand(20)
-        x1 .*= mass / sum(x1)
-        y1 = rand(30)
-        y1 .*= mass / sum(y1)
+        x1 = normalize!(rand(20), 1)
+        x1 .*= mass
+        y1 = normalize!(rand(30), 1)
+        y1 .*= mass
         @test OptimalTransport.checkbalanced(x1, y1) === nothing
         @test OptimalTransport.checkbalanced(y1, x1) === nothing
         @test_throws ArgumentError OptimalTransport.checkbalanced(rand() .* x1, y1)
