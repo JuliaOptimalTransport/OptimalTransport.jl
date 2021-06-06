@@ -127,8 +127,8 @@ Random.seed!(100)
         @testset "Multivariate Finite Discrete Measure" begin
             n = 10
             m = 3
-            μsupp = [i for i in eachrow(rand(n, m))]
-            νsupp = [i for i in eachrow(rand(n, m))]
+            μsupp = [rand(m) for i in 1:n]
+            νsupp = [rand(m) for i in 1:n]
             μprobs = rand(n)
             μprobs ./= sum(μprobs)
             μ = discretemeasure(μsupp, μprobs)
