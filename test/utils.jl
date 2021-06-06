@@ -4,7 +4,6 @@ using LinearAlgebra
 using Random
 using Test
 using Distributions
-using ArraysOfArrays
 
 Random.seed!(100)
 
@@ -128,12 +127,12 @@ Random.seed!(100)
         @testset "Multivariate Finite Discrete Measure" begin
             n = 10
             m = 3
-            μsupp = rand(n, m)
-            νsupp = rand(n, m)
+            μsupp = [i for i in eachrow(rand(n, m))]
+            νsupp = [i for i in eachrow(rand(n, m))]
             μprobs = rand(n)
             μprobs ./= sum(μprobs)
-            μ = discretemeasure(RowVecs(μsupp), μprobs)
-            ν = discretemeasure(ColVecs(νsupp))
+            μ = discretemeasure(μsupp, μprobs)
+            ν = discretemeasure(νsupp)
             # check if it vectors are indeed probabilities
             @test isprobvec(μ.p)
             @test isprobvec(probs(μ))
@@ -141,10 +140,10 @@ Random.seed!(100)
             @test probs(ν) == ones(m) ./ m
 
             # check if support is correctly assinged
-            @test μsupp == μ.support.X
-            @test μsupp == support(μ).X
-            @test νsupp == ν.support.X
-            @test νsupp == support(ν).X
+            @test μsupp == vcat(μ.support'...)
+            @test μsupp == vcat(support(μ)'...)
+            @test νsupp == vcat(ν.support'...)
+            @test νsupp == vcat(support(ν)'...)
         end
     end
 end
