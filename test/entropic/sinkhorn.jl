@@ -13,7 +13,7 @@ const POT = PythonOT
 
 Random.seed!(100)
 
-@testset "entropic.jl" begin
+@testset "sinkhorn.jl" begin
     @testset "sinkhorn" begin
         M = 250
         N = 200
@@ -174,45 +174,6 @@ Random.seed!(100)
             @test (@test_deprecated OptimalTransport.sinkhorn_gibbs(
                 μ, ν, K; check_marginal_step=5
             )) == γ
-        end
-    end
-
-    @testset "stabilized sinkhorn" begin
-        M = 250
-        N = 200
-
-        @testset "example" begin
-            # create two uniform histograms
-            μ = fill(1 / M, M)
-            ν = fill(1 / N, N)
-
-            # create random cost matrix
-            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
-            # compute optimal transport map (Julia implementation + POT)
-            eps = 0.001
-            γ = sinkhorn_stabilized(μ, ν, C, eps; maxiter=5_000)
-            γ_pot = POT.sinkhorn(
-                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
-            )
-            @test γ ≈ γ_pot rtol = 1e-6
-        end
-
-        @testset "epsilon scaling" begin
-            # create two uniform histograms
-            μ = fill(1 / M, M)
-            ν = fill(1 / N, N)
-
-            # create random cost matrix
-            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
-            # compute optimal transport map (Julia implementation + POT)
-            eps = 0.001
-            γ = sinkhorn_stabilized_epsscaling(μ, ν, C, eps; k=5, maxiter=5_000)
-            γ_pot = POT.sinkhorn(
-                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
-            )
-            @test γ ≈ γ_pot rtol = 1e-6
         end
     end
 
