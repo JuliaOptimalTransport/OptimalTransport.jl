@@ -129,8 +129,8 @@ Random.seed!(100)
             μsupp = [rand(m) for i in 1:n]
             νsupp = [rand(m) for i in 1:n]
             μprobs = normalize!(rand(n), 1)
-            μ = discretemeasure(μsupp, μprobs)
-            ν = discretemeasure(νsupp)
+            μ = OptimalTransport.discretemeasure(μsupp, μprobs)
+            ν = OptimalTransport.discretemeasure(νsupp)
             # check if it vectors are indeed probabilities
             @test isprobvec(μ.p)
             @test isprobvec(probs(μ))
