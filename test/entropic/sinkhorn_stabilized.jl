@@ -18,16 +18,18 @@ Random.seed!(100)
     M = 250
     N = 200
 
+    # create two random histograms
+    μ = normalize!(rand(M), 1)
+    ν = normalize!(rand(N), 1)
+
+    # create random cost matrix
+    C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+
+    # regularization parameter
+    ε = 0.01
+
     @testset "without epsilon scaling" begin
-        # create two random histograms
-        μ = normalize!(rand(M), 1)
-        ν = normalize!(rand(N), 1)
-
-        # create random cost matrix
-        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
         # compute optimal transport map
-        ε = 0.01
         γ = sinkhorn_stabilized(μ, ν, C, ε; maxiter=5_000)
 
         # compare with regular Sinkhorn algorithm
@@ -40,15 +42,7 @@ Random.seed!(100)
     end
 
     @testset "with epsilon scaling" begin
-        # create two random histograms
-        μ = normalize!(rand(M), 1)
-        ν = normalize!(rand(N), 1)
-
-        # create random cost matrix
-        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
         # compute optimal transport map (Julia implementation + POT)
-        ε = 0.01
         γ = sinkhorn_stabilized_epsscaling(μ, ν, C, ε; maxiter=5_000)
 
         # compare with regular Sinkhorn algorithm
@@ -64,15 +58,18 @@ Random.seed!(100)
         @test γ ≈ γ_pot rtol = 1e-6
     end
 
-    @testset "AD" begin
-        # random histograms with random cost matrix
-        μ = normalize!(rand(M), 1)
-        ν = normalize!(rand(N), 1)
-        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
+    @testset "consistency with `sinkhorn`" begin
+        # compute optimal transport map with infinite absorption tolerance
+        γ = sinkhorn_stabilized(μ, ν, C, ε; maxiter=5_000, absorb_tol=Inf)
 
+        # compare with regular Sinkhorn algorithm
+        γ_sinkhorn = sinkhorn(μ, ν, C, ε; maxiter=5_000)
+        @test γ ≈ γ_sinkhorn
+    end
+
+    @testset "AD" begin
         # compute gradients with respect to source and target marginals separately and
         # together
-        ε = 0.01
         for f in (sinkhorn_stabilized, sinkhorn_stabilized_epsscaling)
             ForwardDiff.gradient(zeros(N)) do xs
                 return dot(C, f(μ, softmax(xs), C, ε))
@@ -87,15 +84,7 @@ Random.seed!(100)
     end
 
     @testset "deprecations" begin
-        # create two uniform histograms
-        μ = fill(1 / M, M)
-        ν = fill(1 / N, N)
-
-        # create random cost matrix
-        C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
         # check `sinkhorn_stabilized`
-        ε = 0.01
         γ = sinkhorn_stabilized(μ, ν, C, ε; atol=1e-6)
         @test (@test_deprecated sinkhorn_stabilized(μ, ν, C, ε; tol=1e-6)) == γ
         γ = sinkhorn_stabilized(μ, ν, C, ε)
