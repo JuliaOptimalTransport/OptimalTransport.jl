@@ -115,8 +115,8 @@ Random.seed!(100)
             @test probs(ν) == ones(m) ./ m
 
             # check if it assigns to DiscreteNonParametric when Vector/Matrix is 1D
-            @test typeof(μ) <: DiscreteNonParametric
-            @test typeof(ν) <: DiscreteNonParametric
+            @test μ isa DiscreteNonParametric
+            @test ν isa DiscreteNonParametric
 
             # check if support is correctly assinged
             @test sort(μsupp) == μ.support
