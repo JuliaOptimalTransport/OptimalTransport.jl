@@ -36,8 +36,3 @@ sinkhorn_unbalanced2
 ```@docs
 quadreg
 ```
-
-## Auxiliary functions
-```@docs
-discretemeasure
-```
