@@ -136,8 +136,8 @@ Random.seed!(100)
             # check if it vectors are indeed probabilities
             @test isprobvec(μ.p)
             @test isprobvec(probs(μ))
-            @test ν.p == ones(m) ./ m
-            @test probs(ν) == ones(m) ./ m
+            @test ν.p == ones(n) ./ n
+            @test probs(ν) == ones(n) ./ n
 
             # check if support is correctly assinged
             @test μsupp == vcat(μ.support'...)
