@@ -140,10 +140,10 @@ Random.seed!(100)
             @test probs(ν) == ones(n) ./ n
 
             # check if support is correctly assinged
-            @test μsupp == vcat(μ.support'...)
-            @test μsupp == vcat(support(μ)'...)
-            @test νsupp == vcat(ν.support'...)
-            @test νsupp == vcat(support(ν)'...)
+            @test μsupp == μ.support
+            @test μsupp == support(μ)
+            @test νsupp == ν.support
+            @test νsupp == support(ν)
         end
     end
 end
