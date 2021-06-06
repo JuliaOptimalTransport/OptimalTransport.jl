@@ -103,8 +103,7 @@ Random.seed!(100)
             m = 80
             μsupp = rand(n)
             νsupp = rand(m)
-            μprobs = rand(n)
-            μprobs ./= sum(μprobs)
+            μprobs = normalize!(rand(n), 1)
 
             μ = discretemeasure(μsupp, μprobs)
             ν = discretemeasure(νsupp)
