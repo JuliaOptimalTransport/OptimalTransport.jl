@@ -129,8 +129,7 @@ Random.seed!(100)
             m = 3
             μsupp = [rand(m) for i in 1:n]
             νsupp = [rand(m) for i in 1:n]
-            μprobs = rand(n)
-            μprobs ./= sum(μprobs)
+            μprobs = normalize!(rand(n), 1)
             μ = discretemeasure(μsupp, μprobs)
             ν = discretemeasure(νsupp)
             # check if it vectors are indeed probabilities
