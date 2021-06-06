@@ -5,8 +5,6 @@ using Random
 using Test
 using Distributions
 
-include("../src/utils.jl")
-
 Random.seed!(100)
 
 @testset "utils.jl" begin
