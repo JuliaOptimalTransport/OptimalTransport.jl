@@ -27,7 +27,8 @@ include("distances/bures.jl")
 include("utils.jl")
 include("exact.jl")
 include("wasserstein.jl")
-include("entropic.jl")
+include("entropic/sinkhorn.jl")
+include("entropic/sinkhorn_stabilized.jl")
 include("quadratic.jl")
 
 end
