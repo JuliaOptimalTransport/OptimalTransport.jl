@@ -26,13 +26,23 @@ sinkhorn_stabilized
 sinkhorn_barycenter
 ```
 
+Currently the following variants of the Sinkhorn algorithm are supported:
+
+```@docs
+SinkhornGibbs
+SinkhornStabilized
+SinkhornEpsilonScaling
+```
+
 ## Unbalanced optimal transport
+
 ```@docs
 sinkhorn_unbalanced
 sinkhorn_unbalanced2
 ```
 
 ## Quadratically regularised optimal transport
+
 ```@docs
 quadreg
 ```
