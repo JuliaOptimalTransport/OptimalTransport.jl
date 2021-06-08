@@ -37,8 +37,12 @@ Random.seed!(100)
         @test c ≈ dot(γ, C)
 
         # compare with POT
-        γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000, stopThr=1e-9)
-        c_pot = POT.sinkhorn2(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000, stopThr=1e-9)[1]
+        γ_pot = POT.sinkhorn(
+            μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000, stopThr=1e-9
+        )
+        c_pot = POT.sinkhorn2(
+            μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000, stopThr=1e-9
+        )[1]
         @test γ_pot ≈ γ rtol = 1e-6
         @test c_pot ≈ c rtol = 1e-7
 
@@ -105,7 +109,9 @@ Random.seed!(100)
             return sinkhorn2(softmax(xs), ν, C, ε, SinkhornStabilized())
         end
         ForwardDiff.gradient(zeros(M + N)) do xs
-            return sinkhorn2(softmax(xs[1:M]), softmax(xs[(M + 1):end]), C, ε, SinkhornStabilized())
+            return sinkhorn2(
+                softmax(xs[1:M]), softmax(xs[(M + 1):end]), C, ε, SinkhornStabilized()
+            )
         end
     end
 

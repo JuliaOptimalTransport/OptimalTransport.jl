@@ -31,9 +31,9 @@ Check that dimensions of source and target marginals `μ` and `ν` are consisten
 matrix `C`.
 """
 function checksize(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C::AbstractMatrix)
-    size(C) == (size(μ, 1), size(ν, 1)) || throw(DimensionMismatch(
-        "cost matrix `C` must be of size `(size(μ, 1), size(ν, 1))`",
-    ))
+    size(C) == (size(μ, 1), size(ν, 1)) || throw(
+        DimensionMismatch("cost matrix `C` must be of size `(size(μ, 1), size(ν, 1))`")
+    )
     return nothing
 end
 
