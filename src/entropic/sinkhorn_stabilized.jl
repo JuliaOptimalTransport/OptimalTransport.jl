@@ -1,161 +1,160 @@
-struct SinkhornStabilizedCache{U,V,KT,M}
+# algorithm
+
+struct SinkhornStabilized{T<:Real} <: Sinkhorn
+    absorb_tol::T
+end
+
+"""
+    SinkhornStabilized(; absorb_tol::Real=1_000)
+
+Construct a log-domain stabilized Sinkhorn algorithm with absorption tolerance `absorb_tol`
+for solving an entropically regularized optimal transport problem.
+
+# References
+
+Schmitzer, B. (2019).
+[Stabilized Sparse Scaling Algorithms for Entropy Regularized Transport Problems](https://doi.org/10.1137/16m1106018).
+SIAM Journal on Scientific Computing, 41(3), A1443–A1481.
+"""
+function SinkhornStabilized(; absorb_tol::Real=1_000)
+    absorb_tol > zero(absorb_tol) ||
+        throw(ArgumentError("absorption tolerance `absorb_tol` must be positive"))
+    return SinkhornStabilized(absorb_tol)
+end
+
+function Base.show(io::IO, alg::SinkhornStabilized)
+    return print(
+        io,
+        "Log-domain stabilized Sinkhorn algorithm (absorption tolerance = ",
+        alg.absorb_tol,
+        ")",
+    )
+end
+
+# caches
+
+struct SinkhornStabilizedCache{U,V,KT}
     u::U
     v::V
     alpha::U
     beta::V
-    Ktilde::KT
-    Ktildebeta::U
-    tmp::U
-    norm_mu::M
+    K::KT
+    Kv::U
 end
 
-function SinkhornStabilizedCache(μ, ν, C, ε)
-    # check that source and target marginals have the same mass
-    checkbalanced(μ, ν)
+function build_cache(
+    ::Type{T},
+    ::SinkhornStabilized,
+    size2::Tuple,
+    μ::AbstractVecOrMat,
+    ν::AbstractVecOrMat,
+    C::AbstractMatrix,
+    ε::Real,
+) where {T}
+    # compute Gibbs kernel (has to be mutable for ε-scaling algorithm)
+    K = similar(C, T, size(C)..., size2...)
+    @. K = exp(-C / ε)
 
-    # compute the element type of the caches
-    T = float(Base.promote_eltype(μ, ν, C, inv(ε)))
+    # create and initialize dual potentials
+    u = similar(μ, T, size(μ, 1), size2...)
+    v = similar(ν, T, size(ν, 1), size2...)
+    α = similar(u)
+    β = similar(v)
+    fill!(u, one(T))
+    fill!(v, one(T))
+    fill!(α, zero(T))
+    fill!(β, zero(T))
 
-    # compute the Gibbs kernel (has to be mutable since it will be modified)
-    K̃ = similar(C, T)
-    @. K̃ = exp(-C / ε)
+    # cache for next iterate of `u`
+    Kv = similar(u)
 
-    # dual potentials and caches
-    u = similar(μ, T)
-    v = similar(ν, T)
-    α = similar(μ, T)
-    β = similar(ν, T)
-    K̃β = similar(μ, T)
-    tmp = similar(μ, T)
-
-    # evaluate L1 norm of `μ` for convergence checks
-    normμ = sum(abs, μ)
-
-    # initializations
-    fill!(u, zero(T))
-    fill!(v, zero(T))
-    fill!(α, one(T))
-    fill!(β, one(T))
-
-    # create cache
-    cache = SinkhornStabilizedCache(u, v, α, β, K̃, K̃β, tmp, normμ)
-
-    return cache
+    return SinkhornStabilizedCache(u, v, α, β, K, Kv)
 end
 
-"""
-    sinkhorn_stabilized_epsscaling(
-        μ, ν, C, ε; scaling_factor=0.5, scaling_steps=5, kwargs...
-    )
+# interface
 
-Compute the optimal transport plan for the entropically regularized optimal transport
-problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
-`(length(μ), length(ν))`, and entropic regularisation parameter `ε`.
+function prestep!(solver::SinkhornSolver{<:SinkhornStabilized}, iter::Int)
+    # unpack
+    absorb_tol = solver.alg.absorb_tol
+    cache = solver.cache
+    u = cache.u
+    v = cache.v
 
-The function uses the log-domain stabilized Sinkhorn algorithm with `scaling_steps`
-ε-scaling steps with scaling factor `scaling_factor`. Using [`sinkhorn_stabilized`](@ref),
-it sequentially solves the entropically regularized optimal transport with regularization
-parameters
-```math
-\\varepsilon_i := \\varepsilon \\lambda^{i-k}, \\qquad (i = 1,\\ldots,k),
-```
-where ``\\lambda`` is the scaling factor and ``k`` the number of scaling steps.
+    # absorption step
+    if maximum(abs, u) > absorb_tol || maximum(abs, v) > absorb_tol
+        @debug string(solver.alg) *
+               " (" *
+               string(iter) *
+               "/" *
+               string(maxiter) *
+               ": absorbing `u` and `v` into `α` and `β`"
 
-The other keyword arguments supported here are the same as those in the
-[`sinkhorn_stabilized`](@ref) function.
+        # absorb `u` and `v` into `α` and `β`
+        absorb!(solver)
 
-See also: [`sinkhorn_stabilized`](@ref), [`sinkhorn`](@ref)
-
-# References
-
-Schmitzer, B. (2019).
-[Stabilized Sparse Scaling Algorithms for Entropy Regularized Transport Problems](https://doi.org/10.1137/16m1106018).
-SIAM Journal on Scientific Computing, 41(3), A1443–A1481.
-"""
-function sinkhorn_stabilized_epsscaling(
-    μ, ν, C, ε; lambda=nothing, scaling_factor=lambda, k=nothing, scaling_steps=k, kwargs...
-)
-    if lambda !== nothing
-        Base.depwarn(
-            "keyword argument `lambda` is deprecated, please use `scaling_factor`",
-            :sinkhorn_stabilized_epsscaling,
-        )
-    end
-    if k !== nothing
-        Base.depwarn(
-            "keyword argument `k` is deprecated, please use `scaling_steps`",
-            :sinkhorn_stabilized_epsscaling,
-        )
+        # re-compute cache for next iterate of `u`
+        A_batched_mul_B!(cache.Kv, cache.K, v)
     end
 
-    _scaling_factor = scaling_factor === nothing ? 1//2 : scaling_factor
-    _scaling_steps = scaling_steps === nothing ? 5 : scaling_steps
-
-    # initial regularization parameter
-    εstep = ε * _scaling_factor^(1 - _scaling_steps)
-    @debug "ε-scaling Sinkhorn algorithm: ε = $εstep"
-
-    # initialize cache and perform stabilized Sinkhorn algorithm
-    cache = SinkhornStabilizedCache(μ, ν, C, εstep)
-    solve!(cache, μ, ν, C, εstep; kwargs...)
-
-    for _ in 2:(_scaling_steps - 1)
-        εstep *= _scaling_factor
-        @debug "ε-scaling Sinkhorn algorithm: ε = $εstep"
-
-        # re-run Sinkhorn algorithm with smaller regularization parameter
-        updateKtilde!(cache, C, εstep)
-        solve!(cache, μ, ν, C, εstep; kwargs...)
-    end
-
-    # re-run Sinkhorn algorithm with desired regularization parameter
-    @debug "ε-scaling Sinkhorn algorithm: ε = $ε"
-    updateKtilde!(cache, C, ε)
-    solve!(cache, μ, ν, C, ε; kwargs...)
-
-    # compute final plan
-    updateKtilde!(cache, C, ε)
-    γ = cache.Ktilde
-
-    return γ
+    return nothing
 end
 
+# absorption step
+function absorb!(solver::SinkhornSolver{<:SinkhornStabilized})
+    # unpack
+    ε = solver.eps
+    cache = solver.cache
+    u = cache.u
+    v = cache.v
+    α = cache.alpha
+    β = cache.beta
+
+    # update dual potentials
+    α .+= ε .* log.(u)
+    β .+= ε .* log.(v)
+
+    # reset `α` and `β`
+    fill!(u, one(eltype(u)))
+    fill!(v, one(eltype(v)))
+
+    # update kernel
+    update_K!(solver)
+
+    return nothing
+end
+
+# update kernel
+function update_K!(solver::SinkhornSolver{<:SinkhornStabilized})
+    cache = solver.cache
+    α = add_singleton(cache.alpha, Val(2))
+    β = add_singleton(cache.beta, Val(1))
+    @. cache.K = exp(-(solver.C - α - β) / solver.eps)
+    return nothing
+end
+
+# obtain plan
+function plan(solver::SinkhornSolver{<:SinkhornStabilized})
+    absorb!(solver)
+    return copy(solver.cache.K)
+end
+
+# deprecations
+
 """
-    sinkhorn_stabilized(
-        μ, ν, C, ε;
-        absorb_tol=1_000,
-        maxiter=1_000,
-        atol=0,
-        rtol=atol > 0 ? 0 : √eps,
-        check_convergence=10,
-        maxiter=1_000,
-    )
+    sinkhorn_stabilized(μ, ν, C, ε; absorb_tol=1_000, kwargs...)
 
-Compute the optimal transport plan for the entropically regularized optimal transport
-problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
-`(length(μ), length(ν))`, and entropic regularisation parameter `ε`.
-
-The function uses the log-domain stabilized Sinkhorn algorithm with an absorption tolerance
-`absorb_tol`.
-
-Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
-the iterate of the transport plan `G` satisfies
+This method is deprecated, please use
 ```julia
-isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
+sinkhorn(
+    SinkhornStabilized(; absorb_tol=absorb_tol), μ, ν, C, ε; kwargs...
+)
 ```
-The default `rtol` depends on the types of `μ`, `ν`, `C`, and `ε`. After `maxiter`
-iterations, the computation is stopped.
+instead.
 
-See also: [`sinkhorn`](@ref)
-
-# References
-
-Schmitzer, B. (2019).
-[Stabilized Sparse Scaling Algorithms for Entropy Regularized Transport Problems](https://doi.org/10.1137/16m1106018).
-SIAM Journal on Scientific Computing, 41(3), A1443–A1481.
+See also: [`sinkhorn`](@ref), [`SinkhornStabilized`](@ref)
 """
 function sinkhorn_stabilized(
-    μ, ν, C, ε; tol=nothing, atol=tol, return_duals=nothing, kwargs...
+    μ, ν, C, ε; tol=nothing, atol=tol, return_duals=nothing, absorb_tol=1_000, kwargs...
 )
     # deprecation warnings
     if tol !== nothing
@@ -171,136 +170,23 @@ function sinkhorn_stabilized(
         )
     end
 
-    # create cache
-    cache = SinkhornStabilizedCache(μ, ν, C, ε)
-    solve!(cache, μ, ν, C, ε; atol=atol, kwargs...)
+    Base.depwarn(
+        "`sinkhorn_stabilized` is deprecated, " *
+        "please use `sinkhorn` with `SinkhornStabilized` instead",
+        :sinkhorn_stabilized_epsscaling,
+    )
+
+    # construct algorithm
+    algorithm = SinkhornStabilized(; absorb_tol=absorb_tol)
 
     # return "dual potentials" (in log space and scaled by 1/ε) if requested
     if return_duals !== nothing && return_duals
-        return cache.u, cache.v
+        solver = build_solver(algorithm, μ, ν, C, ε; atol=atol, kwargs...)
+        solve!(solver)
+        absorb!(solver)
+        cache = solver.cache
+        return cache.alpha, cache.beta
     end
 
-    # compute optimal transport plan
-    updateKtilde!(cache, C, ε)
-    γ = cache.Ktilde
-
-    return γ
-end
-
-# perform stabilized Sinkhorn algorithm
-function solve!(
-    cache::SinkhornStabilizedCache,
-    μ,
-    ν,
-    C,
-    ε;
-    atol=nothing,
-    rtol=nothing,
-    absorb_tol::Real=1_000,
-    maxiter::Int=1_000,
-    check_convergence::Int=10,
-)
-    # unpack
-    u = cache.u
-    v = cache.v
-    α = cache.alpha
-    β = cache.beta
-    K̃ = cache.Ktilde
-    K̃β = cache.Ktildebeta
-    tmp = cache.tmp
-    norm_μ = cache.norm_mu
-
-    # compute default tolerances
-    T = eltype(u)
-    _atol = atol === nothing ? 0 : atol
-    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
-
-    # initial iterate
-    mul!(K̃β, K̃, β)
-
-    isconverged = false
-    to_check_step = check_convergence
-    for iter in 1:maxiter
-        # reduce counter
-        to_check_step -= 1
-
-        # absorption step
-        if maximum(abs, u) > absorb_tol || maximum(abs, v) > absorb_tol
-            @debug "stabilized Sinkhorn algorithm (" *
-                   string(iter) *
-                   "/" *
-                   string(maxiter) *
-                   ": absorbing `α` and `β` into `u` and `v`"
-
-            # absorb `α` and `β` in `u` and `v`
-            absorb!(cache, ε)
-
-            # update iterates
-            updateKtilde!(cache, C, ε)
-            fill!(β, one(eltype(β)))
-            mul!(K̃β, K̃, β)
-        end
-
-        # compute next iterate
-        α .= μ ./ K̃β
-        mul!(β, K̃', α)
-        β .= ν ./ β
-        mul!(K̃β, K̃, β)
-
-        # check source marginal
-        # always check convergence after the final iteration
-        if to_check_step == 0 || iter == maxiter
-            # reset counter
-            to_check_step = check_convergence
-
-            # do not overwrite `Kβ` but reuse it for computing `α` if not converged
-            tmp .= α .* K̃β
-            norm_αK̃β = sum(abs, tmp)
-            tmp .= abs.(μ .- tmp)
-            norm_diff = sum(tmp)
-
-            @debug "stabilized Sinkhorn algorithm (" *
-                   string(iter) *
-                   "/" *
-                   string(maxiter) *
-                   ": absolute error of source marginal = " *
-                   string(norm_diff)
-
-            isconverged = norm_diff < max(_atol, _rtol * max(norm_μ, norm_αK̃β))
-            if isconverged
-                @debug "Stabilized Sinkhorn algorithm ($iter/$maxiter): converged"
-                break
-            end
-        end
-    end
-
-    # absorb `α` and `β` into `u` and `v`
-    absorb!(cache, ε)
-
-    if !isconverged
-        @warn "Stabilized Sinkhorn algorithm ($maxiter/$maxiter): not converged"
-    end
-
-    return nothing
-end
-
-# absorption step
-function absorb!(cache::SinkhornStabilizedCache, ε)
-    # unpack
-    u = cache.u
-    v = cache.v
-    α = cache.alpha
-    β = cache.beta
-
-    # update dual potentials: absorb `α` and `β` in `u` and `v`
-    u .+= ε .* log.(α)
-    v .+= ε .* log.(β)
-
-    return nothing
-end
-
-# update kernel
-function updateKtilde!(cache::SinkhornStabilizedCache, C, ε)
-    @. cache.Ktilde = exp(-(C - cache.u - cache.v') / ε)
-    return nothing
+    return sinkhorn(μ, ν, C, ε, algorithm; atol=atol, kwargs...)
 end

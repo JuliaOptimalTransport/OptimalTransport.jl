@@ -11,26 +11,37 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Utilities" begin
             include("utils.jl")
         end
+
         @safetestset "Exact OT" begin
             include("exact.jl")
         end
+
         @testset "Entropically regularized OT" begin
-            @safetestset "Sinkhorn" begin
-                include(joinpath("entropic", "sinkhorn.jl"))
+            @safetestset "Sinkhorn Gibbs" begin
+                include(joinpath("entropic", "sinkhorn_gibbs.jl"))
             end
             @safetestset "Stabilized Sinkhorn" begin
                 include(joinpath("entropic", "sinkhorn_stabilized.jl"))
             end
+            @safetestset "Sinkhorn with ε-scaling" begin
+                include(joinpath("entropic", "sinkhorn_epsscaling.jl"))
+            end
+            @safetestset "Unbalanced Sinkhorn" begin
+                include(joinpath("entropic", "sinkhorn_unbalanced.jl"))
+            end
+            @safetestset "Sinkhorn barycenter" begin
+                include(joinpath("entropic", "sinkhorn_barycenter.jl"))
+            end
         end
+
         @safetestset "Quadratically regularized OT" begin
             include("quadratic.jl")
         end
-        @safetestset "Unbalanced OT" begin
-            include("unbalanced.jl")
-        end
+
         @safetestset "Wasserstein distance" begin
             include("wasserstein.jl")
         end
+
         @safetestset "Bures distance" begin
             include("bures.jl")
         end
