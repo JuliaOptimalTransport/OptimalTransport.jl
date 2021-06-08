@@ -21,8 +21,6 @@ squared2wasserstein
 ```@docs
 sinkhorn
 sinkhorn2
-sinkhorn_stabilized_epsscaling
-sinkhorn_stabilized
 sinkhorn_barycenter
 ```
 
@@ -32,6 +30,13 @@ Currently the following variants of the Sinkhorn algorithm are supported:
 SinkhornGibbs
 SinkhornStabilized
 SinkhornEpsilonScaling
+```
+
+The following methods are deprecated and will be removed:
+
+```@docs
+sinkhorn_stabilized
+sinkhorn_stabilized_epsscaling
 ```
 
 ## Unbalanced optimal transport

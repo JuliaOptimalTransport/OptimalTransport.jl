@@ -259,7 +259,9 @@ function sinkhorn(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
 end
 
 """
-    sinkhorn2([alg=SinkhornGibbs(), ]μ, ν, C, ε; regularization=false, plan=nothing, kwargs...)
+    sinkhorn2(
+        μ, ν, C, ε[, alg=SinkhornGibbs()]; regularization=false, plan=nothing, kwargs...
+    )
 
 Solve the entropically regularized optimal transport problem with source and target
 marginals `μ` and `ν`, cost matrix `C` of size `(length(μ), length(ν))`, and entropic

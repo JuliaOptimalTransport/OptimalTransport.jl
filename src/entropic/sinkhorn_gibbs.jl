@@ -1,7 +1,7 @@
 # algorithm
 
 """
-    SinkhornGibbs
+    SinkhornGibbs()
 
 Vanilla Sinkhorn algorithm.
 """
