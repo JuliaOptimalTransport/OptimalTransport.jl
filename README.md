@@ -9,24 +9,39 @@
 [![Coveralls](https://coveralls.io/repos/github/JuliaOptimalTransport/OptimalTransport.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaOptimalTransport/OptimalTransport.jl?branch=master)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
-This package provides some [Julia](https://julialang.org/) implementations of algorithms for computational [optimal transport](https://optimaltransport.github.io/), including the Earth-Mover's (Wasserstein) distance, Sinkhorn scaling algorithm for entropy-regularised transport as well as some variants or extensions. 
+This package provides some [Julia](https://julialang.org/) implementations of algorithms for computational [optimal transport](https://optimaltransport.github.io/), including the Earth-Mover's (Wasserstein) distance, Sinkhorn algorithm for entropically regularized optimal transport as well as some variants or extensions.
 
-## Overview of supported functionality
+Noteably, OptimalTransport.jl provides GPU acceleration through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl/) and [NNlibCUDA.jl](https://github.com/FluxML/NNlibCUDA.jl).
 
-* Monge-Kantorovich (Earth-Mover's) distance (`emd`, `emd2`)
-* Sinkhorn algorithm for entropy-regularised optimal transport (`sinkhorn`, `sinkhorn2`)
-* Log-stabilized Sinkhorn algorithm (`sinkhorn_stabilized`)
-* Epsilon-scaling stabilized Sinkhorn algorithm (`sinkhorn_stabilized_epsscaling`) 
-* Unbalanced Sinkhorn algorithm (`sinkhorn_unbalanced`)
-* Entropy-regularised barycenters (Sinkhorn barycenters) (`sinkhorn_barycenter`)
-* Quadratically regularised optimal transport via semismooth Newton scheme [Lorenz, 2019] (`quadreg`) 
+This package is inspired by the [Python Optimal Transport](https://optimaltransport.github.io/)
+package.
 
-See the documentation pages linked below for further information. Most calling conventions are analogous to those in the [Python Optimal Transport](https://optimaltransport.github.io/) library, which formed the inspiration for this library.
+## Example
 
-## Documentation
+```julia
+using OptimalTransport
+using Distances
 
- - [Stable](https://juliaoptimaltransport.github.io/OptimalTransport.jl/stable)
- - [Dev](https://juliaoptimaltransport.github.io/OptimalTransport.jl/dev)
+# uniform histograms
+μ = fill(1/250, 250)
+ν = fill(1/200, 200)
+
+# random cost matrix
+C = pairwise(SqEuclidean(), rand(1, 250), rand(1, 200); dims=2)
+
+# regularization parameter
+ε = 0.01
+
+# solve entropically regularized optimal transport problem
+sinkhorn(μ, ν, C, ε)
+```
+
+Please see the documentation pages for further information.
+
+## Related packages
+
+- [PythonOT.jl](https://github.com/JuliaOptimalTransport/PythonOT.jl): Julia interface for the [Python Optimal Transport (POT) package](https://pythonot.github.io/).
+- [StochasticOptimalTransport.jl](https://github.com/JuliaOptimalTransport/StochasticOptimalTransport.jl): Julia implementation of stochastic optimization algorithms for large-scale optimal transport.
 
 ## Contributing
 
@@ -40,11 +55,6 @@ Contributors include:
 - David Widmann (Uppsala)
 - Davi Barreira (FGV)
 - Stephen Zhang (UBC)
-
-## Related packages
-
-- [PythonOT.jl](https://github.com/JuliaOptimalTransport/PythonOT.jl): Julia interface for the [Python Optimal Transport (POT) package](https://pythonot.github.io/).
-- [StochasticOptimalTransport.jl](https://github.com/JuliaOptimalTransport/StochasticOptimalTransport.jl): Julia implementation of stochastic optimization algorithms for large-scale optimal transport.
 
 ## References
 
