@@ -6,7 +6,7 @@ OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 
 [compat]
 Distributions = "0.25"
-Documenter = "0.26"
+Documenter = "0.27"
 Literate = "2.8"
 OptimalTransport = "0.3"
 julia = "1"
