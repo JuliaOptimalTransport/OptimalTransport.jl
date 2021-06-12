@@ -147,20 +147,19 @@ Random.seed!(100)
         end
     end
     @testset "costmatrix.jl" begin
-
         @testset "Creating cost matrices from vectors" begin
             n = 100
             m = 80
             μsupp = rand(n)
             νsupp = rand(m)
             μprobs = normalize!(rand(n), 1)
-            μ = OptimalTransport.discretemeasure(μsupp,μprobs)
+            μ = OptimalTransport.discretemeasure(μsupp, μprobs)
             ν = OptimalTransport.discretemeasure(νsupp)
             c(x, y) = sum((x - y) .^ 2)
             C1 = cost_matrix(SqEuclidean(), μ, ν)
             C2 = cost_matrix(sqeuclidean, μ, ν)
             C3 = cost_matrix(c, μ, ν)
-            C  = pairwise(SqEuclidean(), vcat(μ.support...), vcat(ν.support...))
+            C = pairwise(SqEuclidean(), vcat(μ.support...), vcat(ν.support...))
             @test C1 ≈ C
             @test C2 ≈ C
             @test C3 ≈ C
@@ -178,7 +177,7 @@ Random.seed!(100)
             C1 = cost_matrix(SqEuclidean(), μ, ν)
             C2 = cost_matrix(sqeuclidean, μ, ν)
             C3 = cost_matrix(c, μ, ν)
-            C  = pairwise(SqEuclidean(), vcat(μ.support'...), vcat(ν.support'...), dims=1)
+            C = pairwise(SqEuclidean(), vcat(μ.support'...), vcat(ν.support'...); dims=1)
             @test C1 ≈ C
             @test C2 ≈ C
             @test C3 ≈ C
@@ -193,7 +192,7 @@ Random.seed!(100)
             C1 = cost_matrix(Euclidean(), μ; symmetric=true)
             C2 = cost_matrix(euclidean, μ; symmetric=true)
             C3 = cost_matrix(c, μ)
-            C  = pairwise(Euclidean(), vcat(μ.support'...), vcat(μ.support'...); dims=1)
+            C = pairwise(Euclidean(), vcat(μ.support'...), vcat(μ.support'...); dims=1)
             @test C1 ≈ C
             @test C2 ≈ C
             @test C3 ≈ C
