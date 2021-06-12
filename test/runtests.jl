@@ -15,8 +15,13 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Exact OT" begin
             include("exact.jl")
         end
-        @safetestset "Entropically regularized OT" begin
-            include("entropic.jl")
+        @testset "Entropically regularized OT" begin
+            @safetestset "Sinkhorn" begin
+                include(joinpath("entropic", "sinkhorn.jl"))
+            end
+            @safetestset "Stabilized Sinkhorn" begin
+                include(joinpath("entropic", "sinkhorn_stabilized.jl"))
+            end
         end
         @safetestset "Quadratically regularized OT" begin
             include("quadratic.jl")
@@ -26,6 +31,9 @@ const GROUP = get(ENV, "GROUP", "All")
         end
         @safetestset "Wasserstein distance" begin
             include("wasserstein.jl")
+        end
+        @safetestset "Bures distance" begin
+            include("bures.jl")
         end
     end
 

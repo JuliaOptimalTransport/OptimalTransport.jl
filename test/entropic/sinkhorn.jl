@@ -6,6 +6,7 @@ using LogExpFunctions
 using PythonOT: PythonOT
 using Distributions
 
+using LinearAlgebra
 using Random
 using Test
 
@@ -13,7 +14,7 @@ const POT = PythonOT
 
 Random.seed!(100)
 
-@testset "entropic.jl" begin
+@testset "sinkhorn.jl" begin
     @testset "sinkhorn" begin
         M = 250
         N = 200
@@ -177,53 +178,12 @@ Random.seed!(100)
         end
     end
 
-    @testset "stabilized sinkhorn" begin
-        M = 250
-        N = 200
-
-        @testset "example" begin
-            # create two uniform histograms
-            μ = fill(1 / M, M)
-            ν = fill(1 / N, N)
-
-            # create random cost matrix
-            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
-            # compute optimal transport map (Julia implementation + POT)
-            eps = 0.001
-            γ = sinkhorn_stabilized(μ, ν, C, eps; maxiter=5_000)
-            γ_pot = POT.sinkhorn(
-                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
-            )
-            @test γ ≈ γ_pot rtol = 1e-6
-        end
-
-        @testset "epsilon scaling" begin
-            # create two uniform histograms
-            μ = fill(1 / M, M)
-            ν = fill(1 / N, N)
-
-            # create random cost matrix
-            C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-
-            # compute optimal transport map (Julia implementation + POT)
-            eps = 0.001
-            γ = sinkhorn_stabilized_epsscaling(μ, ν, C, eps; k=5, maxiter=5_000)
-            γ_pot = POT.sinkhorn(
-                μ, ν, C, eps; method="sinkhorn_stabilized", numItermax=5_000
-            )
-            @test γ ≈ γ_pot rtol = 1e-6
-        end
-    end
-
     @testset "sinkhorn barycenter" begin
         @testset "example" begin
             # set up support
             support = range(-1; stop=1, length=250)
-            μ1 = exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2)
-            μ1 ./= sum(μ1)
-            μ2 = exp.(-(support .- 0.5) .^ 2 ./ 0.1^2)
-            μ2 ./= sum(μ2)
+            μ1 = normalize!(exp.(-(support .+ 0.5) .^ 2 ./ 0.1^2), 1)
+            μ2 = normalize!(exp.(-(support .- 0.5) .^ 2 ./ 0.1^2), 1)
             μ_all = hcat(μ1, μ2)
             # create cost matrix
             C = pairwise(SqEuclidean(), support'; dims=2)

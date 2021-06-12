@@ -5,6 +5,7 @@ using Distances
 using LinearAlgebra
 using Random
 using Test
+using Distributions
 
 Random.seed!(100)
 
@@ -68,10 +69,10 @@ Random.seed!(100)
     @testset "checkbalanced" begin
         mass = rand()
 
-        x1 = rand(20)
-        x1 .*= mass / sum(x1)
-        y1 = rand(30)
-        y1 .*= mass / sum(y1)
+        x1 = normalize!(rand(20), 1)
+        x1 .*= mass
+        y1 = normalize!(rand(30), 1)
+        y1 .*= mass
         @test OptimalTransport.checkbalanced(x1, y1) === nothing
         @test OptimalTransport.checkbalanced(y1, x1) === nothing
         @test_throws ArgumentError OptimalTransport.checkbalanced(rand() .* x1, y1)
@@ -98,44 +99,104 @@ Random.seed!(100)
         )
     end
 
+    @testset "FiniteDiscreteMeasure" begin
+        @testset "Univariate Finite Discrete Measure" begin
+            n = 100
+            m = 80
+            μsupp = rand(n)
+            νsupp = rand(m)
+            μprobs = normalize!(rand(n), 1)
+
+            μ = OptimalTransport.discretemeasure(μsupp, μprobs)
+            ν = OptimalTransport.discretemeasure(νsupp)
+            # check if it vectors are indeed probabilities
+            @test isprobvec(μ.p)
+            @test isprobvec(probs(μ))
+            @test ν.p == ones(m) ./ m
+            @test probs(ν) == ones(m) ./ m
+
+            # check if it assigns to DiscreteNonParametric when Vector/Matrix is 1D
+            @test μ isa DiscreteNonParametric
+            @test ν isa DiscreteNonParametric
+
+            # check if support is correctly assinged
+            @test sort(μsupp) == μ.support
+            @test sort(μsupp) == support(μ)
+            @test sort(vec(νsupp)) == ν.support
+            @test sort(vec(νsupp)) == support(ν)
+        end
+        @testset "Multivariate Finite Discrete Measure" begin
+            n = 10
+            m = 3
+            μsupp = [rand(m) for i in 1:n]
+            νsupp = [rand(m) for i in 1:n]
+            μprobs = normalize!(rand(n), 1)
+            μ = OptimalTransport.discretemeasure(μsupp, μprobs)
+            ν = OptimalTransport.discretemeasure(νsupp)
+            # check if it vectors are indeed probabilities
+            @test isprobvec(μ.p)
+            @test isprobvec(probs(μ))
+            @test ν.p == ones(n) ./ n
+            @test probs(ν) == ones(n) ./ n
+
+            # check if support is correctly assinged
+            @test μsupp == μ.support
+            @test μsupp == support(μ)
+            @test νsupp == ν.support
+            @test νsupp == support(ν)
+        end
+    end
     @testset "costmatrix.jl" begin
+
         @testset "Creating cost matrices from vectors" begin
-            N = 15
-            M = 20
-            μ = FiniteDiscreteMeasure(rand(N), rand(N))
-            ν = FiniteDiscreteMeasure(rand(M), rand(M))
+            n = 100
+            m = 80
+            μsupp = rand(n)
+            νsupp = rand(m)
+            μprobs = normalize!(rand(n), 1)
+            μ = OptimalTransport.discretemeasure(μsupp,μprobs)
+            ν = OptimalTransport.discretemeasure(νsupp)
             c(x, y) = sum((x - y) .^ 2)
             C1 = cost_matrix(SqEuclidean(), μ, ν)
             C2 = cost_matrix(sqeuclidean, μ, ν)
             C3 = cost_matrix(c, μ, ν)
-            @test C1 ≈ pairwise(SqEuclidean(), μ.support, ν.support)
-            @test C2 ≈ pairwise(SqEuclidean(), μ.support, ν.support)
-            @test C3 ≈ pairwise(SqEuclidean(), μ.support, ν.support)
+            C  = pairwise(SqEuclidean(), vcat(μ.support...), vcat(ν.support...))
+            @test C1 ≈ C
+            @test C2 ≈ C
+            @test C3 ≈ C
         end
 
         @testset "Creating cost matrices from matrices" begin
-            N = 10
-            M = 8
-            μ = FiniteDiscreteMeasure(rand(N, 3), rand(N))
-            ν = FiniteDiscreteMeasure(rand(M, 3), rand(M))
+            n = 10
+            m = 3
+            μsupp = [rand(m) for i in 1:n]
+            νsupp = [rand(m) for i in 1:n]
+            μprobs = normalize!(rand(n), 1)
+            μ = OptimalTransport.discretemeasure(μsupp, μprobs)
+            ν = OptimalTransport.discretemeasure(νsupp)
             c(x, y) = sum((x - y) .^ 2)
             C1 = cost_matrix(SqEuclidean(), μ, ν)
             C2 = cost_matrix(sqeuclidean, μ, ν)
             C3 = cost_matrix(c, μ, ν)
-            @test C1 ≈ pairwise(SqEuclidean(), μ.support, ν.support; dims=1)
-            @test C2 ≈ pairwise(SqEuclidean(), μ.support, ν.support; dims=1)
-            @test C3 ≈ pairwise(SqEuclidean(), μ.support, ν.support; dims=1)
+            C  = pairwise(SqEuclidean(), vcat(μ.support'...), vcat(ν.support'...), dims=1)
+            @test C1 ≈ C
+            @test C2 ≈ C
+            @test C3 ≈ C
         end
         @testset "Creating cost matrices from μ to itself" begin
-            N = 10
-            μ = FiniteDiscreteMeasure(rand(N, 2), rand(N))
+            n = 10
+            m = 3
+            μsupp = [rand(m) for i in 1:n]
+            μprobs = normalize!(rand(n), 1)
+            μ = OptimalTransport.discretemeasure(μsupp, μprobs)
             c(x, y) = sqrt(sum((x - y) .^ 2))
             C1 = cost_matrix(Euclidean(), μ; symmetric=true)
             C2 = cost_matrix(euclidean, μ; symmetric=true)
             C3 = cost_matrix(c, μ)
-            @test C1 ≈ pairwise(Euclidean(), μ.support, μ.support; dims=1)
-            @test C2 ≈ pairwise(Euclidean(), μ.support, μ.support; dims=1)
-            @test C3 ≈ pairwise(Euclidean(), μ.support, μ.support; dims=1)
+            C  = pairwise(Euclidean(), vcat(μ.support'...), vcat(μ.support'...); dims=1)
+            @test C1 ≈ C
+            @test C2 ≈ C
+            @test C3 ≈ C
         end
     end
 end
