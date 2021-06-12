@@ -4,8 +4,6 @@
 
 module OptimalTransport
 
-using PDMats: length
-using LinearAlgebra: AbstractMatrix
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
