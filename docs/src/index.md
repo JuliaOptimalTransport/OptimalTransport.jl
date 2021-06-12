@@ -36,3 +36,8 @@ sinkhorn_unbalanced2
 ```@docs
 quadreg
 ```
+
+## Utilities
+```@docs
+cost_matrix
+```
