@@ -9,11 +9,19 @@ const GROUP = get(ENV, "GROUP", "All")
 
 @testset "OptimalTransport" begin
     if GROUP == "All" || GROUP == "OptimalTransport"
+        @safetestset "Utilities" begin
+            include("utils.jl")
+        end
         @safetestset "Exact OT" begin
             include("exact.jl")
         end
-        @safetestset "Entropically regularized OT" begin
-            include("entropic.jl")
+        @testset "Entropically regularized OT" begin
+            @safetestset "Sinkhorn" begin
+                include(joinpath("entropic", "sinkhorn.jl"))
+            end
+            @safetestset "Stabilized Sinkhorn" begin
+                include(joinpath("entropic", "sinkhorn_stabilized.jl"))
+            end
         end
         @safetestset "Quadratically regularized OT" begin
             include("quadratic.jl")
@@ -24,11 +32,8 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Wasserstein distance" begin
             include("wasserstein.jl")
         end
-        @safetestset "Finite Discrete Measure" begin
-            include("finitediscretemeasure.jl")
-        end
-        @safetestset "Cost matrix computation" begin
-            include("costmatrix.jl")
+        @safetestset "Bures distance" begin
+            include("bures.jl")
         end
     end
 

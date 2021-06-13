@@ -5,6 +5,7 @@ using PythonOT: PythonOT
 using Tulip
 using MathOptInterface
 using Distributions
+using HCubature
 
 using LinearAlgebra
 using Random
@@ -19,10 +20,8 @@ Random.seed!(100)
     @testset "Earth-Movers Distance" begin
         M = 200
         N = 250
-        μ = rand(M)
-        ν = rand(N)
-        μ ./= sum(μ)
-        ν ./= sum(ν)
+        μ = normalize!(rand(M), 1)
+        ν = normalize!(rand(N), 1)
 
         @testset "example" begin
             # create random cost matrix
@@ -86,8 +85,7 @@ Random.seed!(100)
 
         @testset "semidiscrete case" begin
             μ = Normal(randn(), rand())
-            νprobs = rand(30)
-            νprobs ./= sum(νprobs)
+            νprobs = normalize!(rand(30), 1)
             ν = Categorical(νprobs)
 
             # compute OT plan
@@ -112,14 +110,12 @@ Random.seed!(100)
         @testset "discrete case" begin
             # random source and target marginal
             m = 30
-            μprobs = rand(m)
-            μprobs ./= sum(μprobs)
+            μprobs = normalize!(rand(m), 1)
             μsupport = randn(m)
             μ = DiscreteNonParametric(μsupport, μprobs)
 
             n = 50
-            νprobs = rand(n)
-            νprobs ./= sum(νprobs)
+            νprobs = normalize!(rand(n), 1)
             νsupport = randn(n)
             ν = DiscreteNonParametric(νsupport, νprobs)
 
@@ -146,7 +142,7 @@ Random.seed!(100)
             # manually
             C = pairwise(Euclidean(), μsupport', νsupport'; dims=2)
             c2 = emd2(μprobs, νprobs, C, Tulip.Optimizer())
-            @test c2 ≈ c rtol = 1e-6
+            @test c2 ≈ c rtol = 1e-5
 
             # compare with POT
             # disabled currently since https://github.com/PythonOT/POT/issues/169 causes bounds
@@ -162,6 +158,55 @@ Random.seed!(100)
             @test c2 ≈ c
             c2 = @inferred(ot_cost(euclidean, μ2, ν2; plan=Matrix(γ)))
             @test c2 ≈ c
+        end
+    end
+
+    @testset "Multivariate Gaussians" begin
+        @testset "translation with constant covariance" begin
+            m = randn(100)
+            τ = rand(100)
+            Σ = Matrix(Hermitian(rand(100, 100) + 100I))
+            μ = MvNormal(m, Σ)
+            ν = MvNormal(m .+ τ, Σ)
+            @test ot_cost(SqEuclidean(), μ, ν) ≈ norm(τ)^2
+
+            x = rand(100, 10)
+            T = ot_plan(SqEuclidean(), μ, ν)
+            @test pdf(ν, mapslices(T, x; dims=1)) ≈ pdf(μ, x)
+        end
+
+        @testset "comparison to grid approximation" begin
+            μ = MvNormal([0, 0], [1 0; 0 2])
+            ν = MvNormal([10, 10], [2 0; 0 1])
+            # Constructing circular grid approximation
+            # Angular grid step
+            θ = collect(0:0.2:(2π))
+            θx = cos.(θ)
+            θy = sin.(θ)
+            # Radius grid step
+            δ = collect(0:0.2:1)
+            μsupp = [0.0 0.0]
+            νsupp = [10.0 10.0]
+            for i in δ[2:end]
+                a = [θx .* i θy .* i * 2]
+                b = [θx .* i * 2 θy .* i] .+ [10 10]
+                μsupp = vcat(μsupp, a)
+                νsupp = vcat(νsupp, b)
+            end
+
+            # Create discretized distribution
+            μprobs = normalize!(pdf(μ, μsupp'), 1)
+            νprobs = normalize!(pdf(ν, νsupp'), 1)
+            C = pairwise(SqEuclidean(), μsupp', νsupp'; dims=2)
+            @test emd2(μprobs, νprobs, C, Tulip.Optimizer()) ≈ ot_cost(SqEuclidean(), μ, ν) rtol =
+                1e-3
+
+            # Use hcubature integration to perform ``\\int c(x,T(x)) d\\mu``
+            T = ot_plan(SqEuclidean(), μ, ν)
+            c_hcubature, _ = hcubature([-10, -10], [10, 10]) do x
+                return sqeuclidean(x, T(x)) * pdf(μ, x)
+            end
+            @test ot_cost(SqEuclidean(), μ, ν) ≈ c_hcubature rtol = 1e-3
         end
     end
 end

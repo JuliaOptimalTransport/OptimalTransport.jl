@@ -3,14 +3,13 @@ using OptimalTransport
 using Distributions
 using Random
 
-
 Random.seed!(100)
 
 @testset "finitediscretemeasure.jl" begin
     @testset "Univariate Finite Discrete Measure" begin
         n = 100
         μsupp = rand(n)
-        νsupp = rand(n,1)
+        νsupp = rand(n, 1)
         μ = FiniteDiscreteMeasure(μsupp)
         ν = FiniteDiscreteMeasure(νsupp, rand(n))
         # check if it assigns equal probabilities to all entries
