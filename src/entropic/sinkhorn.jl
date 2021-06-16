@@ -563,7 +563,7 @@ end
         Cμν, Cμμ, Cνν,
         μ::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
         ν::Union{FiniteDiscreteMeasure, DiscreteNonParametric},
-        ε; regularization=false, plan=nothing, kwargs...
+        ε; plan=nothing, kwargs...
     )
 
 Compute the Sinkhorn Divergence between finite discrete
