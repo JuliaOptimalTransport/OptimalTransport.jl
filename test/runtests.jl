@@ -1,4 +1,3 @@
-using LinearAlgebra: symmetric
 using OptimalTransport
 using Pkg: Pkg
 using SafeTestsets
