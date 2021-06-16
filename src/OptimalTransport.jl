@@ -4,7 +4,6 @@
 
 module OptimalTransport
 
-using LinearAlgebra: AbstractMatrix
 using Distances
 using LinearAlgebra
 using IterativeSolvers, SparseArrays
