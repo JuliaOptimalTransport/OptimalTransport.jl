@@ -2,5 +2,5 @@
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [compat]
-CUDA = "3"
+CUDA = "= 3.2"
 julia = "1.6"
