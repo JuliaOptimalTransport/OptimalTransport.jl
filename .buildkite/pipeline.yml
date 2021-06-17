@@ -14,4 +14,3 @@ steps:
 
 env:
   GROUP: GPU
-  JULIA_DEBUG: CUBLAS
