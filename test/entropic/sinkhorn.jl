@@ -208,14 +208,12 @@ Random.seed!(100)
             μ = OptimalTransport.discretemeasure(μsupp, μprobs)
             ν = OptimalTransport.discretemeasure(νsupp)
 
-            for (ε, metrics) in Iterators.product(
-                [0.1, 1.0, 10.0],
-                [
-                    (sqeuclidean, SqEuclidean()),
-                    (euclidean, Euclidean()),
-                    (totalvariation, TotalVariation()),
-                ],
-            )
+            metrics_list = [
+                (sqeuclidean, SqEuclidean()),
+                (euclidean, Euclidean()),
+                (totalvariation, TotalVariation()),
+            ]
+            for ε in [0.1, 1.0, 10.0], metrics in metrics_list
                 for metric in metrics
                     @test sinkhorn_divergence(metric, μ, μ, ε) ≈ 0.0
                     @test sinkhorn_divergence(metric, ν, ν, ε) ≈ 0.0
@@ -251,14 +249,12 @@ Random.seed!(100)
             μ = OptimalTransport.discretemeasure(μsupp, μprobs)
             ν = OptimalTransport.discretemeasure(νsupp)
 
-            for (ε, metrics) in Iterators.product(
-                [0.1, 1.0, 10.0],
-                [
-                    (sqeuclidean, SqEuclidean()),
-                    (euclidean, Euclidean()),
-                    (totalvariation, TotalVariation()),
-                ],
-            )
+            metrics_list = [
+                (sqeuclidean, SqEuclidean()),
+                (euclidean, Euclidean()),
+                (totalvariation, TotalVariation()),
+            ]
+            for ε in [0.1, 1.0, 10.0], metrics in metrics_list
                 for metric in metrics
                     @test sinkhorn_divergence(metric, μ, μ, ε) ≈ 0.0
                     @test sinkhorn_divergence(metric, ν, ν, ε) ≈ 0.0
