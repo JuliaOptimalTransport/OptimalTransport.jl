@@ -212,7 +212,7 @@ end
 
 """
     sinkhorn(
-        μ, ν, C, ε[, alg=SinkhornGibbs()];
+        μ, ν, C, ε, alg=SinkhornGibbs();
         atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000,
     )
 
@@ -260,7 +260,7 @@ end
 
 """
     sinkhorn2(
-        μ, ν, C, ε[, alg=SinkhornGibbs()]; regularization=false, plan=nothing, kwargs...
+        μ, ν, C, ε, alg=SinkhornGibbs(); regularization=false, plan=nothing, kwargs...
     )
 
 Solve the entropically regularized optimal transport problem with source and target

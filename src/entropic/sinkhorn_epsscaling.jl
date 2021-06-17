@@ -113,15 +113,15 @@ end
 This method is deprecated, please use
 ```julia
 sinkhorn(
+    μ,
+    ν,
+    C,
+    ε,
     SinkhornEpsilonScaling(
         SinkhornStabilized(; absorb_tol=absorb_tol);
         factor=scaling_factor,
         steps=scaling_steps,
-    ),
-    μ,
-    ν,
-    C,
-    ε;
+    );
     kwargs...,
 )
 ```

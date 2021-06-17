@@ -146,7 +146,7 @@ end
 This method is deprecated, please use
 ```julia
 sinkhorn(
-    SinkhornStabilized(; absorb_tol=absorb_tol), μ, ν, C, ε; kwargs...
+    μ, ν, C, ε, SinkhornStabilized(; absorb_tol=absorb_tol); kwargs...
 )
 ```
 instead.
