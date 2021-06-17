@@ -181,7 +181,7 @@ function sinkhorn_stabilized(
 
     # return "dual potentials" (in log space and scaled by 1/ε) if requested
     if return_duals !== nothing && return_duals
-        solver = build_solver(algorithm, μ, ν, C, ε; atol=atol, kwargs...)
+        solver = build_solver(μ, ν, C, ε, algorithm; atol=atol, kwargs...)
         solve!(solver)
         absorb!(solver)
         cache = solver.cache

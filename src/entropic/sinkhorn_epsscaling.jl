@@ -41,7 +41,7 @@ function sinkhorn(μ, ν, C, ε, alg::SinkhornEpsilonScaling; kwargs...)
     @debug "ε-scaling Sinkhorn algorithm: ε = $εstep"
 
     # initialize solver and perform Sinkhorn algorithm
-    solver = build_solver(alg.alg, μ, ν, C, εstep; kwargs...)
+    solver = build_solver(μ, ν, C, εstep, alg.alg; kwargs...)
     solve!(solver)
 
     for _ in 2:(scaling_steps - 1)

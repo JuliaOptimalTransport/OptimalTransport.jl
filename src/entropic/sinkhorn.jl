@@ -19,11 +19,11 @@ struct SinkhornSolver{A<:Sinkhorn,M,N,CT,E<:Real,T<:Real,R<:Real,C1,C2}
 end
 
 function build_solver(
-    alg::Sinkhorn,
     μ::AbstractVecOrMat,
     ν::AbstractVecOrMat,
     C::AbstractMatrix,
-    ε::Real;
+    ε::Real,
+    alg::Sinkhorn;
     atol=nothing,
     rtol=nothing,
     check_convergence=10,
@@ -247,7 +247,7 @@ See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
     # build solver
-    solver = build_solver(alg, μ, ν, C, ε; kwargs...)
+    solver = build_solver(μ, ν, C, ε, alg; kwargs...)
 
     # perform Sinkhorn algorithm
     solve!(solver)
