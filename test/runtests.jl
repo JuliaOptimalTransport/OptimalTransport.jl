@@ -41,7 +41,6 @@ const GROUP = get(ENV, "GROUP", "All")
         # activate separate environment: CUDA can't be added to test/Project.toml since it
         # is not available on older Julia versions
         Pkg.activate("gpu")
-        Pkg.add(Pkg.PackageSpec(; name="CUDA", rev="master"))
         Pkg.instantiate()
 
         @safetestset "Simple GPU" begin
