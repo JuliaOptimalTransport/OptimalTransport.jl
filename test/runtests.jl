@@ -51,9 +51,7 @@ const GROUP = get(ENV, "GROUP", "All")
     if (GROUP == "All" || GROUP == "GPU") && VERSION >= v"1.6"
         # activate separate environment: CUDA can't be added to test/Project.toml since it
         # is not available on older Julia versions
-        pkgdir = dirname(dirname(pathof(OptimalTransport)))
         Pkg.activate("gpu")
-        Pkg.develop(Pkg.PackageSpec(; path=pkgdir))
         Pkg.instantiate()
 
         @safetestset "Simple GPU" begin

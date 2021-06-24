@@ -1,14 +1,8 @@
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
-OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 CUDA = "3"
-Distances = "0.10"
 NNlibCUDA = "0.1"
-OptimalTransport = "0.3"
 julia = "1.6"
