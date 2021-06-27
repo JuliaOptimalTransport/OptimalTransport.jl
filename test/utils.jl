@@ -46,6 +46,15 @@ Random.seed!(100)
         @test OptimalTransport.dot_matwise(y, x) == OptimalTransport.dot_matwise(x, y)
     end
 
+    @testset "checksize" begin
+        for xsize in ((5,), (5, 1), (5, 4)), ysize in ((3,), (3, 1), (3, 6))
+            x = rand(xsize...)
+            y = rand(ysize...)
+            z = rand(xsize[1], ysize[1])
+            OptimalTransport.checksize(x, y, z)
+        end
+    end
+
     @testset "checksize2" begin
         x = rand(5)
         y = rand(10)
@@ -95,6 +104,42 @@ Random.seed!(100)
         @test_throws ArgumentError OptimalTransport.checkbalanced(
             x2, y2 .* hcat(rand(), ones(1, size(y2, 2) - 1))
         )
+    end
+
+    @testset "A_batched_mul_B!" begin
+        l, m, n = 5, 10, 4
+        A = rand(l, m)
+        b = rand(m)
+        c = rand(l)
+        OptimalTransport.A_batched_mul_B!(c, A, b)
+        @test c == A * b
+
+        B = rand(m, n)
+        C = rand(l, n)
+        OptimalTransport.A_batched_mul_B!(C, A, B)
+        @test C == A * B
+
+        As = rand(l, m, n)
+        OptimalTransport.A_batched_mul_B!(C, As, B)
+        @test all(C[:, i] ≈ As[:, :, i] * B[:, i] for i in 1:n)
+    end
+
+    @testset "At_batched_mul_B!" begin
+        l, m, n = 5, 10, 4
+        A = rand(l, m)
+        b = rand(l)
+        c = rand(m)
+        OptimalTransport.At_batched_mul_B!(c, A, b)
+        @test c == transpose(A) * b
+
+        B = rand(l, n)
+        C = rand(m, n)
+        OptimalTransport.At_batched_mul_B!(C, A, B)
+        @test C == transpose(A) * B
+
+        As = rand(l, m, n)
+        OptimalTransport.At_batched_mul_B!(C, As, B)
+        @test all(C[:, i] ≈ transpose(As[:, :, i]) * B[:, i] for i in 1:n)
     end
 
     @testset "FiniteDiscreteMeasure" begin
