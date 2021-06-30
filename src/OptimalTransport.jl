@@ -12,7 +12,10 @@ using MathOptInterface
 using Distributions
 using PDMats
 using QuadGK
+using NNlib: NNlib
 using StatsBase: StatsBase
+
+export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 
 export sinkhorn, sinkhorn2
 export emd, emd2
@@ -27,8 +30,14 @@ include("distances/bures.jl")
 include("utils.jl")
 include("exact.jl")
 include("wasserstein.jl")
+
 include("entropic/sinkhorn.jl")
+include("entropic/sinkhorn_gibbs.jl")
 include("entropic/sinkhorn_stabilized.jl")
+include("entropic/sinkhorn_epsscaling.jl")
+include("entropic/sinkhorn_unbalanced.jl")
+include("entropic/sinkhorn_barycenter.jl")
+
 include("quadratic.jl")
 
 end
