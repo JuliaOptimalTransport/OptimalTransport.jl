@@ -25,6 +25,19 @@ end
 dot_matwise(x::AbstractMatrix, y::AbstractArray) = dot_matwise(y, x)
 
 """
+    checksize(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C::AbstractMatrix)
+
+Check that dimensions of source and target marginals `μ` and `ν` are consistent with cost
+matrix `C`.
+"""
+function checksize(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C::AbstractMatrix)
+    size(C) == (size(μ, 1), size(ν, 1)) || throw(
+        DimensionMismatch("cost matrix `C` must be of size `(size(μ, 1), size(ν, 1))`")
+    )
+    return nothing
+end
+
+"""
     checksize2(x::AbstractVecOrMat, y::AbstractVecOrMat)
 
 Check if arrays `x` and `y` are compatible, then return a tuple of its broadcasted second
@@ -55,6 +68,57 @@ function checkbalanced(x::AbstractVecOrMat, y::AbstractVecOrMat)
     return nothing
 end
 
+"""
+    A_batched_mul_B!(c::AbstractVector, A::AbstractMatrix, b::AbstractVector)
+
+Compute the matrix-vector product `Ab` and write the result to `c`.
+"""
+A_batched_mul_B!(c::AbstractVector, A::AbstractMatrix, b::AbstractVector) = mul!(c, A, b)
+
+"""
+    A_batched_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+
+Compute the matrix-matrix product `AB` and write the result to `C`.
+"""
+A_batched_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix) = mul!(C, A, B)
+
+"""
+    A_batched_mul_B!(C::AbstractMatrix, A::AbstractArray{<:Any,3}, B::AbstractMatrix)
+
+Compute the matrix-vector products `A[:, :, i] B[:, i]` and write them to `C[:, i]`.
+"""
+function A_batched_mul_B!(C::AbstractMatrix, A::AbstractArray{<:Any,3}, B::AbstractMatrix)
+    return NNlib.batched_mul!(add_singleton(C, Val(2)), A, add_singleton(B, Val(2)))
+end
+
+"""
+    At_batched_mul_B!(c::AbstractVector, A::AbstractMatrix, b::AbstractVector)
+
+Compute the matrix-vector product `transpose(A)b` and write the result to `c`.
+"""
+function At_batched_mul_B!(c::AbstractVector, A::AbstractMatrix, b::AbstractVector)
+    return mul!(c, transpose(A), b)
+end
+
+"""
+    At_batched_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+
+Compute the matrix-matrix product `transpose(A)B` and write the result to `C`.
+"""
+function At_batched_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+    return mul!(C, transpose(A), B)
+end
+
+"""
+    At_batched_mul_B!(C::AbstractMatrix, A::AbstractArray{<:Any,3}, B::AbstractMatrix)
+
+Compute the matrix-vector products `transpose(A[:, :, i]) B[:, i]` and write them to
+`C[:, i]`.
+"""
+function At_batched_mul_B!(C::AbstractMatrix, A::AbstractArray{<:Any,3}, B::AbstractMatrix)
+    return NNlib.batched_mul!(add_singleton(C, Val(1)), add_singleton(B, Val(1)), A)
+end
+
 struct FiniteDiscreteMeasure{X<:AbstractVector,P<:AbstractVector}
     support::X
     p::P
@@ -72,7 +136,7 @@ end
         probs::AbstractVector{<:Real}=fill(inv(length(support)), length(support))
     )
 
-Construct a finite discrete probability measure with `support` and corresponding 
+Construct a finite discrete probability measure with `support` and corresponding
 `probabilities`. If the probability vector argument is not passed, then
 equal probability is assigned to each entry in the support.
 

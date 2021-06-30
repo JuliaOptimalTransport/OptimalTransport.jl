@@ -11,26 +11,40 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Utilities" begin
             include("utils.jl")
         end
+
         @safetestset "Exact OT" begin
             include("exact.jl")
         end
+
         @testset "Entropically regularized OT" begin
-            @safetestset "Sinkhorn" begin
-                include(joinpath("entropic", "sinkhorn.jl"))
+            @safetestset "Sinkhorn Gibbs" begin
+                include(joinpath("entropic", "sinkhorn_gibbs.jl"))
             end
             @safetestset "Stabilized Sinkhorn" begin
                 include(joinpath("entropic", "sinkhorn_stabilized.jl"))
             end
+            @safetestset "Sinkhorn with ε-scaling" begin
+                include(joinpath("entropic", "sinkhorn_epsscaling.jl"))
+            end
+            @safetestset "Unbalanced Sinkhorn" begin
+                include(joinpath("entropic", "sinkhorn_unbalanced.jl"))
+            end
+            @safetestset "Sinkhorn barycenter" begin
+                include(joinpath("entropic", "sinkhorn_barycenter.jl"))
+            end
+            @safetestset "Sinkhorn Divergence" begin
+                include(joinpath("entropic", "sinkhorn_divergence.jl"))
+            end
         end
+
         @safetestset "Quadratically regularized OT" begin
             include("quadratic.jl")
         end
-        @safetestset "Unbalanced OT" begin
-            include("unbalanced.jl")
-        end
+
         @safetestset "Wasserstein distance" begin
             include("wasserstein.jl")
         end
+
         @safetestset "Bures distance" begin
             include("bures.jl")
         end
@@ -40,9 +54,7 @@ const GROUP = get(ENV, "GROUP", "All")
     if (GROUP == "All" || GROUP == "GPU") && VERSION >= v"1.6"
         # activate separate environment: CUDA can't be added to test/Project.toml since it
         # is not available on older Julia versions
-        pkgdir = dirname(dirname(pathof(OptimalTransport)))
         Pkg.activate("gpu")
-        Pkg.develop(Pkg.PackageSpec(; path=pkgdir))
         Pkg.instantiate()
 
         @safetestset "Simple GPU" begin
