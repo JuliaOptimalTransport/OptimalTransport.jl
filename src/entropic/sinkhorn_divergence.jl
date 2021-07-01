@@ -41,7 +41,14 @@ ternational Conference on Artificial Intelligence and Statistics, pages
 See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn_divergence(
-    c, μ::T, ν::T, ε, alg::Sinkhorn=SinkhornGibbs(); regularization=nothing, plan=nothing, kwargs...
+    c,
+    μ::T,
+    ν::T,
+    ε,
+    alg::Sinkhorn=SinkhornGibbs();
+    regularization=nothing,
+    plan=nothing,
+    kwargs...,
 ) where {T<:Union{FiniteDiscreteMeasure,DiscreteNonParametric}}
     return sinkhorn_divergence(
         pairwise(c, μ.support, ν.support),
@@ -74,7 +81,16 @@ A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
 See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn_divergence(
-    Cμν, Cμ, Cν, μ::T, ν::T, ε, alg::Sinkhorn=SinkhornGibbs(); regularization=nothing, plan=nothing, kwargs...
+    Cμν,
+    Cμ,
+    Cν,
+    μ::T,
+    ν::T,
+    ε,
+    alg::Sinkhorn=SinkhornGibbs();
+    regularization=nothing,
+    plan=nothing,
+    kwargs...,
 ) where {T<:Union{FiniteDiscreteMeasure,DiscreteNonParametric}}
     if regularization !== nothing
         @warn "`sinkhorn_divergence` does not support the `regularization` keyword argument"

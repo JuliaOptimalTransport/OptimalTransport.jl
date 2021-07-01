@@ -48,8 +48,7 @@ Random.seed!(100)
                 # so instead, it's more realiable to calculate using sinkhorn2
                 sd_pot =
                     POT.sinkhorn2(μ.p, ν.p, Cμν, ε) -
-                    (POT.sinkhorn2(μ.p, μ.p, Cμ, ε) + POT.sinkhorn2(ν.p, ν.p, Cν, ε)) /
-                    2
+                    (POT.sinkhorn2(μ.p, μ.p, Cμ, ε) + POT.sinkhorn2(ν.p, ν.p, Cν, ε)) / 2
 
                 @test sd_c ≈ sd_pot[1]
                 @test sd_C ≈ sd_pot[1]
@@ -89,8 +88,7 @@ Random.seed!(100)
                 # so instead, it's more realiable to calculate using sinkhorn2
                 sd_pot =
                     POT.sinkhorn2(μ.p, ν.p, Cμν, ε) -
-                    (POT.sinkhorn2(μ.p, μ.p, Cμ, ε) + POT.sinkhorn2(ν.p, ν.p, Cν, ε)) /
-                    2
+                    (POT.sinkhorn2(μ.p, μ.p, Cμ, ε) + POT.sinkhorn2(ν.p, ν.p, Cν, ε)) / 2
 
                 @test sd_c ≈ sd_pot[1]
                 @test sd_C ≈ sd_pot[1]
