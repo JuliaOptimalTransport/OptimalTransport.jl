@@ -1,4 +1,4 @@
-# solver 
+# Barycenter solver
 
 struct SinkhornBarycenterSolver{A<:Sinkhorn,M,CT,W,E<:Real,T<:Real,R<:Real,C1,C2}
     source::M
@@ -33,7 +33,7 @@ function build_solver(
     # compute type
     T = float(Base.promote_eltype(μ, one(eltype(C)) / ε))
 
-    # build caches using SinkhornGibbsCache struct
+    # build caches using SinkhornGibbsCache struct (since there is no dependence on ν)
     cache = build_cache(T, alg, size2, μ, C, ε)
     convergence_cache = build_convergence_cache(T, size2, μ)
 
@@ -102,6 +102,9 @@ function solve!(solver::SinkhornBarycenterSolver)
                 break
             end
         end
+    end
+    if !isconverged
+        @warn "$(solver.alg) ($maxiter/$maxiter): not converged"
     end
     return nothing
 end
