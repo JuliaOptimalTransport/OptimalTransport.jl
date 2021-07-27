@@ -16,6 +16,7 @@ using NNlib: NNlib
 using StatsBase: StatsBase
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
+export SinkhornBarycenterGibbs
 
 export sinkhorn, sinkhorn2
 export emd, emd2
