@@ -1,4 +1,4 @@
-struct SinkhornBarycenterGibbs <: Sinkhorn end 
+struct SinkhornBarycenterGibbs <: Sinkhorn end
 
 # solver cache
 function build_cache(

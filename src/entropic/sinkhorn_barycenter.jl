@@ -28,7 +28,7 @@ function build_solver(
     # check that input marginals are balanced
     checkbalanced(μ)
 
-    size2 = (size(μ, 2), )
+    size2 = (size(μ, 2),)
 
     # compute type
     T = float(Base.promote_eltype(μ, one(eltype(C)) / ε))
@@ -65,7 +65,7 @@ function solve!(solver::SinkhornBarycenterSolver)
     v = cache.v
     K = cache.K
     Kv = cache.Kv
-    
+
     isconverged = false
     to_check_step = check_convergence
     for iter in 1:maxiter
@@ -102,11 +102,9 @@ function solve!(solver::SinkhornBarycenterSolver)
                 break
             end
         end
-
     end
-    return nothing 
+    return nothing
 end
-
 
 """
     sinkhorn_barycenter(μ, C, ε, w, alg = SinkhornBarycenterGibbs(); kwargs...)

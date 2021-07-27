@@ -59,9 +59,8 @@ end
 Check that all entries of `x` are approximately equal
 """
 function isallapprox(x::AbstractVecOrMat)
-    all(y -> isapprox(y, x[begin]), x[2:end])
+    return all(y -> isapprox(y, x[begin]), x[2:end])
 end
-
 
 """
      checkbalanced(μ::AbstractVecOrMat, ν::AbstractVecOrMat)
@@ -78,7 +77,7 @@ function checkbalanced(x::AbstractVecOrMat, y::AbstractVecOrMat)
     return nothing
 end
 function checkbalanced(x::AbstractMatrix)
-    isallapprox(sum(x; dims = 1)) || 
+    isallapprox(sum(x; dims=1)) ||
         throw(ArgumentError("source and target marginals are not balanced"))
     return nothing
 end
