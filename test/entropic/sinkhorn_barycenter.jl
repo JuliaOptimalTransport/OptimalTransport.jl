@@ -24,7 +24,7 @@ Random.seed!(100)
 
         # compute Sinkhorn barycenter
         eps = 0.01
-        μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5])
+        μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5], OptimalTransport.SinkhornBarycenterGibbs())
 
         # compare with POT
         # need to use a larger tolerance here because of a quirk with the POT solver

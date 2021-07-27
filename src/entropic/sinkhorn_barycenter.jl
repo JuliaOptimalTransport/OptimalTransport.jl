@@ -1,5 +1,115 @@
+# solver 
+
+struct SinkhornBarycenterSolver{A<:Sinkhorn,M,CT,W,E<:Real,T<:Real,R<:Real,C1,C2}
+    source::M
+    C::CT
+    eps::E
+    w::W
+    alg::A
+    atol::T
+    rtol::R
+    maxiter::Int
+    check_convergence::Int
+    cache::C1
+    convergence_cache::C2
+end
+
+function build_solver(
+    μ::AbstractMatrix,
+    C::AbstractMatrix,
+    ε::Real,
+    w::AbstractVector,
+    alg::Sinkhorn;
+    atol=nothing,
+    rtol=nothing,
+    check_convergence=10,
+    maxiter::Int=1_000,
+)
+    # check that input marginals are balanced
+    checkbalanced(μ)
+
+    size2 = (size(μ, 2), )
+
+    # compute type
+    T = float(Base.promote_eltype(μ, one(eltype(C)) / ε))
+
+    # build caches using SinkhornGibbsCache struct
+    cache = build_cache(T, alg, size2, μ, C, ε)
+    convergence_cache = build_convergence_cache(T, size2, μ)
+
+    # set tolerances
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
+
+    # create solver
+    solver = SinkhornBarycenterSolver(
+        μ, C, ε, w, alg, _atol, _rtol, maxiter, check_convergence, cache, convergence_cache
+    )
+    return solver
+end
+
+function solve!(solver::SinkhornBarycenterSolver)
+    # unpack solver 
+    μ = solver.source
+    w = solver.w
+    atol = solver.atol
+    rtol = solver.rtol
+
+    maxiter = solver.maxiter
+    check_convergence = solver.check_convergence
+    cache = solver.cache
+    convergence_cache = solver.convergence_cache
+
+    # unpack cache
+    u = cache.u
+    v = cache.v
+    K = cache.K
+    Kv = cache.Kv
+    
+    isconverged = false
+    to_check_step = check_convergence
+    for iter in 1:maxiter
+        # prestep if needed (not used for SinkhornBarycenterGibbs)
+        prestep!(solver, iter)
+
+        # Sinkhorn iteration
+        At_batched_mul_B!(v, K, u)
+        v .= μ ./ v
+        A_batched_mul_B!(Kv, K, v)
+        v .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
+        u .= v ./ Kv
+
+        # decrement check marginal step
+        to_check_step -= 1
+        # check convergence
+        if to_check_step == 0 || iter == maxiter
+            # reset counter
+            to_check_step = check_convergence
+
+            isconverged, abserror = OptimalTransport.check_convergence(
+                μ, u, Kv, convergence_cache, atol, rtol
+            )
+            @debug string(solver.alg) *
+                   " (" *
+                   string(iter) *
+                   "/" *
+                   string(maxiter) *
+                   ": absolute error of source marginal = " *
+                   string(maximum(abserror))
+
+            if isconverged
+                @debug "$(solver.alg) ($iter/$maxiter): converged"
+                break
+            end
+        end
+
+    end
+    return nothing 
+end
+
+
 """
-    sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
+    sinkhorn_barycenter(μ, C, ε, w, alg = SinkhornBarycenterGibbs(); kwargs...)
 
 Compute the Sinkhorn barycenter for a collection of `N` histograms contained in the columns of `μ`, for a cost matrix `C` of size `(size(μ, 1), size(μ, 1))`, relative weights `w` of size `N`, and entropic regularisation parameter `ε`.
 Returns the entropically regularised barycenter of the `μ`, i.e. the histogram `ρ` of length `size(μ, 1)` that solves
@@ -11,33 +121,8 @@ Returns the entropically regularised barycenter of the `μ`, i.e. the histogram 
 where ``\\operatorname{OT}_{ε}(\\mu, \\nu) = \\inf_{\\gamma \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)``
 is the entropic optimal transport loss with cost ``C`` and regularisation ``\\epsilon``.
 """
-function sinkhorn_barycenter(μ, C, ε, w; tol=1e-9, check_marginal_step=10, max_iter=1000)
-    sums = sum(μ; dims=1)
-    if !isapprox(extrema(sums)...)
-        throw(ArgumentError("Error: marginals are unbalanced"))
-    end
-    K = exp.(-C / ε)
-    converged = false
-    v = ones(size(μ))
-    u = ones(size(μ))
-    N = size(μ, 2)
-    for n in 1:max_iter
-        v = μ ./ (K' * u)
-        a = ones(size(u, 1))
-        a = prod((K * v)' .^ w; dims=1)'
-        u = a ./ (K * v)
-        if n % check_marginal_step == 0
-            # check marginal errors
-            err = maximum(abs.(μ .- v .* (K' * u)))
-            @debug "Sinkhorn algorithm: iteration $n" err
-            if err < tol
-                converged = true
-                break
-            end
-        end
-    end
-    if !converged
-        @warn "Sinkhorn did not converge"
-    end
-    return u[:, 1] .* (K * v[:, 1])
+function sinkhorn_barycenter(μ, C, ε, w, alg::Sinkhorn; kwargs...)
+    solver = build_solver(μ, C, ε, w, alg; kwargs...)
+    solve!(solver)
+    return solution(solver)
 end

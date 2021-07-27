@@ -37,6 +37,7 @@ include("entropic/sinkhorn_stabilized.jl")
 include("entropic/sinkhorn_epsscaling.jl")
 include("entropic/sinkhorn_unbalanced.jl")
 include("entropic/sinkhorn_barycenter.jl")
+include("entropic/sinkhorn_barycenter_gibbs.jl")
 
 include("quadratic.jl")
 
