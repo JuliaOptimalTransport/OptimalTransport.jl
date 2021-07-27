@@ -59,7 +59,7 @@ end
 Check that all entries of `x` are approximately equal
 """
 function isallapprox(x::AbstractVecOrMat)
-    return all(y -> isapprox(y, x[begin]), x[2:end])
+    return all(y -> isapprox(y, x[1]), x[2:end])
 end
 
 """
