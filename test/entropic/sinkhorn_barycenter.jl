@@ -23,7 +23,7 @@ Random.seed!(100)
         C = pairwise(SqEuclidean(), support'; dims=2)
 
         # compute Sinkhorn barycenter
-        eps = 0.01
+        eps = 0.005
         μ_interp = sinkhorn_barycenter(μ_all, C, eps, [0.5, 0.5], OptimalTransport.SinkhornBarycenterGibbs())
 
         # compare with POT

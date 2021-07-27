@@ -65,19 +65,21 @@ function solve!(solver::SinkhornBarycenterSolver)
     v = cache.v
     K = cache.K
     Kv = cache.Kv
+    a = cache.a
 
     isconverged = false
     to_check_step = check_convergence
+    A_batched_mul_B!(Kv, K, v)
     for iter in 1:maxiter
         # prestep if needed (not used for SinkhornBarycenterGibbs)
         prestep!(solver, iter)
 
         # Sinkhorn iteration
+        a .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
+        u .= a ./ Kv
         At_batched_mul_B!(v, K, u)
         v .= μ ./ v
         A_batched_mul_B!(Kv, K, v)
-        v .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
-        u .= v ./ Kv
 
         # decrement check marginal step
         to_check_step -= 1
@@ -87,7 +89,7 @@ function solve!(solver::SinkhornBarycenterSolver)
             to_check_step = check_convergence
 
             isconverged, abserror = OptimalTransport.check_convergence(
-                μ, u, Kv, convergence_cache, atol, rtol
+                a, u, Kv, convergence_cache, atol, rtol
             )
             @debug string(solver.alg) *
                    " (" *
