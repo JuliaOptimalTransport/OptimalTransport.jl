@@ -27,7 +27,7 @@ Random.seed!(100)
     w = ones(N) / N
 
     @testset "example" begin
-        α = sinkhorn_barycenter(μ, C, ε, w, SinkhornBarycenterGibbs())
+        α = sinkhorn_barycenter(μ, C, ε, w, SinkhornGibbs())
 
         # compare with POT
         # need to use a larger tolerance here because of a quirk with the POT solver
@@ -41,7 +41,7 @@ Random.seed!(100)
         ε32 = map(Float32, ε)
         C32 = map(Float32, C)
         w32 = map(Float32, w)
-        α = sinkhorn_barycenter(μ32, C32, ε32, w32, SinkhornBarycenterGibbs())
+        α = sinkhorn_barycenter(μ32, C32, ε32, w32, SinkhornGibbs())
 
         α_pot = POT.barycenter(μ32, C32, ε32; weights=w32, stopThr=1e-9)
         @test α ≈ α_pot rtol = 1e-6

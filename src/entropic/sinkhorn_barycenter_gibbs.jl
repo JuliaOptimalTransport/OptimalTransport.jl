@@ -1,7 +1,3 @@
-# algorithm
-
-struct SinkhornBarycenterGibbs <: Sinkhorn end
-
 # cache
 
 struct SinkhornBarycenterGibbsCache{U,V,KT,A}
@@ -15,7 +11,7 @@ end
 # solver cache
 function build_cache(
     ::Type{T},
-    ::SinkhornBarycenterGibbs,
+    ::SinkhornGibbs,
     size2::Tuple,
     μ::AbstractMatrix,
     C::AbstractMatrix,
@@ -39,9 +35,9 @@ function build_cache(
     return SinkhornBarycenterGibbsCache(u, v, K, Kv, a)
 end
 
-prestep!(::SinkhornBarycenterSolver{SinkhornBarycenterGibbs}, ::Int) = nothing
+prestep!(::SinkhornBarycenterSolver{SinkhornGibbs}, ::Int) = nothing
 
-function solution(solver::SinkhornBarycenterSolver{SinkhornBarycenterGibbs})
+function solution(solver::SinkhornBarycenterSolver{SinkhornGibbs})
     cache = solver.cache
     return cache.u[:, 1] .* cache.Kv[:, 1]
 end

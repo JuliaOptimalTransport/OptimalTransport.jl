@@ -71,7 +71,7 @@ function solve!(solver::SinkhornBarycenterSolver)
     to_check_step = check_convergence
     A_batched_mul_B!(Kv, K, v)
     for iter in 1:maxiter
-        # prestep if needed (not used for SinkhornBarycenterGibbs)
+        # prestep if needed (not used for SinkhornBarycenterSolver{SinkhornGibbs})
         prestep!(solver, iter)
 
         # Sinkhorn iteration
@@ -112,7 +112,7 @@ function solve!(solver::SinkhornBarycenterSolver)
 end
 
 """
-    sinkhorn_barycenter(μ, C, ε, w, alg = SinkhornBarycenterGibbs(); kwargs...)
+    sinkhorn_barycenter(μ, C, ε, w, alg = SinkhornGibbs(); kwargs...)
 
 Compute the Sinkhorn barycenter for a collection of `N` histograms contained in the columns of `μ`, for a cost matrix `C` of size `(size(μ, 1), size(μ, 1))`, relative weights `w` of size `N`, and entropic regularisation parameter `ε`.
 Returns the entropically regularised barycenter of the `μ`, i.e. the histogram `ρ` of length `size(μ, 1)` that solves
