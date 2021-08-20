@@ -16,6 +16,7 @@ using NNlib: NNlib
 using StatsBase: StatsBase
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
+export SinkhornBarycenterGibbs
 
 export sinkhorn, sinkhorn2
 export emd, emd2
@@ -37,6 +38,7 @@ include("entropic/sinkhorn_stabilized.jl")
 include("entropic/sinkhorn_epsscaling.jl")
 include("entropic/sinkhorn_unbalanced.jl")
 include("entropic/sinkhorn_barycenter.jl")
+include("entropic/sinkhorn_barycenter_gibbs.jl")
 
 include("quadratic.jl")
 
