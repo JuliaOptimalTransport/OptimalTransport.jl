@@ -10,12 +10,7 @@ end
 
 # solver cache
 function build_cache(
-    ::Type{T},
-    ::SinkhornGibbs,
-    size2::Tuple,
-    μ::AbstractMatrix,
-    C::AbstractMatrix,
-    ε::Real,
+    ::Type{T}, ::SinkhornGibbs, size2::Tuple, μ::AbstractMatrix, C::AbstractMatrix, ε::Real
 ) where {T}
     # compute Gibbs kernel (has to be mutable for ε-scaling algorithm)
     K = similar(C, T)
