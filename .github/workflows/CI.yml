@@ -13,6 +13,7 @@ jobs:
     continue-on-error: ${{ matrix.version == 'nightly' }}
     strategy:
       matrix:
+        python-version: [3.6, 3.7]
         version:
           - '1.0'
           - '1'
@@ -33,6 +34,8 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
+          python-version: ${{ matrix.python-version }}
+
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
