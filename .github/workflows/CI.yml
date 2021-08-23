@@ -45,6 +45,8 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
+      - run: >
+          pip3 install pot
       - uses: julia-actions/julia-runtest@latest
         with:
           coverage: ${{ matrix.coverage || false }}
@@ -62,5 +64,3 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: lcov.info
-      - run: >
-          pip3 install pot
