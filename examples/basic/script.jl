@@ -225,7 +225,7 @@ mu = hcat(mu1, mu2)
 C = pairwise(SqEuclidean(), support'; dims=2)
 for λ1 in (0.25, 0.5, 0.75)
     λ2 = 1 - λ1
-    a = sinkhorn_barycenter(mu, C, 0.01, [λ1, λ2]; max_iter=1000)
+    a = sinkhorn_barycenter(mu, C, 0.01, [λ1, λ2], SinkhornGibbs())
     plot!(plt, support, a; label="\$\\mu \\quad (\\lambda_1 = $λ1)\$")
 end
 plt

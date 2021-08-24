@@ -54,6 +54,15 @@ function checksize2(μ::AbstractVecOrMat, ν::AbstractVecOrMat)
 end
 
 """
+     isallapprox(x::AbstractVector)
+
+Check that all entries of `x` are approximately equal
+"""
+function isallapprox(x::AbstractVecOrMat)
+    return all(y -> isapprox(y, x[1]), x[2:end])
+end
+
+"""
      checkbalanced(μ::AbstractVecOrMat, ν::AbstractVecOrMat)
 
 Check that source and target marginals `μ` and `ν` are balanced.
@@ -64,6 +73,11 @@ function checkbalanced(μ::AbstractVector, ν::AbstractVector)
 end
 function checkbalanced(x::AbstractVecOrMat, y::AbstractVecOrMat)
     all(isapprox.(sum(x; dims=1), sum(y; dims=1))) ||
+        throw(ArgumentError("source and target marginals are not balanced"))
+    return nothing
+end
+function checkbalanced(x::AbstractMatrix)
+    isallapprox(sum(x; dims=1)) ||
         throw(ArgumentError("source and target marginals are not balanced"))
     return nothing
 end
