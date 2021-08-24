@@ -38,7 +38,7 @@ function build_solver(
     atol=nothing,
     rtol=nothing,
     check_convergence=1,
-    maxiter::Int=50,
+    maxiter::Int=100,
 )
     # check that source and target marginals have the correct size and are balanced
     checksize(μ, ν, C)

@@ -94,7 +94,7 @@ sinkhorn2(μ, ν, C, ε)
 # resulting transport plan $\gamma$ is *sparse*. We take advantage of this and represent it as
 # a sparse matrix.
 
-quadreg(μ, ν, C, ε; maxiter=500);
+quadreg(μ, ν, C, ε; maxiter=100);
 
 # ## Stabilized Sinkhorn algorithm
 #
@@ -188,7 +188,7 @@ heatmap(
 # Notice how the "edges" of the transport plan are sharper if we use quadratic regularisation
 # instead of entropic regularisation:
 
-γquad = Matrix(quadreg(μ, ν, C, 5; maxiter=500))
+γquad = quadreg(μ, ν, C, 5; maxiter=100);
 heatmap(
     μsupport,
     νsupport,
