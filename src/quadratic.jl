@@ -1,132 +1,86 @@
-"""
-    quadreg(mu, nu, C, ϵ; θ = 0.1, tol = 1e-5,maxiter = 50,κ = 0.5,δ = 1e-5)
+# algorithm
 
-Computes the optimal transport plan of histograms `mu` and `nu` with cost matrix `C` and quadratic regularization parameter `ϵ`,
-using the semismooth Newton algorithm [Lorenz 2016].
+abstract type QuadraticOT end 
 
-This implementation makes use of IterativeSolvers.jl and SparseArrays.jl.
+# solver 
 
-Parameters:\n
-θ: starting Armijo parameter.\n
-tol: tolerance of marginal error.\n
-maxiter: maximum interation number.\n
-κ: control parameter of Armijo.\n
-δ: small constant for the numerical stability of conjugate gradient iterative solver.\n
-
-Tips:
-If the algorithm does not converge, try some different values of θ.
-
-Reference:
-Lorenz, D.A., Manns, P. and Meyer, C., 2019. Quadratically regularized optimal transport. arXiv preprint arXiv:1903.01112v4.
-"""
-function quadreg(mu, nu, C, ϵ; θ=0.1, tol=1e-5, maxiter=50, κ=0.5, δ=1e-5)
-    if !(sum(mu) ≈ sum(nu))
-        throw(ArgumentError("Error: mu and nu must lie in the simplex"))
-    end
-
-    N = length(mu)
-    M = length(nu)
-
-    # initialize dual potentials as uniforms
-    a = ones(M) ./ M
-    b = ones(N) ./ N
-    γ = spzeros(M, N)
-
-    da = spzeros(M)
-    db = spzeros(N)
-
-    converged = false
-
-    function DualObjective(a, b)
-        A = a .* ones(N)' + ones(M) .* b' - C'
-
-        return 0.5 * norm(A[A .> 0], 2)^2 - ϵ * (dot(nu, a) + dot(mu, b))
-    end
-
-    # computes minimizing directions, update γ
-    function search_dir!(a, b, da, db)
-        P = a * ones(N)' .+ ones(M) * b' .- C'
-
-        σ = 1.0 * sparse(P .>= 0)
-        γ = sparse(max.(P, 0) ./ ϵ)
-
-        G = vcat(
-            hcat(spdiagm(0 => σ * ones(N)), σ),
-            hcat(sparse(σ'), spdiagm(0 => sparse(σ') * ones(M))),
-        )
-
-        h = vcat(γ * ones(N) - nu, sparse(γ') * ones(M) - mu)
-
-        x = cg(G + δ * I, -ϵ * h)
-
-        da = x[1:M]
-        return db = x[(M + 1):end]
-    end
-
-    function search_dir(a, b)
-        P = a * ones(N)' .+ ones(M) * b' .- C'
-
-        σ = 1.0 * sparse(P .>= 0)
-        γ = sparse(max.(P, 0) ./ ϵ)
-
-        G = vcat(
-            hcat(spdiagm(0 => σ * ones(N)), σ),
-            hcat(sparse(σ'), spdiagm(0 => sparse(σ') * ones(M))),
-        )
-
-        h = vcat(γ * ones(N) - nu, sparse(γ') * ones(M) - mu)
-
-        x = cg(G + δ * I, -ϵ * h)
-
-        return x[1:M], x[(M + 1):end]
-    end
-
-    # computes optimal maginitude in the minimizing directions
-    function search_t(a, b, da, db, θ)
-        d = ϵ * dot(γ, (da .* ones(N)' .+ ones(M) .* db')) - ϵ * (dot(da, nu) + dot(db, mu))
-
-        ϕ₀ = DualObjective(a, b)
-        t = 1
-
-        while DualObjective(a + t * da, b + t * db) >= ϕ₀ + t * θ * d
-            t *= κ
-
-            if t < 1e-15
-                # @warn "@ i = $i, t = $t , armijo did not converge"
-                break
-            end
-        end
-        return t
-    end
-
-    for i in 1:maxiter
-
-        # search_dir!(a, b, da, db)
-        da, db = search_dir(a, b)
-
-        t = search_t(a, b, da, db, θ)
-
-        a += t * da
-        b += t * db
-
-        err1 = norm(γ * ones(N) - nu, Inf)
-        err2 = norm(sparse(γ') * ones(M) - mu, Inf)
-
-        if err1 <= tol && err2 <= tol
-            converged = true
-            @warn "Converged @ i = $i with marginal errors: \n err1 = $err1, err2 = $err2 \n"
-            break
-        elseif i == maxiter
-            @warn "Not Converged with errors:\n err1 = $err1, err2 = $err2 \n"
-        end
-
-        @debug " t = $t"
-        @debug "marginal @ i = $i: err1 = $err1, err2 = $err2 "
-    end
-
-    if !converged
-        @warn "SemiSmooth Newton algorithm did not converge"
-    end
-
-    return sparse(γ')
+struct QuadraticOTSolver{A<:QuadraticOT,M,N,CT,E<:Real,T<:Real,R<:Real,C1,C2}
+    source::M
+    target::N
+    C::CT
+    eps::E
+    alg::A
+    atol::T
+    rtol::R
+    maxiter::Int
+    check_convergence::Int
+    cache::C1
+    convergence_cache::C2
 end
+
+struct QuadraticOTConvergenceCache{N<:Real}
+    norm_source::N
+    norm_target::N
+end
+
+function build_convergence_cache(::Type{T}, μ::AbstractVector, ν::AbstractVector) where {T}
+    norm_μ = sum(abs, μ)
+    norm_ν = sum(abs, ν)
+    return QuadraticOTConvergenceCache(norm_μ, norm_ν)
+end
+
+function build_solver(
+    μ::AbstractVector,
+    ν::AbstractVector,
+    C::AbstractMatrix,
+    ε::Real,
+    alg::QuadraticOT;
+    atol=nothing,
+    rtol=nothing,
+    check_convergence=1,
+    maxiter::Int=50,
+)
+    # check that source and target marginals have the correct size and are balanced
+    checksize(μ, ν, C)
+    checkbalanced(μ, ν)
+    # do not use checksize2 since for quadratic OT (at least for now) we do not support batch computations
+
+    # compute type
+    T = float(Base.promote_eltype(μ, ν, one(eltype(C)) / ε))
+
+    # build caches
+    cache = build_cache(T, alg, μ, ν, C, ε)
+    convergence_cache = build_convergence_cache(T, μ, ν)
+
+    # set tolerances
+    _atol = atol === nothing ? 0 : atol
+    _rtol = rtol === nothing ? (_atol > zero(_atol) ? zero(T) : sqrt(eps(T))) : rtol
+
+    # create solver
+    solver = QuadraticOTSolver(
+        μ, ν, C, ε, alg, _atol, _rtol, maxiter, check_convergence, cache, convergence_cache
+    )
+
+    return solver
+end
+
+
+"""
+    quadreg(μ, ν, C, ε, alg::QuadraticOT; kwargs...)
+
+Computes the optimal transport plan of histograms `μ` and `ν` with cost matrix `C` and quadratic regularization parameter `ε` using the semismooth Newton algorithm [Lorenz 2019]. 
+"""
+
+function quadreg(μ, ν, C, ε, alg::QuadraticOT = QuadraticOTNewton(); kwargs...)
+    # build solver
+    solver = build_solver(μ, ν, C, ε, alg; kwargs...)
+
+    # perform Sinkhorn algorithm
+    solve!(solver)
+
+    # compute optimal transport plan
+    γ = plan(solver)
+
+    return γ
+end
+
