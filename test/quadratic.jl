@@ -32,4 +32,3 @@ Random.seed!(100)
         @test γ ≈ γ_pot rtol = 1e-1
     end
 end
-
