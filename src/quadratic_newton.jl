@@ -107,7 +107,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
 
     # setup intermediate variables 
     @. γ = u + v' - C
-    @. σ = ifelse(γ ≥ 0, 1, 0)
+    @. σ = γ ≥ 0
     @. γ = NNlib.relu(γ) / eps
 
     # setup kernel matrix G
