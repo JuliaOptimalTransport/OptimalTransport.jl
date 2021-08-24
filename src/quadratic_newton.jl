@@ -111,11 +111,14 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     @. γ = NNlib.relu(γ) / eps
 
     # setup kernel matrix G
-    G[diagind(G)[1:M]] .= vec(sum(σ; dims=2))
-    G[diagind(G)[(M + 1):end]] .= vec(sum(σ; dims=1))
+    # G[diagind(G)[1:M]] .= vec(sum(σ; dims=2))
+    G[1:M, 1:M] .= Diagonal(vec(sum(σ; dims = 2)))
+    # G[diagind(G)[(M + 1):end]] .= vec(sum(σ; dims=1))
+    G[M+1:end, M+1:end] .= Diagonal(vec(sum(σ; dims = 1)))
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
-    G[diagind(G)] .+= δ # regularise cg
+    # G[diagind(G)] .+= δ # regularise cg
+    G .+= δ*I(M+N)
 
     # cg step
     b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)

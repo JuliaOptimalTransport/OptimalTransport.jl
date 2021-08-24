@@ -85,7 +85,7 @@ the iterate of the transport plan `γ` satisfies
 ```
 where
 ```math
-    \text{normdiff} = \\max\\{ \\| \\gamma \\mathbf{1} - \\mu \\|_\\infty , \\|  \\gamma^\\top \\mathbf{1} - \\nu \\|_\\infty  \\} . 
+    \\text{normdiff} = \\max\\{ \\| \\gamma \\mathbf{1} - \\mu \\|_\\infty , \\|  \\gamma^\\top \\mathbf{1} - \\nu \\|_\\infty  \\} . 
 ```
 After `maxiter` iterations, the computation is stopped.
 
