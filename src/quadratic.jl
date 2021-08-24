@@ -25,7 +25,7 @@ end
 
 function build_convergence_cache(::Type{T}, μ::AbstractVector, ν::AbstractVector) where {T}
     norm_μ = norm(μ, Inf)
-    norm_ν = sum(ν, Inf)
+    norm_ν = norm(ν, Inf)
     return QuadraticOTConvergenceCache(norm_μ, norm_ν)
 end
 
