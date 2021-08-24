@@ -1,16 +1,31 @@
-# (semi-smooth) Newton method of Lorenz et al. 2019 [https://arxiv.org/pdf/1903.01112.pdf]
 
-struct QuadraticOTNewton{T<:Real, K<:Real, D<:Real} <: QuadraticOT 
+"""
+    Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) for solving quadratically regularised optimal transport
+
+    See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
+
+    # References
+    
+    Lorenz, Dirk A., Paul Manns, and Christian Meyer. [Quadratically regularized optimal transport.](https://doi.org/10.1007/s00245-019-09614-w) Applied Mathematics & Optimization 83.3 (2021): 1919-1949.
+"""
+struct QuadraticOTNewton{T<:Real,K<:Real,D<:Real} <: QuadraticOT
     θ::T
     κ::K
     δ::D
-end 
-
-function QuadraticOTNewton()
-    QuadraticOTNewton(0.1, 0.5, 1e-5)
 end
 
-Base.show(io::IO, ::QuadraticOTNewton) = print(io, "Semi-smooth Newton method of Lorenz et al. 2019")
+"""
+    QuadraticOTNewton(θ = 0.1, κ = 0.5, δ = 1e-5)
+
+    Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) with Armijo parameters `θ` and `κ`, and conjugate gradient regularisation `δ`. 
+    
+    See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
+"""
+function QuadraticOTNewton(θ=0.1, κ=0.5, δ=1e-5)
+    return QuadraticOTNewton(θ, κ, δ)
+end
+
+Base.show(io::IO, ::QuadraticOTNewton) = print(io, "Semi-smooth Newton algorithm")
 
 struct QuadraticOTNewtonCache{U,V,C,P,GT,X}
     u::U
@@ -45,9 +60,9 @@ function build_cache(
     γ = similar(C, T)
     M = size(μ, 1)
     N = size(ν, 1)
-    G = zeros(T, M+N, M+N)
+    G = zeros(T, M + N, M + N)
     # initial guess for conjugate gradient 
-    x = zeros(T, M+N)
+    x = zeros(T, M + N)
     return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, x, M, N)
 end
 
@@ -55,13 +70,17 @@ function check_convergence(
     μ::AbstractVector,
     ν::AbstractVector,
     cache::QuadraticOTNewtonCache,
-    convergence_cache::QuadraticOTConvergenceCache, 
+    convergence_cache::QuadraticOTConvergenceCache,
     atol::Real,
     rtol::Real,
 )
     γ = cache.γ
-    norm_diff = max(norm(vec(sum(γ; dims = 2)) .- μ), norm(vec(sum(γ; dims = 1) .- ν)))
-    isconverged = norm_diff < max(atol, rtol * max(convergence_cache.norm_source, convergence_cache.norm_target))
+    norm_diff = max(
+        norm(vec(sum(γ; dims=2)) .- μ, Inf), norm(vec(sum(γ; dims=1) .- ν), Inf)
+    )
+    isconverged =
+        norm_diff <
+        max(atol, rtol * max(convergence_cache.norm_source, convergence_cache.norm_target))
     return isconverged, norm_diff
 end
 
@@ -89,20 +108,20 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     # setup intermediate variables 
     @. γ = u + v' - C
     @. σ = ifelse(γ ≥ 0, 1, 0)
-    @. γ = NNlib.relu(γ)/eps
+    @. γ = NNlib.relu(γ) / eps
 
     # setup kernel matrix G
-    G[diagind(G)[1:M]] .= vec(sum(σ; dims = 2))
-    G[diagind(G)[M+1:end]] .= vec(sum(σ; dims = 1))
-    G[1:M, M+1:end] .= σ
-    G[M+1:end, 1:M] .= σ'
+    G[diagind(G)[1:M]] .= vec(sum(σ; dims=2))
+    G[diagind(G)[(M + 1):end]] .= vec(sum(σ; dims=1))
+    G[1:M, (M + 1):end] .= σ
+    G[(M + 1):end, 1:M] .= σ'
     G[diagind(G)] .+= δ # regularise cg
 
     # cg step
-    b = -eps * vcat(vec(sum(γ; dims = 2)) .- μ, vec(sum(γ; dims = 1)) .- ν)
+    b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
     cg!(x, G, b)
     δu .= x[1:M]
-    δv .= x[M+1:end]
+    return δv .= x[(M + 1):end]
 end
 
 function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
@@ -124,17 +143,19 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     κ = solver.alg.κ
 
     # dual objective 
-    Φ(u, v, μ, ν, C, ε) = 0.5*norm(NNlib.relu.(u .+ v' .- C))^2 - ε*dot(μ, u) - ε*dot(ν, v)
+    function Φ(u, v, μ, ν, C, ε)
+        return 0.5 * norm(NNlib.relu.(u .+ v' .- C))^2 - ε * dot(μ, u) - ε * dot(ν, v)
+    end
 
     # compute directional derivative
-    d = - eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
+    d = -eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
     t = 1
     Φ0 = Φ(u, v, μ, ν, C, eps)
-    while Φ(u + t*δu, v + t*δv, μ, ν, C, eps) ≥ Φ0 + t*θ*d
-        t = κ*t 
+    while Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d
+        t = κ * t
     end
-    u .= u + t*δu
-    v .= v + t*δv
+    u .= u + t * δu
+    return v .= v + t * δv
 end
 
 function solve!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
@@ -147,7 +168,6 @@ function solve!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     check_convergence = solver.check_convergence
     cache = solver.cache
     convergence_cache = solver.convergence_cache
-    
 
     isconverged = false
     to_check_step = check_convergence
@@ -155,7 +175,7 @@ function solve!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
         # compute descent direction
         descent_dir!(solver)
         # Newton step
-        descent_step!(solver)        
+        descent_step!(solver)
         # check source marginal
         # always check convergence after the final iteration
         to_check_step -= 1
@@ -192,6 +212,6 @@ end
 
 function plan(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     cache = solver.cache
-    γ = NNlib.relu.(cache.u .+ cache.v' .- solver.C)/solver.eps
+    γ = NNlib.relu.(cache.u .+ cache.v' .- solver.C) / solver.eps
     return γ
 end

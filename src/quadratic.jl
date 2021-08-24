@@ -1,6 +1,6 @@
 # algorithm
 
-abstract type QuadraticOT end 
+abstract type QuadraticOT end
 
 # solver 
 
@@ -24,8 +24,8 @@ struct QuadraticOTConvergenceCache{N<:Real}
 end
 
 function build_convergence_cache(::Type{T}, μ::AbstractVector, ν::AbstractVector) where {T}
-    norm_μ = sum(abs, μ)
-    norm_ν = sum(abs, ν)
+    norm_μ = norm(μ, Inf)
+    norm_ν = sum(ν, Inf)
     return QuadraticOTConvergenceCache(norm_μ, norm_ν)
 end
 
@@ -64,14 +64,36 @@ function build_solver(
     return solver
 end
 
-
 """
     quadreg(μ, ν, C, ε, alg::QuadraticOT; kwargs...)
 
-Computes the optimal transport plan of histograms `μ` and `ν` with cost matrix `C` and quadratic regularization parameter `ε` using the semismooth Newton algorithm [Lorenz 2019]. 
-"""
+Computes the optimal transport plan of histograms `μ` and `ν` with cost matrix `C` and quadratic regularization parameter `ε`. 
 
-function quadreg(μ, ν, C, ε, alg::QuadraticOT = QuadraticOTNewton(); kwargs...)
+The optimal transport plan `γ` is of the same size as `C` and solves 
+
+```math
+\\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle
++ \\varepsilon \\Omega(\\gamma),
+```
+where ``\\Omega(\\gamma) = \\frac{1}{2} \\sum_{i,j} \\gamma_{i,j}^2`` is the quadratic 
+regularization term.
+
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterate of the transport plan `γ` satisfies
+```julia
+    norm_diff < max(atol, rtol * max(norm(μ, Inf), norm(ν, Inf)))
+```
+where
+```math
+    \text{normdiff} = \\max\\{ \\| \\gamma \\mathbf{1} - \\mu \\|_\\infty , \\|  \\gamma^\\top \\mathbf{1} - \\nu \\|_\\infty  \\} . 
+```
+After `maxiter` iterations, the computation is stopped.
+
+Note that unlike in the case of Sinkhorn's algorithm for the entropic regularisation, batch computation of optimal transport is not supported for the quadratic regularisation. 
+
+See also: [`sinkhorn`](@ref), [`QuadraticOTNewton`](@ref)
+"""
+function quadreg(μ, ν, C, ε, alg::QuadraticOT=QuadraticOTNewton(); kwargs...)
     # build solver
     solver = build_solver(μ, ν, C, ε, alg; kwargs...)
 
@@ -83,4 +105,3 @@ function quadreg(μ, ν, C, ε, alg::QuadraticOT = QuadraticOTNewton(); kwargs..
 
     return γ
 end
-
