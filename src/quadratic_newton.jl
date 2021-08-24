@@ -2,11 +2,11 @@
 """
     Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) for solving quadratically regularised optimal transport
 
-    See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
+See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
 
-    # References
+# References
     
-    Lorenz, Dirk A., Paul Manns, and Christian Meyer. [Quadratically regularized optimal transport.](https://doi.org/10.1007/s00245-019-09614-w) Applied Mathematics & Optimization 83.3 (2021): 1919-1949.
+Lorenz, Dirk A., Paul Manns, and Christian Meyer. [Quadratically regularized optimal transport.](https://doi.org/10.1007/s00245-019-09614-w) Applied Mathematics & Optimization 83.3 (2021): 1919-1949.
 """
 struct QuadraticOTNewton{T<:Real,K<:Real,D<:Real} <: QuadraticOT
     θ::T
