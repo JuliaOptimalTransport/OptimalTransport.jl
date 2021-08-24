@@ -144,7 +144,7 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
 
     # dual objective 
     function Φ(u, v, μ, ν, C, ε)
-        return 0.5 * norm(NNlib.relu.(u .+ v' .- C))^2 - ε * dot(μ, u) - ε * dot(ν, v)
+        return norm(NNlib.relu.(u .+ v' .- C))^2 / 2 - ε * dot(μ, u) - ε * dot(ν, v)
     end
 
     # compute directional derivative
