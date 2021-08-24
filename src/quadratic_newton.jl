@@ -118,7 +118,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
     # G[diagind(G)] .+= δ # regularise cg
-    G .+= δ * I
+    G .+= δ * I(M + N)
 
     # cg step
     b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
