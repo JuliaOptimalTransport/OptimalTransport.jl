@@ -1,6 +1,8 @@
 
 """
-    Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) for solving quadratically regularised optimal transport
+    QuadraticOTNewton
+
+Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) for solving quadratically regularised optimal transport
 
 See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
 
