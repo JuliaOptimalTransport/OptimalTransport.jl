@@ -17,6 +17,7 @@ using StatsBase: StatsBase
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
+export QuadraticOTNewton
 
 export sinkhorn, sinkhorn2
 export emd, emd2
@@ -41,5 +42,6 @@ include("entropic/sinkhorn_barycenter.jl")
 include("entropic/sinkhorn_barycenter_gibbs.jl")
 
 include("quadratic.jl")
+include("quadratic_newton.jl")
 
 end

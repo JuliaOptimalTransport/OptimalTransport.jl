@@ -51,3 +51,8 @@ sinkhorn_unbalanced2
 ```@docs
 quadreg
 ```
+
+Currently the following algorithms for solving quadratically regularised optimal transport are supported:
+```@docs
+QuadraticOTNewton
+```

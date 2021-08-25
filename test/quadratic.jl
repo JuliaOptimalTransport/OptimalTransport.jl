@@ -24,7 +24,8 @@ Random.seed!(100)
 
         # compute optimal transport map (Julia implementation + POT)
         eps = 0.25
-        γ = quadreg(μ, ν, C, eps)
+        γ = quadreg(μ, ν, C, eps, QuadraticOTNewton())
+
         γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps; stopThr=1e-9)
 
         # need to use a larger tolerance here because of a quirk with the POT solver
