@@ -21,7 +21,7 @@ Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) with Armijo parame
 
 See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
 """
-function QuadraticOTNewton(θ=0.1, κ=0.5, δ=1e-5)
+function QuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5)
     return QuadraticOTNewton(θ, κ, δ)
 end
 
