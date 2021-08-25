@@ -157,24 +157,56 @@ Random.seed!(100)
     # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/86
     @testset "AD" begin
         # compute gradients with respect to source and target marginals separately and
-        # together
-        ∇ = ForwardDiff.gradient(zeros(N)) do xs
+        # together. test against gradient computed using analytic formula of Proposition 2.3 of 
+        # Cuturi, Marco, and Gabriel Peyré. "A smoothed dual approach for variational Wasserstein problems." SIAM Journal on Imaging Sciences 9.1 (2016): 320-343.
+        #
+        # target marginal
+        ∇ = ForwardDiff.gradient(log.(ν)) do xs
             sinkhorn2(μ, softmax(xs), C, ε, SinkhornGibbs(); regularization=true)
         end
-        ∇default = ForwardDiff.gradient(zeros(N)) do xs
+        ∇default = ForwardDiff.gradient(log.(ν)) do xs
             sinkhorn2(μ, softmax(xs), C, ε; regularization=true)
         end
         @test ∇ == ∇default
 
-        ∇ = ForwardDiff.gradient(zeros(M)) do xs
+        solver = OptimalTransport.build_solver(μ, ν, C, ε, SinkhornGibbs())
+        OptimalTransport.solve!(solver)
+        # helper function
+        function dualvar_to_grad(x, ε)
+            x = -ε * log.(x)
+            x .-= sum(x) / size(x, 1)
+            return -x
+        end
+        ∇_ot = dualvar_to_grad(solver.cache.v, ε)
+        # chain rule because target measure parameterised by softmax
+        J_softmax = ForwardDiff.jacobian(log.(ν)) do xs
+            softmax(xs)
+        end
+        ∇analytic_target = J_softmax * ∇_ot
+        # check that gradient obtained by AD matches the analytic formula
+        @test ∇ ≈ ∇analytic_target rtol = 1e-6
+
+        # source marginal
+        ∇ = ForwardDiff.gradient(log.(μ)) do xs
             sinkhorn2(softmax(xs), ν, C, ε, SinkhornGibbs(); regularization=true)
         end
-        ∇default = ForwardDiff.gradient(zeros(M)) do xs
+        ∇default = ForwardDiff.gradient(log.(μ)) do xs
             sinkhorn2(softmax(xs), ν, C, ε; regularization=true)
         end
         @test ∇ == ∇default
 
-        ∇ = ForwardDiff.gradient(zeros(M + N)) do xs
+        # check that gradient obtained by AD matches the analytic formula
+        solver = OptimalTransport.build_solver(μ, ν, C, ε, SinkhornGibbs())
+        OptimalTransport.solve!(solver)
+        J_softmax = ForwardDiff.jacobian(log.(μ)) do xs
+            softmax(xs)
+        end
+        ∇_ot = dualvar_to_grad(solver.cache.u, ε)
+        ∇analytic_source = J_softmax * ∇_ot
+        @test ∇ ≈ ∇analytic_source rtol = 1e-6
+
+        # both marginals
+        ∇ = ForwardDiff.gradient(log.(vcat(μ, ν))) do xs
             sinkhorn2(
                 softmax(xs[1:M]),
                 softmax(xs[(M + 1):end]),
@@ -184,10 +216,12 @@ Random.seed!(100)
                 regularization=true,
             )
         end
-        ∇default = ForwardDiff.gradient(zeros(M + N)) do xs
+        ∇default = ForwardDiff.gradient(log.(vcat(μ, ν))) do xs
             sinkhorn2(softmax(xs[1:M]), softmax(xs[(M + 1):end]), C, ε; regularization=true)
         end
         @test ∇ == ∇default
+        ∇analytic = vcat(∇analytic_source, ∇analytic_target)
+        @test ∇ ≈ ∇analytic rtol = 1e-6
     end
 
     @testset "deprecations" begin
