@@ -45,7 +45,7 @@
 #   \rho_{t + \tau} = \operatorname{argmin}_{\rho} d_{W_2}^2(\rho_{t}, \rho) + \tau F(\rho). 
 # ```
 # Finally, a numerical scheme for computing this gradient flow can be developed by using the entropic regularisation
-# of optimal transport
+# of optimal transport on a discretised domain 
 # ```math
 #   \rho_{t + \tau} = \operatorname{argmin}_{\rho} \operatorname{OT}_\varepsilon(\rho_{t}, \rho) + \tau F(\rho),
 # ```
@@ -71,7 +71,7 @@ using Suppressor
 #
 # [^Santam2017]: Santambrogio, Filippo. "{Euclidean, metric, and Wasserstein} gradient flows: an overview." Bulletin of Mathematical Sciences 7.1 (2017): 87-154.
 
-support = LinRange(-1, 1, 128)
+support = LinRange(-1, 1, 64)
 C = pairwise(SqEuclidean(), support');
 
 # Now we set up various functionals that we will use.
@@ -87,15 +87,15 @@ function E(ρ; m=1)
     end
 end;
 
-# Now define $V(x)$ to be a potential energy function that has two potential wells at $x = ± 0.5$. 
-V(x) = 10 * (x - 0.5)^2 * (x + 0.5)^2;
-plot(support, V.(support); color="black", label="Scalar potential")
+# Now define $\psi(x)$ to be a potential energy function that has two potential wells at $x = ± 0.5$. 
+ψ(x) = 10 * (x - 0.5)^2 * (x + 0.5)^2;
+plot(support, ψ.(support); color="black", label="Scalar potential")
 
-# Having defined $V$, this induces a potential energy functional $\Psi$ on probability distributions $\rho$:
+# Having defined $\psi$, this induces a potential energy functional $\Psi$ on probability distributions $\rho$:
 # ```math
-#    \Psi(\rho) = \int V(x) \rho(x) dx = \langle \psi, \rho \rangle . 
+#    \Psi(\rho) = \int \psi(x) \rho(x) dx = \langle \psi, \rho \rangle . 
 # ```
-Ψ = V.(support);
+Ψ = ψ.(support);
 
 # Define the time step $\tau$ and entropic regularisation level $\varepsilon$, and form the associated Gibbs kernel $K = e^{-C/\varepsilon}$. 
 τ = 0.05
