@@ -71,7 +71,7 @@ using Suppressor
 #
 # [^Santam2017]: Santambrogio, Filippo. "{Euclidean, metric, and Wasserstein} gradient flows: an overview." Bulletin of Mathematical Sciences 7.1 (2017): 87-154.
 
-support = LinRange(-1, 1, 64)
+support = range(-1, 1; length=64)
 C = pairwise(SqEuclidean(), support');
 
 # Now we set up various functionals that we will use.
