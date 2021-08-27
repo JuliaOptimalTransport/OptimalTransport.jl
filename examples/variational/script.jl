@@ -60,7 +60,6 @@ using OptimalTransport
 using StatsBase, Distances
 using ReverseDiff, Optim, LinearAlgebra
 using Plots
-using BenchmarkTools
 using LogExpFunctions
 using LaTeXStrings
 using Suppressor
