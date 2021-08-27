@@ -96,7 +96,6 @@ Random.seed!(100)
 
         @testset "quadreg" begin
             # use a different reg parameter
-            ENV["JULIA_DEBUG"] = "OptimalTransport"
             ε_quad = 1.0f0
             γ = quadreg(cu_μ, cu_ν, cu_C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1f-5, 50))
             # compare with results on the CPU
