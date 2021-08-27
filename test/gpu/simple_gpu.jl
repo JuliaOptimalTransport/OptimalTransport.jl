@@ -100,7 +100,8 @@ Random.seed!(100)
             γ = quadreg(cu_μ, cu_ν, cu_C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1f-5, 50))
             # compare with results on the CPU
             @test convert(Array, γ) ≈
-                  quadreg(μ, ν, C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1f-5, 50))
+                  quadreg(μ, ν, C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1f-5, 50)) atol =
+                1f-6 rtol = 1f-6
         end
     end
 end
