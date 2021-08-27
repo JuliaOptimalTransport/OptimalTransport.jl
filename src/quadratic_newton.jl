@@ -22,7 +22,7 @@ Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) with Armijo parame
 
 See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
 """
-function QuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5, armijo_max = 50)
+function QuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5, armijo_max=50)
     return QuadraticOTNewton(θ, κ, δ, armijo_max)
 end
 
@@ -159,7 +159,8 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     d = -eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
     t = 1
     Φ0 = Φ(u, v, μ, ν, C, eps)
-    while (armijo_counter < armijo_max) && (Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d)
+    while (armijo_counter < armijo_max) &&
+        (Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d)
         t = κ * t
         armijo_counter += 1
     end
