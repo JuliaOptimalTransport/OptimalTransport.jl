@@ -3,9 +3,11 @@
 # In this example, we will numerically simulate an entropy-regularised Wasserstein gradient flow 
 # approximating the Fokker-Planck and porous medium equations. 
 # 
-# The connection between Wasserstein gradient flows and (non)-linear PDEs is due to Jordan, Kinderlehrer and Otto [^JKO98]. 
+# The connection between Wasserstein gradient flows and (non)-linear PDEs is due to Jordan, Kinderlehrer and Otto [^JKO98], and 
+# an easy-to-read overview of the topic is provided in Section 9.3 [^PC19]
 #
 # [^JKO98]: Jordan, Richard, David Kinderlehrer, and Felix Otto. "The variational formulation of the Fokker--Planck equation." SIAM journal on mathematical analysis 29.1 (1998): 1-17.
+# [^PC19]: Peyré, Gabriel, and Marco Cuturi. "Computational optimal transport: With applications to data science." Foundations and Trends® in Machine Learning 11.5-6 (2019): 355-607.
 #
 # ## Fokker-Planck equation as a $W_2$ gradient flow
 # For a potential function $\Psi$ and noise level $\sigma^2$, the Fokker-Planck equation (FPE) is 
@@ -19,18 +21,18 @@
 # dX_t = -\nabla \Psi(X_t) dt + \sigma dB_t. 
 # ```
 # The result of Jordan, Kinderlehrer and Otto (commonly referred to as the JKO theorem) states that 
-# $\rho$ evolves following the 2-Wasserstein gradient of the Gibbs free energy functional
+# $\rho_t$ evolves following the 2-Wasserstein gradient flow of the Gibbs free energy functional
 # ```math
 #   F(\rho) = \int \Psi d\rho + \int \log(\rho) d\rho. 
 # ```
 #
-# ## Proximal schemes for gradient flows
-# In an Euclidean space, the gradient flow of a functional $F$ is simply an ordinary differential equation
+# ## Implicit schemes for gradient flows
+# In an Euclidean space, the gradient flow of a functional $F$ is simply the solution of an ordinary differential equation
 # ```math
 #  \dfrac{dx(t)}{dt} = -\nabla F(x(t)).
 # ```
-# Of course, there is an implicit requirement that $F$ is smooth. A more general formulation of a gradient flow that allows
-# $F$ to be non-smooth is 
+# Of course, there is a requirement that $F$ is smooth. A more general formulation of a gradient flow that allows
+# $F$ to be non-smooth is the implicit scheme
 # ```math
 #   x_{t+\tau} = \operatorname{argmin}_x \frac{1}{2} \| x - x_t \|_2^2 + \tau F(x).
 # ```
@@ -38,7 +40,7 @@
 #
 # ## Wasserstein gradient flow
 # In the context of the JKO theorem, we seek $\rho_t$ that is the gradient flow of $F$ with 
-# respect to the 2-Wasserstein distance. This can be achieved by choosing the $W_2$ metric in the proximal step:
+# respect to the 2-Wasserstein distance. This can be achieved by choosing the $W_2$ metric in the implicit step:
 # ```math
 #   \rho_{t + \tau} = \operatorname{argmin}_{\rho} d_{W_2}^2(\rho_{t}, \rho) + \tau F(\rho). 
 # ```
@@ -49,7 +51,7 @@
 # ```
 # where 
 # ```math
-#   \operatorname{OT}_\varepsilon(\alpha, \beta) = \min_{\gamma \in \Pi(\alpha, \beta)} \sum_{i,j} \frac{1}{2} \| x_i - x_j \|_2^2 \gamma(x_i, x_j) + \varepsilon \sum_{i, j} \gamma_{ij} \log(\gamma_{ij}). 
+#   \operatorname{OT}_\varepsilon(\alpha, \beta) = \min_{\gamma \in \Pi(\alpha, \beta)} \sum_{i,j} \frac{1}{2} \| x_i - x_j \|_2^2 \gamma_{ij} + \varepsilon \sum_{i, j} \gamma_{ij} \log(\gamma_{ij}). 
 # ```
 # Each step of this problem is a minimisation problem with respect to $\rho$. 
 # Since we use entropic optimal transport which is differentiable, this can be solved using gradient-based methods.
@@ -69,12 +71,12 @@ using Suppressor
 #
 # [^Santam2017]: Santambrogio, Filippo. "{Euclidean, metric, and Wasserstein} gradient flows: an overview." Bulletin of Mathematical Sciences 7.1 (2017): 87-154.
 
-support = LinRange(-1, 1, 64)
+support = LinRange(-1, 1, 128)
 C = pairwise(SqEuclidean(), support');
 
 # Now we set up various functionals that we will use.
 #
-# Generalised entropy (Equation (4.4) of [^Peyre2015]): for $m = 1$ this is just the "regular" entropy, and $m = 2$ this is squared $L_2$. 
+# We define the generalised entropy (Equation (4.4) of [^Peyre2015]) as follows. For $m = 1$ this is just the "regular" entropy, and $m = 2$ this is squared $L_2$. 
 #
 # [^Peyre2015]: Peyré, Gabriel. "Entropic approximation of Wasserstein gradient flows." SIAM Journal on Imaging Sciences 8.4 (2015): 2323-2351.
 function E(ρ; m=1)
@@ -106,16 +108,16 @@ H(x) = x > 0
 ρ0 = ρ0 / sum(ρ0)
 plot(support, ρ0; label="Initial condition ρ0", color="blue")
 
-# `G_fpe` is the objective function for the proximal step 
+# `G_fpe` is the objective function for the implicit step scheme  
 # ```math
-# G_\mathrm{fp}(\rho) = \operatorname{OT}_\varepsilon(\rho_{t}, \rho) + \tau F(\rho),
+# G_\mathrm{fpe}(\rho) = \operatorname{OT}_\varepsilon(\rho_{t}, \rho) + \tau F(\rho),
 # ```
 # and we seek to minimise in $\rho$. 
 function G_fpe(ρ, ρ0, τ, ε, C)
     return sinkhorn2(ρ, ρ0, C, ε; regularization=true, maxiter=250) + τ * (dot(Ψ, ρ) + E(ρ))
 end;
 
-# `step` solves the proximal problem to produce $\rho_{t + \tau}$ from $\rho_t$. 
+# `step` solves the implicit step problem to produce $\rho_{t + \tau}$ from $\rho_t$. 
 function step(ρ0, τ, ε, C, G)
     opt = optimize(
         u -> G(softmax(u), ρ0, τ, ε, C),
