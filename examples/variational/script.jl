@@ -57,10 +57,10 @@
 # ## Problem setup
 #
 using OptimalTransport
-using StatsBase, Distances 
+using StatsBase, Distances
 using ReverseDiff, Optim, LinearAlgebra
 using Plots
-using BenchmarkTools 
+using BenchmarkTools
 using LogExpFunctions
 using LaTeXStrings
 using Suppressor
@@ -71,24 +71,24 @@ using Suppressor
 # [^Santam2017]: Santambrogio, Filippo. "{Euclidean, metric, and Wasserstein} gradient flows: an overview." Bulletin of Mathematical Sciences 7.1 (2017): 87-154.
 
 support = LinRange(-1, 1, 64)
-C = pairwise(SqEuclidean(), support'); 
+C = pairwise(SqEuclidean(), support');
 
 # Now we set up various functionals that we will use.
 #
 # Generalised entropy (Equation (4.4) of [^Peyre2015]): for $m = 1$ this is just the "regular" entropy, and $m = 2$ this is squared $L_2$. 
 #
 # [^Peyre2015]: Peyré, Gabriel. "Entropic approximation of Wasserstein gradient flows." SIAM Journal on Imaging Sciences 8.4 (2015): 2323-2351.
-function E(ρ; m = 1) 
+function E(ρ; m=1)
     if m == 1
         return sum(xlogx.(ρ)) - sum(ρ)
     elseif m > 1
-        return dot(ρ, @. (ρ^(m-1) - m)/(m-1))
+        return dot(ρ, @. (ρ^(m - 1) - m) / (m - 1))
     end
-end; 
+end;
 
 # Now define $V(x)$ to be a potential energy function that has two potential wells at $x = ± 0.5$. 
-V(x) = 10*(x-0.5)^2*(x+0.5)^2;
-plot(support, V.(support); color = "black", label = "Scalar potential")
+V(x) = 10 * (x - 0.5)^2 * (x + 0.5)^2;
+plot(support, V.(support); color="black", label="Scalar potential")
 
 # Having defined $V$, this induces a potential energy functional $\Psi$ on probability distributions $\rho$:
 # ```math
@@ -99,37 +99,51 @@ plot(support, V.(support); color = "black", label = "Scalar potential")
 # Define the time step $\tau$ and entropic regularisation level $\varepsilon$, and form the associated Gibbs kernel $K = e^{-C/\varepsilon}$. 
 τ = 0.05
 ε = 0.01
-K = @. exp(-C/ε)
+K = @. exp(-C / ε)
 
 # We define the (non-smooth) initial condition $\rho_0$ in terms of step functions. 
 H(x) = x > 0
-ρ0 = @. H(support + 0.25) - H(support - 0.25) 
-ρ0 = ρ0/sum(ρ0)
-plot(support, ρ0; label = "Initial condition ρ0", color = "blue")
+ρ0 = @. H(support + 0.25) - H(support - 0.25)
+ρ0 = ρ0 / sum(ρ0)
+plot(support, ρ0; label="Initial condition ρ0", color="blue")
 
 # `G_fpe` is the objective function for the proximal step 
 # ```math
 # G_\mathrm{fp}(\rho) = \operatorname{OT}_\varepsilon(\rho_{t}, \rho) + \tau F(\rho),
 # ```
 # and we seek to minimise in $\rho$. 
-G_fpe(ρ, ρ0, τ, ε, C) = sinkhorn2(ρ, ρ0, C, ε; regularization = true, maxiter = 250) + τ*( dot(Ψ, ρ) + E(ρ) );
+function G_fpe(ρ, ρ0, τ, ε, C)
+    return sinkhorn2(ρ, ρ0, C, ε; regularization=true, maxiter=250) + τ * (dot(Ψ, ρ) + E(ρ))
+end;
 
 # `step` solves the proximal problem to produce $\rho_{t + \tau}$ from $\rho_t$. 
 function step(ρ0, τ, ε, C, G)
-    opt = optimize(u -> G(softmax(u), ρ0, τ, ε, C), ones(size(ρ0)), LBFGS(), Optim.Options(iterations = 50, g_tol = 1e-6); autodiff = :forward)
+    opt = optimize(
+        u -> G(softmax(u), ρ0, τ, ε, C),
+        ones(size(ρ0)),
+        LBFGS(),
+        Optim.Options(; iterations=50, g_tol=1e-6);
+        autodiff=:forward,
+    )
     return softmax(Optim.minimizer(opt))
 end
 # Now we simulate `N = 10` iterates of the gradient flow and plot the result. 
-N = 10 
+N = 10
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
 @suppress begin
-    for i = 2:N
-        ρ[:, i] = step(ρ[:, i-1], τ, ε, C, G_fpe)
+    for i in 2:N
+        ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_fpe)
     end
 end
-colors = range(colorant"red", stop = colorant"blue", length = N)
-plot(support, ρ, title = L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle"; palette = colors, legend = nothing)
+colors = range(colorant"red"; stop=colorant"blue", length=N)
+plot(
+    support,
+    ρ;
+    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle",
+    palette=colors,
+    legend=nothing,
+)
 
 # ## Porous medium equation 
 #
@@ -140,15 +154,24 @@ plot(support, ρ, title = L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho,
 # again with Neumann boundary conditions. The value of $m$ in the PME corresponds to picking $m$ in the generalised entropy functional.  
 # Now, we will solve the PME with $m = 2$ as a Wasserstein gradient flow.
 #
-G_pme(ρ, ρ0, τ, ε, C) = sinkhorn2(ρ, ρ0, C, ε; regularization = true, maxiter = 250) + τ*(dot(Ψ, ρ) + E(ρ; m = 2));
+function G_pme(ρ, ρ0, τ, ε, C)
+    return sinkhorn2(ρ, ρ0, C, ε; regularization=true, maxiter=250) +
+           τ * (dot(Ψ, ρ) + E(ρ; m=2))
+end;
 
 # set up as previously 
-N = 10 
+N = 10
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
 @suppress begin
-    for i = 2:N
-        ρ[:, i] = step(ρ[:, i-1], τ, ε, C, G_pme)
+    for i in 2:N
+        ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_pme)
     end
 end
-plot(support, ρ, title = L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle"; palette = colors, legend = nothing)
+plot(
+    support,
+    ρ;
+    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle",
+    palette=colors,
+    legend=nothing,
+)
