@@ -12,17 +12,18 @@ struct QuadraticOTNewton{T<:Real,K<:Real,D<:Real} <: QuadraticOT
     θ::T
     κ::K
     δ::D
+    armijo_max::Int
 end
 
 """
-    QuadraticOTNewton(θ = 0.1, κ = 0.5, δ = 1e-5)
+    QuadraticOTNewton(;θ = 0.1, κ = 0.5, δ = 1e-5, armijo_max = 50)
 
 Semi-smooth Newton method (Algorithm 2 of Lorenz et al. 2019) with Armijo parameters `θ` and `κ`, and conjugate gradient regularisation `δ`. 
 
 See also: [`QuadraticOTNewton`](@ref), [`quadreg`](@ref)
 """
-function QuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5)
-    return QuadraticOTNewton(θ, κ, δ)
+function QuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5, armijo_max = 50)
+    return QuadraticOTNewton(θ, κ, δ, armijo_max)
 end
 
 Base.show(io::IO, ::QuadraticOTNewton) = print(io, "Semi-smooth Newton algorithm")
@@ -53,16 +54,18 @@ function build_cache(
     v = similar(ν, T, size(ν, 1))
     fill!(u, zero(T))
     fill!(v, zero(T))
-    δu = zeros(T, size(u))
-    δv = zeros(T, size(v))
+    δu = similar(u, T)
+    δv = similar(v, T)
     # intermediate variables (don't need to be initialised)
     σ = similar(C, T)
     γ = similar(C, T)
     M = size(μ, 1)
     N = size(ν, 1)
-    G = zeros(T, M + N, M + N)
+    G = similar(u, T, M + N, M + N)
+    fill!(G, zero(T))
     # initial guess for conjugate gradient 
-    x = zeros(T, M + N)
+    x = similar(u, T, M + N)
+    fill!(x, zero(T))
     return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, x, M, N)
 end
 
@@ -144,6 +147,8 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     # Armijo parameters
     θ = solver.alg.θ
     κ = solver.alg.κ
+    armijo_max = solver.alg.armijo_max
+    armijo_counter = 0
 
     # dual objective 
     function Φ(u, v, μ, ν, C, ε)
@@ -154,8 +159,9 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     d = -eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
     t = 1
     Φ0 = Φ(u, v, μ, ν, C, eps)
-    while Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d
+    while (armijo_counter < armijo_max) && (Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d)
         t = κ * t
+        armijo_counter += 1
     end
     u .= u + t * δu
     return v .= v + t * δv
