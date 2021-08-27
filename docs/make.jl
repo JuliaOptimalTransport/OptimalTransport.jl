@@ -9,7 +9,7 @@ if haskey(ENV, "GITHUB_ACTIONS")
     ENV["JULIA_DEBUG"] = "Documenter"
 end
 
-const EXAMPLES = ("basic",)
+const EXAMPLES = ("basic", "variational")
 const INPUT = joinpath(@__DIR__, "..", "examples")
 const OUTPUT = joinpath(@__DIR__, "src", "examples")
 
