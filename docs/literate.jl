@@ -51,4 +51,3 @@ Literate.markdown(
 Literate.notebook(
     SCRIPTJL, OUTDIR; name=EXAMPLE, documenter=false, execute=true, preprocess=preprocess
 )
-
