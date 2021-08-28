@@ -145,9 +145,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "b9db97ff2391603bb6411ae8a87258055e2c7de5"
+git-tree-sha1 = "f389cb8974e02d7eaa6ae2ccedbbfb43174cd8e8"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.13"
+version = "0.25.14"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -282,6 +282,12 @@ deps = ["Base64", "Dates", "IniFile", "Logging", "MbedTLS", "NetworkOptions", "S
 git-tree-sha1 = "44e3b40da000eab4ccb1aecdc4801c040026aeb5"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 version = "0.9.13"
+
+[[IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
 
 [[IfElse]]
 git-tree-sha1 = "28e837ff3e7a6c3cdb252ce49fb412c8eb3caeef"
@@ -449,6 +455,12 @@ version = "7.1.1"
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
+[[Literate]]
+deps = ["Base64", "IOCapture", "JSON", "REPL"]
+git-tree-sha1 = "4a165f8517bbc8e6df7300e2ac3da683e3c099df"
+uuid = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+version = "2.9.2"
+
 [[LogExpFunctions]]
 deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
 git-tree-sha1 = "3d682c07e6dd250ed082f883dc88aee7996bf2cc"
@@ -553,9 +565,9 @@ version = "1.4.1"
 
 [[OptimalTransport]]
 deps = ["Distances", "Distributions", "IterativeSolvers", "LinearAlgebra", "LogExpFunctions", "MathOptInterface", "NNlib", "PDMats", "QuadGK", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "cd9442cc3dcb423bf09f630adb9dd424d1d6c746"
+path = "../.."
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
-version = "0.3.14"
+version = "0.3.15"
 
 [[Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -663,9 +675,9 @@ version = "1.1.2"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
-git-tree-sha1 = "32efa73dece357e9c834cae8af00265752c80061"
+git-tree-sha1 = "e377b29ebe56fadd8b40b04d8eb117c98d0a9960"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
-version = "0.3.5"
+version = "0.3.6"
 
 [[Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
