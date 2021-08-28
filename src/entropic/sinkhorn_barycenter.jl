@@ -48,67 +48,31 @@ function build_solver(
     return solver
 end
 
-function solve!(solver::SinkhornBarycenterSolver)
-    # unpack solver 
+function init_step!(solver::SinkhornBarycenterSolver) 
+    A_batched_mul_B!(solver.cache.Kv, solver.cache.K, solver.cache.v)
+end
+
+function step!(solver::SinkhornBarycenterSolver, iter::Int)
     μ = solver.source
     w = solver.w
-    atol = solver.atol
-    rtol = solver.rtol
-
-    maxiter = solver.maxiter
-    check_convergence = solver.check_convergence
     cache = solver.cache
-    convergence_cache = solver.convergence_cache
-
-    # unpack cache
     u = cache.u
     v = cache.v
-    K = cache.K
     Kv = cache.Kv
+    K = cache.K 
     a = cache.a
 
-    isconverged = false
-    to_check_step = check_convergence
+    a .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
+    u .= a ./ Kv
+    At_batched_mul_B!(v, K, u)
+    v .= μ ./ v
     A_batched_mul_B!(Kv, K, v)
-    for iter in 1:maxiter
-        # prestep if needed (not used for SinkhornBarycenterSolver{SinkhornGibbs})
-        prestep!(solver, iter)
+end
 
-        # Sinkhorn iteration
-        a .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
-        u .= a ./ Kv
-        At_batched_mul_B!(v, K, u)
-        v .= μ ./ v
-        A_batched_mul_B!(Kv, K, v)
-
-        # decrement check marginal step
-        to_check_step -= 1
-        # check convergence
-        if to_check_step == 0 || iter == maxiter
-            # reset counter
-            to_check_step = check_convergence
-
-            isconverged, abserror = OptimalTransport.check_convergence(
-                a, u, Kv, convergence_cache, atol, rtol
-            )
-            @debug string(solver.alg) *
-                   " (" *
-                   string(iter) *
-                   "/" *
-                   string(maxiter) *
-                   ": absolute error of source marginal = " *
-                   string(maximum(abserror))
-
-            if isconverged
-                @debug "$(solver.alg) ($iter/$maxiter): converged"
-                break
-            end
-        end
-    end
-    if !isconverged
-        @warn "$(solver.alg) ($maxiter/$maxiter): not converged"
-    end
-    return nothing
+function check_convergence(solver::SinkhornBarycenterSolver)
+    OptimalTransport.check_convergence(
+        solver.cache.a, solver.cache.u, solver.cache.Kv, solver.convergence_cache, solver.atol, solver.rtol
+    )
 end
 
 """
