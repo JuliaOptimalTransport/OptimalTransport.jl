@@ -48,33 +48,6 @@ function build_solver(
     return solver
 end
 
-function init_step!(solver::SinkhornBarycenterSolver) 
-    A_batched_mul_B!(solver.cache.Kv, solver.cache.K, solver.cache.v)
-end
-
-function step!(solver::SinkhornBarycenterSolver, iter::Int)
-    μ = solver.source
-    w = solver.w
-    cache = solver.cache
-    u = cache.u
-    v = cache.v
-    Kv = cache.Kv
-    K = cache.K 
-    a = cache.a
-
-    a .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
-    u .= a ./ Kv
-    At_batched_mul_B!(v, K, u)
-    v .= μ ./ v
-    A_batched_mul_B!(Kv, K, v)
-end
-
-function check_convergence(solver::SinkhornBarycenterSolver)
-    OptimalTransport.check_convergence(
-        solver.cache.a, solver.cache.u, solver.cache.Kv, solver.convergence_cache, solver.atol, solver.rtol
-    )
-end
-
 """
     sinkhorn_barycenter(μ, C, ε, w, alg = SinkhornGibbs(); kwargs...)
 

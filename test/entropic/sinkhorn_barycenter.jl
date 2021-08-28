@@ -1,6 +1,7 @@
 using OptimalTransport
 
 using Distances
+using ForwardDiff
 using PythonOT: PythonOT
 
 using LinearAlgebra

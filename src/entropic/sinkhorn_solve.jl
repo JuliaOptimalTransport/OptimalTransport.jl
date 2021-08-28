@@ -1,3 +1,5 @@
+# Convergence checks 
+#
 # for single inputs
 function check_convergence(
     μ::AbstractVector,
@@ -52,7 +54,8 @@ function check_convergence(
     return all(isconverged), norm_diff
 end
 
-function solve!(solver::Union{SinkhornSolver, SinkhornBarycenterSolver})
+# Common solve! operation 
+function solve!(solver::Union{SinkhornSolver,SinkhornBarycenterSolver})
     # unpack solver
     atol = solver.atol
     rtol = solver.rtol
@@ -63,6 +66,7 @@ function solve!(solver::Union{SinkhornSolver, SinkhornBarycenterSolver})
 
     isconverged = false
     to_check_step = check_convergence
+    # initial step if needed 
     init_step!(solver)
     for iter in 1:maxiter
         # computations before the Sinkhorn iteration (e.g., absorption step)
