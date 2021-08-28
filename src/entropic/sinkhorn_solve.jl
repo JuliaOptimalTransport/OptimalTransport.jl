@@ -52,7 +52,7 @@ function check_convergence(
     return all(isconverged), norm_diff
 end
 
-function solve!(solver::Union{SinkhornSolver, SinkhornBarycenterSolver})
+function solve!(solver::Union{SinkhornSolver,SinkhornBarycenterSolver})
     # unpack solver
     atol = solver.atol
     rtol = solver.rtol

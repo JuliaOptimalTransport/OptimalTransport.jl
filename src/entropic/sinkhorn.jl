@@ -91,8 +91,8 @@ end
 
 # Sinkhorn algorithm
 
-function init_step!(solver::SinkhornSolver) 
-    A_batched_mul_B!(solver.cache.Kv, solver.cache.K, solver.cache.v)
+function init_step!(solver::SinkhornSolver)
+    return A_batched_mul_B!(solver.cache.Kv, solver.cache.K, solver.cache.v)
 end
 
 function step!(solver::SinkhornSolver, iter::Int)
@@ -102,18 +102,23 @@ function step!(solver::SinkhornSolver, iter::Int)
     u = cache.u
     v = cache.v
     Kv = cache.Kv
-    K = cache.K 
+    K = cache.K
 
     u .= μ ./ Kv
     At_batched_mul_B!(v, K, u)
     v .= ν ./ v
-    A_batched_mul_B!(Kv, K, v)
+    return A_batched_mul_B!(Kv, K, v)
 end
 
 function check_convergence(solver::SinkhornSolver)
     return OptimalTransport.check_convergence(
-                solver.source, solver.cache.u, solver.cache.Kv, solver.convergence_cache, solver.atol, solver.rtol
-               )
+        solver.source,
+        solver.cache.u,
+        solver.cache.Kv,
+        solver.convergence_cache,
+        solver.atol,
+        solver.rtol,
+    )
 end
 
 # API
