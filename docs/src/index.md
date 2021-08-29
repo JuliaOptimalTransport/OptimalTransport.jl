@@ -7,11 +7,15 @@
 emd
 emd2
 ot_plan
-ot_plan(::Any, ::ContinuousUnivariateDistribution, ::UnivariateDistribution)
-ot_plan(::Any, ::DiscreteNonParametric, ::DiscreteNonParametric)
+ot_plan(::Any, ::OptimalTransport.ContinuousUnivariateDistribution, ::OptimalTransport.UnivariateDistribution)
+ot_plan(::Any, ::OptimalTransport.DiscreteNonParametric, ::OptimalTransport.DiscreteNonParametric)
+ot_plan(::OptimalTransport.SqEuclidean, ::OptimalTransport.Normal, ::OptimalTransport.Normal)
+ot_plan(::OptimalTransport.SqEuclidean, ::OptimalTransport.MvNormal, ::OptimalTransport.MvNormal)
 ot_cost
-ot_cost(::Any, ::ContinuousUnivariateDistribution, ::UnivariateDistribution)
-ot_cost(::Any, ::DiscreteNonParametric, ::DiscreteNonParametric)
+ot_cost(::Any, ::OptimalTransport.ContinuousUnivariateDistribution, ::OptimalTransport.UnivariateDistribution)
+ot_cost(::Any, ::OptimalTransport.DiscreteNonParametric, ::OptimalTransport.DiscreteNonParametric)
+ot_cost(::OptimalTransport.SqEuclidean, ::OptimalTransport.Normal, ::OptimalTransport.Normal)
+ot_cost(::OptimalTransport.SqEuclidean, ::OptimalTransport.MvNormal, ::OptimalTransport.MvNormal)
 wasserstein
 squared2wasserstein
 ```
