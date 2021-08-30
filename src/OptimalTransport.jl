@@ -14,6 +14,7 @@ using PDMats
 using QuadGK
 using NNlib: NNlib
 using StatsBase: StatsBase
+using Optim
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
@@ -34,6 +35,7 @@ include("exact.jl")
 include("wasserstein.jl")
 
 include("entropic/sinkhorn.jl")
+include("entropic/sinkhorn_dual.jl")
 include("entropic/sinkhorn_gibbs.jl")
 include("entropic/sinkhorn_stabilized.jl")
 include("entropic/sinkhorn_epsscaling.jl")
