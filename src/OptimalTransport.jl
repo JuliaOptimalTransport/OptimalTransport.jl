@@ -35,7 +35,6 @@ include("exact.jl")
 include("wasserstein.jl")
 
 include("entropic/sinkhorn.jl")
-include("entropic/sinkhorn_dual.jl")
 include("entropic/sinkhorn_gibbs.jl")
 include("entropic/sinkhorn_stabilized.jl")
 include("entropic/sinkhorn_epsscaling.jl")
@@ -45,5 +44,10 @@ include("entropic/sinkhorn_barycenter_gibbs.jl")
 
 include("quadratic.jl")
 include("quadratic_newton.jl")
+
+module Dual
+include("dual/entropic_dual.jl")
+end
+include("entropic/sinkhorn_dual.jl")
 
 end
