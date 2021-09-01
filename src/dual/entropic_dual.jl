@@ -11,15 +11,33 @@ function logKexp(logK::AbstractMatrix, x::AbstractMatrix; dims)
     return logsumexp(logK + x; dims = dims)
 end
 
-function ot_entropic_semidual(μ, v, eps, K)
-    return eps*(-sum(xlogx.(μ) .- μ) + dot(μ, logKexp(K, v/eps)))
+"""
+    ot_entropic_semidual(μ, v, eps, K; stabilized = false)
+
+Computes the semidual (in the second argument) of the entropic optimal transport loss, with source marginal `μ`, regularization parameter `ε`, and Gibbs kernel `K`.
+That is, if
+```math
+    \\operatorname{OT}_{\\varepsilon}(\\mu, \\nu) = \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)
+```
+with ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{ij} \\log \\gamma_{ij}``, then the semidual in the second argument ν is
+```math
+
+    \\operatorname{OT}_{\\varepsilon}^*(\\mu, v) = \\sup_{\\nu} \\langle v, \\nu \\rangle - \\operatorname{OT}_{\\varepsilon}(\\mu, \\nu). 
+```
+"""
+function ot_entropic_semidual(μ, v, eps, K; stabilized = false)
+    if stabilized
+        return eps*(-sum(xlogx.(μ) .- μ) + dot(μ, logKexp(K, v/eps)))
+    else
+        return eps*(-sum(xlogx.(μ) .- μ) + dot(μ, log.(K*exp.(v/eps))))
+    end
 end
 
 function getprimal_ot_entropic_semidual(μ, v, eps, K)
     return Diagonal(exp.(v/eps)) * K' * (μ ./ (K * exp.(v/eps)))
 end
 
-function ot_entropic_dual(u, v, eps, K; stabilized = true)
+function ot_entropic_dual(u, v, eps, K; stabilized = false)
     # (μ, ν) → min_{γ ∈ Π(μ, ν)} ε H(γ | K)
     # has Legendre transform
     # (u, v) → ε log < exp(u/ε), K exp(v/ε) >

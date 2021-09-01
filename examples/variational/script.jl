@@ -176,3 +176,63 @@ plot(
     palette=colors,
     legend=nothing,
 )
+
+# ## Exploiting duality 
+
+function E_dual(u; m = 1) 
+    if m == 1
+        return sum(exp.(u)) 
+    elseif m > 1
+        f = m/(m-1)
+        return sum(@. (u + f) * (u/f + 1)^(1/(m-1)) - (1/(m-1))*(u/f + 1)^f)
+    end
+end
+
+function G_dual_fpe(u, ρ0, τ, ε, K)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) + τ*E_dual(-u/τ - Ψ; m = 1)
+end
+
+function step(ρ0, τ, ε, K, G)
+    opt = optimize(u -> G(u, ρ0, τ, ε, K), 
+                   ones(size(ρ0)), 
+                   LBFGS(), 
+                   Optim.Options(iterations = 250, g_tol = 1e-6); 
+                   autodiff = :forward)
+    return OptimalTransport.Dual.getprimal_ot_entropic_semidual(ρ0, Optim.minimizer(opt), ε, K)
+end
+
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+@suppress begin
+    for i in 2:N
+        ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_fpe)
+    end
+end
+colors = range(colorant"red"; stop=colorant"blue", length=N)
+plot(
+    support,
+    ρ;
+    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle",
+    palette=colors,
+    legend=nothing,
+)
+
+function G_dual_pme(u, ρ0, τ, ε, K)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) + τ*E_dual(-u/τ - Ψ; m = 2)
+end
+
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+@suppress begin
+    for i in 2:N
+        ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_pme)
+    end
+end
+colors = range(colorant"red"; stop=colorant"blue", length=N)
+plot(
+    support,
+    ρ;
+    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle",
+    palette=colors,
+    legend=nothing,
+)
