@@ -65,6 +65,8 @@ QuadraticOTNewton
 
 ```@docs
 OptimalTransport.Dual.ot_entropic_semidual
+OptimalTransport.Dual.ot_entropic_semidual_grad
 OptimalTransport.Dual.getprimal_ot_entropic_semidual
 OptimalTransport.Dual.ot_entropic_dual
+OptimalTransport.Dual.getprimal_ot_entropic_dual
 ```
