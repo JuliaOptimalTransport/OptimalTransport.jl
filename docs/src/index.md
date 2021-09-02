@@ -60,3 +60,11 @@ Currently the following algorithms for solving quadratically regularised optimal
 ```@docs
 QuadraticOTNewton
 ```
+
+## Dual
+
+```@docs
+OptimalTransport.Dual.ot_entropic_semidual
+OptimalTransport.Dual.getprimal_ot_entropic_semidual
+OptimalTransport.Dual.ot_entropic_dual
+```

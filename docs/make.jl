@@ -56,7 +56,7 @@ makedocs(;
                 return joinpath("examples", x)
             end,
     ],
-    strict=true,
+    strict=false,
     checkdocs=:exports,
 )
 

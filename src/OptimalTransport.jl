@@ -45,9 +45,7 @@ include("entropic/sinkhorn_barycenter_gibbs.jl")
 include("quadratic.jl")
 include("quadratic_newton.jl")
 
-module Dual
 include("dual/entropic_dual.jl")
-end
 include("entropic/sinkhorn_dual.jl")
 
 end

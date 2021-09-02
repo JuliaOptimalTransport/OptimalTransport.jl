@@ -1,7 +1,13 @@
+module Dual
+
 using LinearAlgebra
 using LogExpFunctions
 using StatsBase
 import OptimalTransport.add_singleton
+
+export ot_entropic_semidual
+export getprimal_ot_entropic_semidual
+export ot_entropic_dual
 
 function logKexp(logK::AbstractMatrix, x::AbstractVector)
     return logsumexp(logK .+ add_singleton(x, Val(1)); dims = 2)
@@ -14,8 +20,9 @@ end
 """
     ot_entropic_semidual(μ, v, eps, K; stabilized = false)
 
-Computes the semidual (in the second argument) of the entropic optimal transport loss, with source marginal `μ`, regularization parameter `ε`, and Gibbs kernel `K`.
-That is, if
+Computes the semidual (in the second argument) of the entropic optimal transport loss, with source marginal `μ`, regularization parameter `ε`, and Gibbs kernel `K`. If `stabilized == true`, then `K` is actually taken to be `-C/ε` (i.e. the log-Gibbs kernel). 
+
+That is, 
 ```math
     \\operatorname{OT}_{\\varepsilon}(\\mu, \\nu) = \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\langle \\gamma, C \\rangle + \\varepsilon \\Omega(\\gamma)
 ```
@@ -24,6 +31,9 @@ with ``\\Omega(\\gamma) = \\sum_{i,j} \\gamma_{ij} \\log \\gamma_{ij}``, then th
 
     \\operatorname{OT}_{\\varepsilon}^*(\\mu, v) = \\sup_{\\nu} \\langle v, \\nu \\rangle - \\operatorname{OT}_{\\varepsilon}(\\mu, \\nu). 
 ```
+Notably, the semidual is computationally advantageous for solving variational problems since it is a smooth and unconstrained function of `v` and admits a closed form gradient. See [^CP16] for a detailed discussion of dual methods for variational problems in optimal transport.
+
+[^CP16]: Cuturi, Marco, and Gabriel Peyré. "A smoothed dual approach for variational Wasserstein problems." SIAM Journal on Imaging Sciences 9.1 (2016): 320-343.
 """
 function ot_entropic_semidual(μ, v, eps, K; stabilized = false)
     if stabilized
@@ -33,10 +43,19 @@ function ot_entropic_semidual(μ, v, eps, K; stabilized = false)
     end
 end
 
+function ot_entropic_semidual_grad(μ, v, eps, K)
+    return K' * (μ ./ (K * exp.(v/eps))) .* exp.(v/eps)
+end
+
 function getprimal_ot_entropic_semidual(μ, v, eps, K)
     return Diagonal(exp.(v/eps)) * K' * (μ ./ (K * exp.(v/eps)))
 end
 
+"""
+    ot_entropic_dual(u, v, eps, K; stabilized = false)
+
+Computes the dual in both arguments of entropic optimal transport loss, where `u` and `v` are the dual variables associated with the source and target marginals respectively. 
+"""
 function ot_entropic_dual(u, v, eps, K; stabilized = false)
     # (μ, ν) → min_{γ ∈ Π(μ, ν)} ε H(γ | K)
     # has Legendre transform
@@ -47,4 +66,6 @@ function ot_entropic_dual(u, v, eps, K; stabilized = false)
     else
         return eps * log(dot(exp.(u/eps), K * exp.(v/eps)))
     end
+end
+
 end
