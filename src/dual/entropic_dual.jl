@@ -22,9 +22,9 @@ function logKexp(logK::AbstractMatrix, x::AbstractMatrix; dims)
 end
 
 """
-    ot_entropic_semidual(μ, v, eps, K; stabilized = false)
+    ot_entropic_semidual(μ, v, eps, K)
 
-Computes the semidual (in the second argument) of the entropic optimal transport loss, with source marginal `μ`, regularization parameter `ε`, and Gibbs kernel `K`. If `stabilized == true`, then `K` is actually taken to be `-C/ε` (i.e. the log-Gibbs kernel). 
+Computes the semidual (in the second argument) of the entropic optimal transport loss, with source marginal `μ`, regularization parameter `ε`, and Gibbs kernel `K`.  
 
 That is, 
 ```math
@@ -42,12 +42,8 @@ Notably, the semidual is computationally advantageous for solving variational pr
 [^CP16]: Cuturi, Marco, and Gabriel Peyré. "A smoothed dual approach for variational Wasserstein problems." SIAM Journal on Imaging Sciences 9.1 (2016): 320-343.
 [^Z21]: Zhang, Stephen Y. “A Unified Framework for Non-Negative Matrix and Tensor Factorisations with a Smoothed Wasserstein Loss.” ArXiv: Machine Learning, 2021.
 """
-function ot_entropic_semidual(μ, v, eps, K; stabilized = false)
-    if stabilized
-        return eps*(-sum(xlogx.(μ) .- μ) + dot(μ, logKexp(K, v/eps)))
-    else
-        return eps*(-dot_vecwise(xlogx.(μ) .- μ, one.(μ)) + dot_vecwise(μ, log.(K*exp.(v/eps))))
-    end
+function ot_entropic_semidual(μ, v, eps, K)
+    return eps*(-dot_vecwise(xlogx.(μ) .- μ, one.(μ)) + dot_vecwise(μ, log.(K*exp.(v/eps))))
 end
 
 """
@@ -79,7 +75,7 @@ function getprimal_ot_entropic_semidual(μ, v, eps, K)
 end
 
 """
-    ot_entropic_dual(u, v, eps, K; stabilized = false)
+    ot_entropic_dual(u, v, eps, K)
 
 Computes the dual in both arguments of entropic optimal transport loss, where `u` and `v` are the dual variables associated with the source and target marginals respectively. 
 
@@ -91,16 +87,11 @@ That is,
     \\end{aligned}
 ```
 """
-function ot_entropic_dual(u, v, eps, K; stabilized = false)
+function ot_entropic_dual(u, v, eps, K)
     # (μ, ν) → min_{γ ∈ Π(μ, ν)} ε H(γ | K)
     # has Legendre transform
     # (u, v) → ε log < exp(u/ε), K exp(v/ε) >
-    if stabilized
-        # K is actually logK
-        return eps * logKexp(K, add_singleton(u/eps, Val(2)) .+ add_singleton(v/eps, Val(1)); dims = :)
-    else
-        return eps * log.(dot_vecwise(exp.(u/eps), K * exp.(v/eps)))
-    end
+    return eps * log.(dot_vecwise(exp.(u/eps), K * exp.(v/eps)))
 end
 
 """
@@ -134,12 +125,8 @@ Computes the the primal variable `γ` corresponding to the dual variable `u, v` 
 
 See also: [`ot_entropic_dual`](@ref)
 """
-function getprimal_ot_entropic_dual(u, v, eps, K; stabilized = false)
-    if stabilized
-        γ = LogExpFunctions.softmax(K .+ add_singleton(-u/eps, Val(2)) .+ add_singleton(-v/eps, Val(1)))
-    else
-        γ = K .* add_singleton(exp.(-u/eps), Val(2)) .* add_singleton(exp.(-v/eps), Val(1))
-    end
+function getprimal_ot_entropic_dual(u, v, eps, K)
+    γ = K .* add_singleton(exp.(-u/eps), Val(2)) .* add_singleton(exp.(-v/eps), Val(1))
     return γ
 end
 
