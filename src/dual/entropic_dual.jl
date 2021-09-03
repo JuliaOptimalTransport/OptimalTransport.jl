@@ -4,11 +4,13 @@ using LinearAlgebra
 using LogExpFunctions
 using StatsBase
 import OptimalTransport.add_singleton
+import OptimalTransport.dot_vecwise
 
 export ot_entropic_semidual
 export ot_entropic_semidual_grad
 export getprimal_ot_entropic_semidual
 export ot_entropic_dual
+export ot_entropic_dual_grad
 export getprimal_ot_entropic_dual
 
 function logKexp(logK::AbstractMatrix, x::AbstractVector)
@@ -44,7 +46,7 @@ function ot_entropic_semidual(μ, v, eps, K; stabilized = false)
     if stabilized
         return eps*(-sum(xlogx.(μ) .- μ) + dot(μ, logKexp(K, v/eps)))
     else
-        return eps*(-sum(xlogx.(μ) .- μ) + dot(μ, log.(K*exp.(v/eps))))
+        return eps*(-dot_vecwise(xlogx.(μ) .- μ, one.(μ)) + dot_vecwise(μ, log.(K*exp.(v/eps))))
     end
 end
 
@@ -73,7 +75,7 @@ Computes the the primal variable `ν` corresponding to the dual variable `v` at 
 See also: [`ot_entropic_semidual`](@ref)
 """
 function getprimal_ot_entropic_semidual(μ, v, eps, K)
-    return Diagonal(exp.(v/eps)) * K' * (μ ./ (K * exp.(v/eps)))
+    return exp.(v/eps) .* (K' * (μ ./ (K * exp.(v/eps))))
 end
 
 """
@@ -97,8 +99,29 @@ function ot_entropic_dual(u, v, eps, K; stabilized = false)
         # K is actually logK
         return eps * logKexp(K, add_singleton(u/eps, Val(2)) .+ add_singleton(v/eps, Val(1)); dims = :)
     else
-        return eps * log(dot(exp.(u/eps), K * exp.(v/eps)))
+        return eps * log.(dot_vecwise(exp.(u/eps), K * exp.(v/eps)))
     end
+end
+
+"""
+    ot_entropic_dual_grad(u, v, eps, K)
+
+Computes the gradient with respect to `u` and `v` of the dual of the entropic optimal transport loss. That is,
+```math
+\\begin{aligned}
+\\nabla_u \\operatorname{OT}^*_{\\varepsilon}(u, v) &= \\dfrac{e^{u/\\varepsilon} \\odot K e^{v/\\varepsilon}}{\\langle e^{u/\\varepsilon}, K e^{v/\\varepsilon} \\rangle} \\ \\
+\\nabla_v \\operatorname{OT}^*_{\\varepsilon}(u, v) &= \\dfrac{e^{v/\\varepsilon} \\odot K^\\top e^{u/\\varepsilon}}{\\langle e^{v/\\varepsilon}, K^\\top e^{u/\\varepsilon} \\rangle}.
+\\end{aligned}
+```
+
+See also: [`ot_entropic_dual`](@ref)
+"""
+function ot_entropic_dual_grad(u, v, eps, K)
+    U = exp.(u/eps)
+    V = exp.(v/eps)
+    grad_u = (U .* (K * V)) ./ dot_vecwise(U, K * V)' 
+    grad_v = (V .* (K' * U)) ./ dot_vecwise(V, K' * U)' 
+    return grad_u, grad_v
 end
 
 """
