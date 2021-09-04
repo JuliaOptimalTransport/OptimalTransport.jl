@@ -49,7 +49,6 @@ import OptimalTransport.Dual: Dual
 import MLDatasets
 using StatsBase
 using Plots
-import PyPlot
 using LogExpFunctions
 import NNlib
 using LinearAlgebra
@@ -213,12 +212,11 @@ X = simplex_norm!(reshape(x, (sizex*sizey, :)));
 # The columns of `X` now correspond to images "flattened" as vectors. We can preview a few images.
 #
 M = 25
-PyPlot.figure()
-for i = 1:M
-    PyPlot.subplot(5, M÷5, i)
-    PyPlot.imshow(reshape(X[:, i], sizex, sizey))
-end
-PyPlot.show()
+plot([
+          heatmap(reshape(X[:, i], sizex, sizey); legend = :none, axis = nothing, showaxis = false, aspect_ratio = :equal, c = :Blues, yflip = true)
+      for i = 1:M]..., 
+     layout = (5, M÷5), 
+     plot_title = "Input images")
 
 # Now we can set up `coord`, cost matrix `C`, and specify parameters.
 #
@@ -251,23 +249,19 @@ end
 # 
 # We can inspect the atoms learned (columns of `D`):
 #
-PyPlot.figure()
-for i = 1:k
-    PyPlot.subplot(5, k÷5, i)
-    PyPlot.imshow(reshape(D[:, i], sizex, sizey))
-    PyPlot.axis("off")
-end
-PyPlot.suptitle("Learned atoms")
-PyPlot.show()
+
+plot([
+          heatmap(reshape(D[:, i], sizex, sizey); legend = :none, axis = nothing, showaxis = false, aspect_ratio = :equal, c = :Blues, yflip = true)
+      for i = 1:k]..., 
+     layout = (5, k÷5), 
+     plot_title = "Learned atoms")
+
 # 
 # Finally, we can look at the images constructed by the low-rank approximation `DΛ` and compare to the original images that we previewed earlier. 
 #
 X_hat = D*Λ
-PyPlot.figure()
-for i = 1:M
-    PyPlot.subplot(5, M÷5, i)
-    PyPlot.imshow(reshape(X_hat[:, i], sizex, sizey))
-    PyPlot.axis("off")
-end
-PyPlot.suptitle("Low-rank approximation")
-PyPlot.show()
+plot([
+          heatmap(reshape(X_hat[:, i], sizex, sizey); legend = :none, axis = nothing, showaxis = false, aspect_ratio = :equal, c = :Blues, yflip = true)
+      for i = 1:M]..., 
+     layout = (5, M÷5), 
+     plot_title = "Low rank approximation")
