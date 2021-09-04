@@ -30,7 +30,40 @@ function build_cache(
     return SinkhornBarycenterGibbsCache(u, v, K, Kv, a)
 end
 
+# Sinkhorn algorithm steps (see solve!)
 prestep!(::SinkhornBarycenterSolver{SinkhornGibbs}, ::Int) = nothing
+
+function init_step!(solver::SinkhornBarycenterSolver{SinkhornGibbs})
+    return A_batched_mul_B!(solver.cache.Kv, solver.cache.K, solver.cache.v)
+end
+
+function step!(solver::SinkhornBarycenterSolver{SinkhornGibbs}, iter::Int)
+    μ = solver.source
+    w = solver.w
+    cache = solver.cache
+    u = cache.u
+    v = cache.v
+    Kv = cache.Kv
+    K = cache.K
+    a = cache.a
+
+    a .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
+    u .= a ./ Kv
+    At_batched_mul_B!(v, K, u)
+    v .= μ ./ v
+    return A_batched_mul_B!(Kv, K, v)
+end
+
+function check_convergence(solver::SinkhornBarycenterSolver{SinkhornGibbs})
+    return OptimalTransport.check_convergence(
+        solver.cache.a,
+        solver.cache.u,
+        solver.cache.Kv,
+        solver.convergence_cache,
+        solver.atol,
+        solver.rtol,
+    )
+end
 
 function solution(solver::SinkhornBarycenterSolver{SinkhornGibbs})
     cache = solver.cache

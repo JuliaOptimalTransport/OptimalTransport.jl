@@ -48,69 +48,6 @@ function build_solver(
     return solver
 end
 
-function solve!(solver::SinkhornBarycenterSolver)
-    # unpack solver 
-    μ = solver.source
-    w = solver.w
-    atol = solver.atol
-    rtol = solver.rtol
-
-    maxiter = solver.maxiter
-    check_convergence = solver.check_convergence
-    cache = solver.cache
-    convergence_cache = solver.convergence_cache
-
-    # unpack cache
-    u = cache.u
-    v = cache.v
-    K = cache.K
-    Kv = cache.Kv
-    a = cache.a
-
-    isconverged = false
-    to_check_step = check_convergence
-    A_batched_mul_B!(Kv, K, v)
-    for iter in 1:maxiter
-        # prestep if needed (not used for SinkhornBarycenterSolver{SinkhornGibbs})
-        prestep!(solver, iter)
-
-        # Sinkhorn iteration
-        a .= prod(Kv' .^ w; dims=1)'  # TODO: optimise 
-        u .= a ./ Kv
-        At_batched_mul_B!(v, K, u)
-        v .= μ ./ v
-        A_batched_mul_B!(Kv, K, v)
-
-        # decrement check marginal step
-        to_check_step -= 1
-        # check convergence
-        if to_check_step == 0 || iter == maxiter
-            # reset counter
-            to_check_step = check_convergence
-
-            isconverged, abserror = OptimalTransport.check_convergence(
-                a, u, Kv, convergence_cache, atol, rtol
-            )
-            @debug string(solver.alg) *
-                   " (" *
-                   string(iter) *
-                   "/" *
-                   string(maxiter) *
-                   ": absolute error of source marginal = " *
-                   string(maximum(abserror))
-
-            if isconverged
-                @debug "$(solver.alg) ($iter/$maxiter): converged"
-                break
-            end
-        end
-    end
-    if !isconverged
-        @warn "$(solver.alg) ($maxiter/$maxiter): not converged"
-    end
-    return nothing
-end
-
 """
     sinkhorn_barycenter(μ, C, ε, w, alg = SinkhornGibbs(); kwargs...)
 
