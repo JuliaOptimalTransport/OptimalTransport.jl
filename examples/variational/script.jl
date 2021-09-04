@@ -279,10 +279,8 @@ end;
 #
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
-@suppress begin
-    for i in 2:N
-        ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_fpe)
-    end
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_fpe)
 end
 colors = range(colorant"red"; stop=colorant"blue", length=N)
 plot(
@@ -301,10 +299,8 @@ function G_dual_pme(u, ρ0, τ, ε, K)
 end
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
-@suppress begin
-    for i in 2:N
-        ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_pme)
-    end
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_pme)
 end
 colors = range(colorant"red"; stop=colorant"blue", length=N)
 plot(
