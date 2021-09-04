@@ -29,7 +29,7 @@ Random.seed!(100)
 
     @testset "semidual_grad" begin
         ∇_ad = ForwardDiff.gradient(zeros(size(ν))) do xs
-            Dual.ot_entropic_semidual(μ, xs, ε, K; stabilized = false)
+            Dual.ot_entropic_semidual(μ, xs, ε, K)
         end
 
         ∇ = Dual.ot_entropic_semidual_grad(μ, zeros(size(ν)), ε, K)
