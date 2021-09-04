@@ -278,9 +278,9 @@ simplex_norm!(D; dims=1) # norm columnwise
 Λ = rand(k, size(X, 2)) # weights
 simplex_norm!(Λ; dims=1); # norm rowwise
 # 
-# We now run 5 iterations of Wasserstein-NMF.
+# We now run 15 iterations of Wasserstein-NMF.
 #
-n_iter = 5
+n_iter = 15
 for iter in 1:n_iter
     @info "Wasserstein-NMF: iteration $iter"
     D .= solve_dict(
