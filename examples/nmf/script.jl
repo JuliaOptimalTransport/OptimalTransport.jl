@@ -225,7 +225,6 @@ end
 plot(coord, D; title="NMF with Wasserstein loss", palette=:Set1_3)
 
 # ## Example: image data (MNIST)
-# 
 # Here we will download MNIST dataset using MLDatasets.jl and downscale each image to 14x14 to allow for faster runtime (since we are running on CPU). 
 #
 sizex, sizey = 28, 28
@@ -233,6 +232,8 @@ factor = 2 # downscale factor
 Σ = hcat([sum(I(sizex)[:, i:(i + factor - 1)]; dims=2) for i in 1:factor:sizex]...)
 sizex, sizey = sizex ÷ factor, sizey ÷ factor
 N = 256
+# must set this for Documenter
+ENV["DATADEPS_ALWAYS_ACCEPT"] = true 
 x, y = MLDatasets.MNIST.traindata(Float64, sample(1:60_000, N; replace=false))
 x = permutedims(x, (2, 1, 3))
 x = cat([Σ' * x[:, :, i] * Σ for i in 1:N]...; dims=3)
