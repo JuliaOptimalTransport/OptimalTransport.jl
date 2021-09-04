@@ -233,7 +233,7 @@ factor = 2 # downscale factor
 sizex, sizey = sizex ÷ factor, sizey ÷ factor
 N = 256
 # must set this for Documenter
-ENV["DATADEPS_ALWAYS_ACCEPT"] = true 
+ENV["DATADEPS_ALWAYS_ACCEPT"] = true
 x, y = MLDatasets.MNIST.traindata(Float64, sample(1:60_000, N; replace=false))
 x = permutedims(x, (2, 1, 3))
 x = cat([Σ' * x[:, :, i] * Σ for i in 1:N]...; dims=3)
