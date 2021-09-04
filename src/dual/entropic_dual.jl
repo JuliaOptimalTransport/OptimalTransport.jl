@@ -14,11 +14,11 @@ export ot_entropic_dual_grad
 export getprimal_ot_entropic_dual
 
 function logKexp(logK::AbstractMatrix, x::AbstractVector)
-    return logsumexp(logK .+ add_singleton(x, Val(1)); dims = 2)
+    return logsumexp(logK .+ add_singleton(x, Val(1)); dims=2)
 end
 
 function logKexp(logK::AbstractMatrix, x::AbstractMatrix; dims)
-    return logsumexp(logK + x; dims = dims)
+    return logsumexp(logK + x; dims=dims)
 end
 
 """
@@ -43,7 +43,8 @@ Notably, the semidual is computationally advantageous for solving variational pr
 [^Z21]: Zhang, Stephen Y. “A Unified Framework for Non-Negative Matrix and Tensor Factorisations with a Smoothed Wasserstein Loss.” ArXiv: Machine Learning, 2021.
 """
 function ot_entropic_semidual(μ, v, eps, K)
-    return eps*(-dot_vecwise(xlogx.(μ) .- μ, one.(μ)) + dot_vecwise(μ, log.(K*exp.(v/eps))))
+    return eps *
+           (-dot_vecwise(xlogx.(μ) .- μ, one.(μ)) + dot_vecwise(μ, log.(K * exp.(v / eps))))
 end
 
 """
@@ -57,7 +58,7 @@ Computes the gradient with respect to `v` of the semidual of the entropic optima
 See also: [`ot_entropic_semidual`](@ref)
 """
 function ot_entropic_semidual_grad(μ, v, eps, K)
-    return K' * (μ ./ (K * exp.(v/eps))) .* exp.(v/eps)
+    return K' * (μ ./ (K * exp.(v / eps))) .* exp.(v / eps)
 end
 
 """
@@ -71,7 +72,7 @@ Computes the the primal variable `ν` corresponding to the dual variable `v` at 
 See also: [`ot_entropic_semidual`](@ref)
 """
 function getprimal_ot_entropic_semidual(μ, v, eps, K)
-    return exp.(v/eps) .* (K' * (μ ./ (K * exp.(v/eps))))
+    return exp.(v / eps) .* (K' * (μ ./ (K * exp.(v / eps))))
 end
 
 """
@@ -91,7 +92,7 @@ function ot_entropic_dual(u, v, eps, K)
     # (μ, ν) → min_{γ ∈ Π(μ, ν)} ε H(γ | K)
     # has Legendre transform
     # (u, v) → ε log < exp(u/ε), K exp(v/ε) >
-    return eps * log.(dot_vecwise(exp.(u/eps), K * exp.(v/eps)))
+    return eps * log.(dot_vecwise(exp.(u / eps), K * exp.(v / eps)))
 end
 
 """
@@ -108,10 +109,10 @@ Computes the gradient with respect to `u` and `v` of the dual of the entropic op
 See also: [`ot_entropic_dual`](@ref)
 """
 function ot_entropic_dual_grad(u, v, eps, K)
-    U = exp.(u/eps)
-    V = exp.(v/eps)
-    grad_u = (U .* (K * V)) ./ dot_vecwise(U, K * V)' 
-    grad_v = (V .* (K' * U)) ./ dot_vecwise(V, K' * U)' 
+    U = exp.(u / eps)
+    V = exp.(v / eps)
+    grad_u = (U .* (K * V)) ./ dot_vecwise(U, K * V)'
+    grad_v = (V .* (K' * U)) ./ dot_vecwise(V, K' * U)'
     return grad_u, grad_v
 end
 
@@ -126,7 +127,7 @@ Computes the the primal variable `γ` corresponding to the dual variable `u, v` 
 See also: [`ot_entropic_dual`](@ref)
 """
 function getprimal_ot_entropic_dual(u, v, eps, K)
-    γ = K .* add_singleton(exp.(-u/eps), Val(2)) .* add_singleton(exp.(-v/eps), Val(1))
+    γ = K .* add_singleton(exp.(-u / eps), Val(2)) .* add_singleton(exp.(-v / eps), Val(1))
     return γ
 end
 

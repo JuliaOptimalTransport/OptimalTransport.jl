@@ -46,11 +46,11 @@
 #
 using OptimalTransport
 import OptimalTransport.Dual: Dual
-import MLDatasets
+using MLDatasets: MLDatasets
 using StatsBase
 using Plots
 using LogExpFunctions
-import NNlib
+using NNlib: NNlib
 using LinearAlgebra
 using Distances
 using Base.Iterators
@@ -60,8 +60,8 @@ using Optim
 # 
 # Define `simplex_norm!`, which normalises `x` to sum to `1` along `dims`. 
 #
-function simplex_norm!(x; dims = 1)
-    x .= x ./ sum(x; dims = dims)
+function simplex_norm!(x; dims=1)
+    return x .= x ./ sum(x; dims=dims)
 end
 # 
 # ## Implementation
@@ -82,29 +82,29 @@ end
 # ```
 # The semi-dual of entropy-regularised optimal transport loss, $\operatorname{OT}_{\varepsilon}$, is implemented as `Dual.ot_entropic_semidual` and its gradient can be computed by `Dual.ot_entropic_semidual_grad`. $E^*$ turns out to be `logsumexp`, for which we implement a wrapper function:
 #
-function E_star(x; dims = 1) 
-    return logsumexp(x; dims = dims)
-end; 
+function E_star(x; dims=1)
+    return logsumexp(x; dims=dims)
+end;
 # 
 # The gradient of `logsumexp` is `softmax`, so we define also its gradient:
 #
-function E_star_grad(x; dims = 1)
-    return NNlib.softmax(x; dims = 1)
+function E_star_grad(x; dims=1)
+    return NNlib.softmax(x; dims=1)
 end;
 # 
 # Thus, for each problem we may define the dual objective and its gradient. We note that `ot_entropic_semidual(_grad)` automatically broadcasts along columns of its input. 
 #
 function dual_obj_weights(X, K, ε, D, G, ρ1)
-    sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ1 * sum(E_star(-D' * G / ρ1))
+    return sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ1 * sum(E_star(-D' * G / ρ1))
 end
 function dual_obj_weights_grad!(∇, X, K, ε, D, G, ρ1)
-    ∇ .= Dual.ot_entropic_semidual_grad(X, G, ε, K) - D * E_star_grad(-D' * G / ρ1)
+    return ∇ .= Dual.ot_entropic_semidual_grad(X, G, ε, K) - D * E_star_grad(-D' * G / ρ1)
 end
 function dual_obj_dict(X, K, ε, Λ, G, ρ2)
-    sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ2 * sum(E_star(-G * Λ' / ρ2))
+    return sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ2 * sum(E_star(-G * Λ' / ρ2))
 end
 function dual_obj_dict_grad!(∇, X, K, ε, Λ, G, ρ2)
-    ∇ .= Dual.ot_entropic_semidual_grad(X, G, ε, K) - E_star_grad(-G * Λ' / ρ2) * Λ
+    return ∇ .= Dual.ot_entropic_semidual_grad(X, G, ε, K) - E_star_grad(-G * Λ' / ρ2) * Λ
 end;
 # 
 # The only remaining part of Wasserstein-NMF to implement is the conversion at optimality from the dual variable $G$ to the primal variables $D, \Lambda$. From the results of Theorems 3 and 4 in Rolet et al., we have for $\Lambda$:
@@ -117,83 +117,113 @@ end;
 # ```
 #
 function getprimal_weights(D, G, ρ1)
-    return NNlib.softmax(-D'*G / ρ1; dims = 1)
+    return NNlib.softmax(-D' * G / ρ1; dims=1)
 end
 function getprimal_dict(Λ, G, ρ2)
-    return NNlib.softmax(-G*Λ' / ρ2; dims = 1)
+    return NNlib.softmax(-G * Λ' / ρ2; dims=1)
 end;
 # 
 # We can now implement functions `solve_weights` and `solve_dict` that solve the respective dual problems for the next iterates of `Λ` and `D`. 
 #
 function solve_weights(X, K, ε, D, ρ1; alg, options)
-    opt = optimize(g -> dual_obj_weights(X, K, ε, D, g, ρ1),
-                   (∇, g) -> dual_obj_weights_grad!(∇, X, K, ε, D, g, ρ1),
-                 zero.(X),
-                 alg,
-                 options)
+    opt = optimize(
+        g -> dual_obj_weights(X, K, ε, D, g, ρ1),
+        (∇, g) -> dual_obj_weights_grad!(∇, X, K, ε, D, g, ρ1),
+        zero.(X),
+        alg,
+        options,
+    )
     return getprimal_weights(D, Optim.minimizer(opt), ρ1)
 end
 function solve_dict(X, K, ε, Λ, ρ2; alg, options)
-    opt = optimize(g -> dual_obj_dict(X, K, ε, Λ, g, ρ2),
-                   (∇, g) -> dual_obj_dict_grad!(∇, X, K, ε, Λ, g, ρ2), 
-             zero.(X),
-             alg,
-             options,
-             autodiff=:forward)
+    opt = optimize(
+        g -> dual_obj_dict(X, K, ε, Λ, g, ρ2),
+        (∇, g) -> dual_obj_dict_grad!(∇, X, K, ε, Λ, g, ρ2),
+        zero.(X),
+        alg,
+        options;
+        autodiff=:forward,
+    )
     return getprimal_dict(Λ, Optim.minimizer(opt), ρ2)
-end; 
+end;
 
 #
 # ## Example: noisy univariate Gaussians
 # 
 # We set up each observation as a mixture of 3 Gaussians with means sampled from `N(6, σ), N(0, σ), N(-6, σ)` respectively, and mixture weights sampled uniformly from `[0, 1]`. The resulting mixture model is normalised to sum to 1 on the discrete domain `coord`. 
 #
-f(x, μ, σ) = exp.(-(x .- μ).^2)
-coord = range(-12, 12; length = 100)
+f(x, μ, σ) = exp.(-(x .- μ) .^ 2)
+coord = range(-12, 12; length=100)
 N = 100
 σ = 1
-X = hcat([rand()*f(coord, σ*randn() + 6, 1) + rand()*f(coord, σ*randn(), 1) + rand()*f(coord, σ*randn() - 6, 1) for _ in 1:N]...)
+X = hcat(
+    [
+        rand() * f(coord, σ * randn() + 6, 1) +
+        rand() * f(coord, σ * randn(), 1) +
+        rand() * f(coord, σ * randn() - 6, 1) for _ in 1:N
+    ]...,
+)
 X = simplex_norm!(X);
 # 
 # We visualise the  observations. 
 #
-plot(coord, X; alpha = 0.1, color = :blue, title = "Input data", legend = nothing)
+plot(coord, X; alpha=0.1, color=:blue, title="Input data", legend=nothing)
 # 
 # We can apply NMF with a squared Frobenius loss using the NMF.jl package. We seek `k = 3` components.  This performs poorly, since the pointwise nature of the loss function cannot handle the translational noise in the data.
 # 
 k = 3
-result = nnmf(X, k, alg = :multmse)
-plot(coord, result.W; title = "NMF with Frobenius loss", palette = :Set1_3)
+result = nnmf(X, k; alg=:multmse)
+plot(coord, result.W; title="NMF with Frobenius loss", palette=:Set1_3)
 #
 # We can now set up a cost matrix corresponding to the domain `coord`. 
 #
 C = pairwise(SqEuclidean(), coord)
-C = C / mean(C); 
+C = C / mean(C);
 # Specify parameters
 ε = 0.025
 ρ1, ρ2 = (5e-2, 5e-2);
 # Compute Gibbs kernel 
-K = exp.(-C/ε);
+K = exp.(-C / ε);
 # 
 # Now we use a random initialisation, where columns of `D` and `Λ` are normalised to sum to 1. 
 # 
 D = rand(size(X, 1), k) # dictionary 
-simplex_norm!(D; dims = 1) # norm columnwise
+simplex_norm!(D; dims=1) # norm columnwise
 Λ = rand(k, size(X, 2)) # weights
-simplex_norm!(Λ; dims = 1); # norm rowwise
+simplex_norm!(Λ; dims=1); # norm rowwise
 # 
 # We now run 5 iterations of Wasserstein-NMF.
 #
 n_iter = 5
 for iter in 1:n_iter
     @info "Wasserstein-NMF: iteration $iter"
-    D .= solve_dict(X, K, ε, Λ, ρ2; alg = LBFGS(), options = Optim.Options(; iterations = 250, g_tol = 1e-4, show_trace = false, show_every = 10))
-    Λ .= solve_weights(X, K, ε, D, ρ1; alg = LBFGS(), options = Optim.Options(; iterations = 250, g_tol = 1e-4, show_trace = false, show_every = 10))
+    D .= solve_dict(
+        X,
+        K,
+        ε,
+        Λ,
+        ρ2;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
+    Λ .= solve_weights(
+        X,
+        K,
+        ε,
+        D,
+        ρ1;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
 end
 # 
 # We observe that Wasserstein-NMF learns atoms (columns of $D$) corresponding to the three Gaussians used to generate the input data.
 #
-plot(coord, D; title = "NMF with Wasserstein loss", palette = :Set1_3)
+plot(coord, D; title="NMF with Wasserstein loss", palette=:Set1_3)
 
 # ## Example: image data (MNIST)
 # 
@@ -201,67 +231,117 @@ plot(coord, D; title = "NMF with Wasserstein loss", palette = :Set1_3)
 #
 sizex, sizey = 28, 28
 factor = 2 # downscale factor 
-Σ = hcat([sum(I(sizex)[:, i:i+factor-1]; dims = 2) for i = 1:factor:sizex]...)
-sizex, sizey = sizex÷factor, sizey÷factor
+Σ = hcat([sum(I(sizex)[:, i:(i + factor - 1)]; dims=2) for i in 1:factor:sizex]...)
+sizex, sizey = sizex ÷ factor, sizey ÷ factor
 N = 256
-x, y = MLDatasets.MNIST.traindata(Float64, sample(1:60_000, N, replace = false))
+x, y = MLDatasets.MNIST.traindata(Float64, sample(1:60_000, N; replace=false))
 x = permutedims(x, (2, 1, 3))
-x = cat([Σ' * x[:, :, i] * Σ for i = 1:N]...; dims = 3)
-X = simplex_norm!(reshape(x, (sizex*sizey, :)));
+x = cat([Σ' * x[:, :, i] * Σ for i in 1:N]...; dims=3)
+X = simplex_norm!(reshape(x, (sizex * sizey, :)));
 # 
 # The columns of `X` now correspond to images "flattened" as vectors. We can preview a few images.
 #
 M = 25
-plot([
-          heatmap(reshape(X[:, i], sizex, sizey); legend = :none, axis = nothing, showaxis = false, aspect_ratio = :equal, c = :Blues, yflip = true)
-      for i = 1:M]..., 
-     layout = (5, M÷5), 
-     plot_title = "Input images")
+plot(
+    [
+        heatmap(
+            reshape(X[:, i], sizex, sizey);
+            legend=:none,
+            axis=nothing,
+            showaxis=false,
+            aspect_ratio=:equal,
+            c=:Blues,
+            yflip=true,
+        ) for i in 1:M
+    ]...;
+    layout=(5, M ÷ 5),
+    plot_title="Input images",
+)
 
 # Now we can set up `coord`, cost matrix `C`, and specify parameters.
 #
 coord = reshape(collect(product(1:sizex, 1:sizey)), :)
 C = pairwise(SqEuclidean(), coord)
-C = C / mean(C); 
+C = C / mean(C);
 ε = 0.0025
-ρ1, ρ2 = (5e-3, 5e-3); 
+ρ1, ρ2 = (5e-3, 5e-3);
 # We compute the Gibbs kernel from `C`:
-K = exp.(-C/ε); 
+K = exp.(-C / ε);
 # 
 # Let us aim to learn `k = 25` atoms.
-k = 25; 
+k = 25;
 # 
 # Initialise again randomly 
 #
 D = rand(size(X, 1), k) # dictionary 
-simplex_norm!(D; dims = 1) # norm columnwise
+simplex_norm!(D; dims=1) # norm columnwise
 Λ = rand(k, size(X, 2)) # weights
-simplex_norm!(Λ; dims = 1); # norm rowwise
+simplex_norm!(Λ; dims=1); # norm rowwise
 # 
 # We now run 5 iterations of Wasserstein-NMF.
 #
 n_iter = 5
 for iter in 1:n_iter
     @info "Wasserstein-NMF: iteration $iter"
-    D .= solve_dict(X, K, ε, Λ, ρ2; alg = LBFGS(), options = Optim.Options(; iterations = 250, g_tol = 1e-4, show_trace = false, show_every = 10))
-    Λ .= solve_weights(X, K, ε, D, ρ1; alg = LBFGS(), options = Optim.Options(; iterations = 250, g_tol = 1e-4, show_trace = false, show_every = 10))
+    D .= solve_dict(
+        X,
+        K,
+        ε,
+        Λ,
+        ρ2;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
+    Λ .= solve_weights(
+        X,
+        K,
+        ε,
+        D,
+        ρ1;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
 end
 # 
 # We can inspect the atoms learned (columns of `D`):
 #
 
-plot([
-          heatmap(reshape(D[:, i], sizex, sizey); legend = :none, axis = nothing, showaxis = false, aspect_ratio = :equal, c = :Blues, yflip = true)
-      for i = 1:k]..., 
-     layout = (5, k÷5), 
-     plot_title = "Learned atoms")
+plot(
+    [
+        heatmap(
+            reshape(D[:, i], sizex, sizey);
+            legend=:none,
+            axis=nothing,
+            showaxis=false,
+            aspect_ratio=:equal,
+            c=:Blues,
+            yflip=true,
+        ) for i in 1:k
+    ]...;
+    layout=(5, k ÷ 5),
+    plot_title="Learned atoms",
+)
 
 # 
 # Finally, we can look at the images constructed by the low-rank approximation `DΛ` and compare to the original images that we previewed earlier. 
 #
-X_hat = D*Λ
-plot([
-          heatmap(reshape(X_hat[:, i], sizex, sizey); legend = :none, axis = nothing, showaxis = false, aspect_ratio = :equal, c = :Blues, yflip = true)
-      for i = 1:M]..., 
-     layout = (5, M÷5), 
-     plot_title = "Low rank approximation")
+X_hat = D * Λ
+plot(
+    [
+        heatmap(
+            reshape(X_hat[:, i], sizex, sizey);
+            legend=:none,
+            axis=nothing,
+            showaxis=false,
+            aspect_ratio=:equal,
+            c=:Blues,
+            yflip=true,
+        ) for i in 1:M
+    ]...;
+    layout=(5, M ÷ 5),
+    plot_title="Low rank approximation",
+)

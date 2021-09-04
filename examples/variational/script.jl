@@ -239,12 +239,12 @@ plot(
 #     \end{cases}
 # ```
 # 
-function E_dual(u; m = 1) 
+function E_dual(u; m=1)
     if m == 1
-        return sum(exp.(u)) 
+        return sum(exp.(u))
     elseif m > 1
-        f = m/(m-1)
-        return sum(@. (u + f) * (u/f + 1)^(1/(m-1)) - (1/(m-1))*(u/f + 1)^f)
+        f = m / (m - 1)
+        return sum(@. (u + f) * (u / f + 1)^(1 / (m - 1)) - (1 / (m - 1)) * (u / f + 1)^f)
     end
 end;
 # 
@@ -255,18 +255,23 @@ end;
 # and we can thus set up `G_dual_fpe`, the dual objective. 
 #
 function G_dual_fpe(u, ρ0, τ, ε, K)
-    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) + τ*E_dual(-u/τ - Ψ; m = 1)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
+           τ * E_dual(-u / τ - Ψ; m=1)
 end;
 # 
 # Now we set up `step` as previously, except this time we need to convert from the optimal dual variable $u^\star$ to the primal variable $\rho^\star$. In the code, this is handled by `getprimal_ot_entropic_semidual`. 
 #
 function step(ρ0, τ, ε, K, G)
-    opt = optimize(u -> G(u, ρ0, τ, ε, K), 
-                   ones(size(ρ0)), 
-                   LBFGS(), 
-                   Optim.Options(iterations = 250, g_tol = 1e-6); 
-                   autodiff = :forward)
-    return OptimalTransport.Dual.getprimal_ot_entropic_semidual(ρ0, Optim.minimizer(opt), ε, K)
+    opt = optimize(
+        u -> G(u, ρ0, τ, ε, K),
+        ones(size(ρ0)),
+        LBFGS(),
+        Optim.Options(; iterations=250, g_tol=1e-6);
+        autodiff=:forward,
+    )
+    return OptimalTransport.Dual.getprimal_ot_entropic_semidual(
+        ρ0, Optim.minimizer(opt), ε, K
+    )
 end;
 # 
 # Now we can solve the dual problem as previously, and we note that the dual formulation is solved an order of magnitude faster than the primal formulation.
@@ -290,7 +295,8 @@ plot(
 # Setting `m = 2`, we can simulate instead the porous medium equation.
 #
 function G_dual_pme(u, ρ0, τ, ε, K)
-    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) + τ*E_dual(-u/τ - Ψ; m = 2)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
+           τ * E_dual(-u / τ - Ψ; m=2)
 end
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
