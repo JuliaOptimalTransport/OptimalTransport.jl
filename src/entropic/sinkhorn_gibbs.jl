@@ -81,6 +81,7 @@ function sinkhorn(
         kwargs...,
     )
 end
+
 function sinkhorn2(
     μ,
     ν,
