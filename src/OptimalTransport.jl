@@ -47,6 +47,5 @@ include("quadratic.jl")
 include("quadratic_newton.jl")
 
 include("dual/entropic_dual.jl")
-include("entropic/sinkhorn_dual.jl")
 
 end
