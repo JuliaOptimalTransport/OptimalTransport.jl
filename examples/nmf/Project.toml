@@ -1,4 +1,5 @@
 [deps]
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+NMF = "6ef6ca0d-6ad7-5ff6-b225-e928bfa0a386"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
