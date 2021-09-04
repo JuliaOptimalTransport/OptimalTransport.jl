@@ -286,7 +286,7 @@ colors = range(colorant"red"; stop=colorant"blue", length=N)
 plot(
     support,
     ρ;
-    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle",
+    title=raw"$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle$",
     palette=colors,
     legend=nothing,
 )
@@ -306,7 +306,7 @@ colors = range(colorant"red"; stop=colorant"blue", length=N)
 plot(
     support,
     ρ;
-    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle",
+    title=raw"$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle$",
     palette=colors,
     legend=nothing,
 )

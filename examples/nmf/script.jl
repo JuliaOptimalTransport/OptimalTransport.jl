@@ -54,7 +54,6 @@ using NNlib: NNlib
 using LinearAlgebra
 using Distances
 using Base.Iterators
-using Distributions
 using NMF
 using Optim
 # 
