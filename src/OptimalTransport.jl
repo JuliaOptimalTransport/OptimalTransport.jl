@@ -14,7 +14,6 @@ using PDMats
 using QuadGK
 using NNlib: NNlib
 using StatsBase: StatsBase
-using Optim
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
