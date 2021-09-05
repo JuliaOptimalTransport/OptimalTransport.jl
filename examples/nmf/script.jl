@@ -11,13 +11,13 @@
 # ```math
 # X \approx D \Lambda. 
 # ```
-# For a target rank $k < \min \{ m, n \}$, this problem can be thought of as seeking a linear, low-dimensional representation of the potentially high-dimensional dataset. 
+# For a target rank $k < \min \{ m, n \}$, i.e. $D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}$, this problem can be thought of as seeking a low-dimensional linear representation $D \Lambda$ of the potentially high-dimensional dataset $X$. 
 #
 # Lee and Seung [^LS99] observed that the data matrix $X$ is non-negative in many practical applications, and that naturally one may want the factor matrices $D, \Lambda$ to be also non-negative. 
 #
 # [^LS99]: Lee, Daniel D., and H. Sebastian Seung. "Learning the parts of objects by non-negative matrix factorization." Nature 401.6755 (1999): 788-791.
 #
-# For a given $m \times n$ matrix $X \ge 0$, finding $D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}$ such that $X \approx D \Lambda$ with $D \ge 0, \Lambda \ge 0$ is known as the non-negative matrix factorization (NMF) problem. Typically, such an approximate representation is sought by solving a minimisation problem
+# For a given $m \times n$ matrix $X \ge 0$, finding the factor matrices $D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}$ such that $X \approx D \Lambda$ with $D \ge 0, \Lambda \ge 0$ is known as the rank-$k$ non-negative matrix factorization (NMF) problem. Typically, such an approximate representation is sought by solving a minimisation problem
 # ```math
 # \min_{D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}, D \ge 0, \Lambda \ge 0} \Phi(X, D \Lambda), 
 # ```
@@ -32,11 +32,11 @@
 # ```math
 # \min_{D \in \mathbb{R}^{m \times k}_{\ge 0}, \Lambda \in \mathbb{R}^{k \times n}_{\ge 0}} \sum_{i = 1}^{n} \operatorname{OT}_{\varepsilon}(X_i, (D\Lambda)_i) + \rho_1 E(D) + \rho_2 E(\Lambda),
 # ```
-# where $\operatorname{OT}_{\varepsilon}(\alpha, \beta)$ is the entropy-regularised optimal transport loss between two probability distributions $\alpha, \beta$, and $E$ is an entropy barrier function (a smooth approximation to the non-negativity constraint),
+# where $\operatorname{OT}_{\varepsilon}(\alpha, \beta)$ is the entropy-regularised optimal transport loss between two probability distributions $\alpha, \beta$ for a cost $C$, and $E$ is an entropy barrier function (a smooth approximation to the non-negativity constraint),
 # ```math
 # E(A) = \sum_{ij} (A_{ij} \log(A_{ij}) - 1).  
 # ```
-# The parameters $\rho_1, \rho_2$ control how "sharp" the non-negativity constraints are -- as $\rho_1, \rho_2 \to 0$, the smoothed constraint approaches the hard non-negativity constraint, and $\varepsilon$ controls the regularisation level for the optimal transport loss. 
+# The parameters $\rho_1, \rho_2$ control how "sharp" the non-negativity constraints are. As $\rho_1, \rho_2 \to 0$, the smoothed constraint approaches the hard non-negativity constraint. Finally, $\varepsilon$ controls the regularisation level for the optimal transport loss. 
 # 
 # This example shows how this method can be implemented using functions from the `Dual` submodule of OptimalTransport.jl. 
 #  
@@ -91,7 +91,7 @@ function E_star_grad(x; dims=1)
     return NNlib.softmax(x; dims=1)
 end;
 # 
-# Thus, for each problem we may define the dual objective and its gradient. We note that `ot_entropic_semidual(_grad)` automatically broadcasts along columns of its input. 
+# Thus, for each problem we may define the dual objective and its gradient. We note that `ot_entropic_semidual(_grad)` automatically broadcasts along columns of its input. There is therefore no need to make multiple calls to the function, thus allowing for more efficient evaluation.
 #
 function dual_obj_weights(X, K, ε, D, G, ρ1)
     return sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ1 * sum(E_star(-D' * G / ρ1))
@@ -191,9 +191,9 @@ simplex_norm!(D; dims=1) # norm columnwise
 Λ = rand(k, size(X, 2)) # weights
 simplex_norm!(Λ; dims=1); # norm rowwise
 # 
-# We now run 5 iterations of Wasserstein-NMF.
+# We now run 10 iterations of Wasserstein-NMF.
 #
-n_iter = 5
+n_iter = 10
 for iter in 1:n_iter
     @info "Wasserstein-NMF: iteration $iter"
     D .= solve_dict(
