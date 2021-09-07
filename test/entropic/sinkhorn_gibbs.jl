@@ -1,7 +1,7 @@
 using OptimalTransport
 
 using Distances
-using Diff
+using ForwardDiff
 using ReverseDiff
 using LogExpFunctions
 using PythonOT: PythonOT
