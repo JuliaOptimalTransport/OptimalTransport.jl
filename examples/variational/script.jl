@@ -59,12 +59,14 @@
 # ## Problem setup
 #
 using OptimalTransport
-using StatsBase, Distances
-using ReverseDiff, Optim, LinearAlgebra
-using Plots
+using Distances
 using LogExpFunctions
-using LaTeXStrings
-using Suppressor
+using Optim
+using Plots
+using StatsBase
+
+using LinearAlgebra
+using Logging
 
 # Here, we set up the computational domain that we work on - we discretize the interval $[-1, 1]$. 
 # The natural boundary conditions to use will be Neumann (zero flux), see e.g. [^Santam2017]
@@ -119,29 +121,30 @@ end;
 
 # `step` solves the implicit step problem to produce $\rho_{t + \tau}$ from $\rho_t$. 
 function step(ρ0, τ, ε, C, G)
-    opt = optimize(
-        u -> G(softmax(u), ρ0, τ, ε, C),
-        ones(size(ρ0)),
-        LBFGS(),
-        Optim.Options(; iterations=50, g_tol=1e-6);
-        autodiff=:forward,
-    )
+    ## only print error messages
+    opt = with_logger(SimpleLogger(stderr, Logging.Error)) do
+        optimize(
+            u -> G(softmax(u), ρ0, τ, ε, C),
+            ones(size(ρ0)),
+            LBFGS(),
+            Optim.Options(; iterations=50, g_tol=1e-6);
+            autodiff=:forward,
+        )
+    end
     return softmax(Optim.minimizer(opt))
 end
 # Now we simulate `N = 10` iterates of the gradient flow and plot the result. 
 N = 10
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
-@suppress begin
-    for i in 2:N
-        ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_fpe)
-    end
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_fpe)
 end
 colors = range(colorant"red"; stop=colorant"blue", length=N)
 plot(
     support,
     ρ;
-    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle",
+    title=raw"$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle$",
     palette=colors,
     legend=nothing,
 )
@@ -164,15 +167,13 @@ end;
 N = 10
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
-@suppress begin
-    for i in 2:N
-        ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_pme)
-    end
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_pme)
 end
 plot(
     support,
     ρ;
-    title=L"F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle",
+    title=raw"$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle$",
     palette=colors,
     legend=nothing,
 )
