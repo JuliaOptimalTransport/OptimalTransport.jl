@@ -161,6 +161,7 @@ Random.seed!(100)
         # together. test against gradient computed using analytic formula of Proposition 2.3 of 
         # Cuturi, Marco, and Gabriel Peyré. "A smoothed dual approach for variational Wasserstein problems." SIAM Journal on Imaging Sciences 9.1 (2016): 320-343.
         #
+        ε = 0.05 # use a larger ε to avoid having to do many iterations 
         # target marginal
         for Diff in [ReverseDiff, ForwardDiff]
             ∇ = Diff.gradient(log.(ν)) do xs
