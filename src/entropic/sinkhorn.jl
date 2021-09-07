@@ -279,11 +279,11 @@ See also: [`sinkhorn`](@ref)
 """
 function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=nothing, kwargs...)
     function reg(γ::AbstractMatrix, C::AbstractMatrix, ε)
-            ε * only(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)))
+        return ε * only(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)))
     end
 
     function reg(γ::AbstractArray, C::AbstractArray, ε)
-            ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
+        return ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
     end
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε, alg; kwargs...)
@@ -303,4 +303,3 @@ function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=noth
 
     return cost
 end
-
