@@ -278,6 +278,13 @@ supported here are the same as those in the [`sinkhorn`](@ref) function.
 See also: [`sinkhorn`](@ref)
 """
 function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=nothing, kwargs...)
+    function reg(γ::AbstractMatrix, C::AbstractMatrix, ε)
+            ε * only(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)))
+    end
+
+    function reg(γ::AbstractArray, C::AbstractArray, ε)
+            ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
+    end
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε, alg; kwargs...)
     else
@@ -289,11 +296,11 @@ function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=noth
         plan
     end
     cost = if regularization
-        dot_matwise(γ, C) .+
-        ε * reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
+        dot_matwise(γ, C) .+ reg(γ, C, ε)
     else
         dot_matwise(γ, C)
     end
 
     return cost
 end
+
