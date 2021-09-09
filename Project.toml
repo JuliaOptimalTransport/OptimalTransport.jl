@@ -30,6 +30,7 @@ julia = "1"
 
 [extras]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PythonOT = "3c485715-4278-42b2-9b5f-8f00e43c12ef"
@@ -39,4 +40,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
 
 [targets]
-test = ["ForwardDiff", "Pkg", "PythonOT", "Random", "SafeTestsets", "Test", "Tulip", "HCubature"]
+test = ["ForwardDiff", "ReverseDiff", "Pkg", "PythonOT", "Random", "SafeTestsets", "Test", "Tulip", "HCubature"]
