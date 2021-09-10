@@ -28,9 +28,7 @@ function dot_vecwise(x::AbstractMatrix, y::AbstractMatrix)
     return [dot(u, v) for (u, v) in zip(eachcol(x), eachcol(y))]
 end
 
-function dot_vecwise(x::AbstractMatrix, y::AbstractVector)
-    return [dot(u, y) for u in eachcol(x)]
-end
+dot_vecwise(x::AbstractMatrix, y::AbstractVector) = x' * y
 
 dot_vecwise(x::AbstractVector, y::AbstractMatrix) = dot_vecwise(y, x)
 dot_vecwise(x::AbstractVector, y::AbstractVector) = dot(x, y)
