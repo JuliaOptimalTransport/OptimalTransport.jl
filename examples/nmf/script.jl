@@ -48,8 +48,8 @@ using OptimalTransport
 import OptimalTransport.Dual: Dual
 using MLDatasets: MLDatasets
 using StatsBase
-using Plots; 
-default(palette=:Set1_3)
+using Plots;
+default(; palette=:Set1_3)
 using LogExpFunctions
 using NNlib: NNlib
 using LinearAlgebra
@@ -141,7 +141,7 @@ function solve_dict(X, K, ε, Λ, ρ2; alg, options)
         (∇, g) -> dual_obj_dict_grad!(∇, X, K, ε, Λ, g, ρ2),
         zero.(X),
         alg,
-        options;
+        options,
     )
     return getprimal_dict(Λ, Optim.minimizer(opt), ρ2)
 end;

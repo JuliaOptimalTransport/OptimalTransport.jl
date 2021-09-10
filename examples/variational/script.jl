@@ -130,7 +130,7 @@ function step(ρ0, τ, ε, C, G)
             ones(size(ρ0)),
             LBFGS(),
             Optim.Options(; iterations=50, g_tol=1e-6);
-            autodiff = :forward
+            autodiff=:forward,
         )
     end
     return softmax(Optim.minimizer(opt))
@@ -250,9 +250,9 @@ plot(
 #
 # We now implement $E_m^*$ for $m = 1, 2$. 
 E_dual(u, m::Val{1}) = sum(exp.(u))
-function E_dual(u, m::Val{2}) 
-    dot(u/2 .+ 1, u/2 .+ 1)
-end; 
+function E_dual(u, m::Val{2})
+    return dot(u / 2 .+ 1, u / 2 .+ 1)
+end;
 # 
 # So, the dual problem we are dealing with reads
 # ```math
@@ -262,7 +262,7 @@ end;
 #
 function G_dual_fpe(u, ρ0, τ, ε, K)
     return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
-        τ * E_dual(-u / τ - Ψ, Val(1))
+           τ * E_dual(-u / τ - Ψ, Val(1))
 end;
 # 
 # Now we set up `step` as previously, except this time we need to convert from the optimal dual variable $u^\star$ to the primal variable $\rho^\star$. In the code, this is handled by `getprimal_ot_entropic_semidual`. We use `ReverseDiff` in this problem. 
@@ -271,10 +271,10 @@ function step(ρ0, τ, ε, K, G)
     obj = u -> G(u, ρ0, τ, ε, K)
     opt = optimize(
         obj,
-        (∇, u) -> ReverseDiff.gradient!(∇, obj, u), 
+        (∇, u) -> ReverseDiff.gradient!(∇, obj, u),
         zeros(size(ρ0)),
         LBFGS(),
-        Optim.Options(; iterations=250, g_tol=1e-6);
+        Optim.Options(; iterations=250, g_tol=1e-6),
     )
     return OptimalTransport.Dual.getprimal_ot_entropic_semidual(
         ρ0, Optim.minimizer(opt), ε, K
@@ -301,7 +301,7 @@ plot(
 #
 function G_dual_pme(u, ρ0, τ, ε, K)
     return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
-        τ * E_dual(-u / τ - Ψ, Val(2))
+           τ * E_dual(-u / τ - Ψ, Val(2))
 end
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
