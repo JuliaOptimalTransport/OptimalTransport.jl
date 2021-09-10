@@ -48,7 +48,8 @@ using OptimalTransport
 import OptimalTransport.Dual: Dual
 using MLDatasets: MLDatasets
 using StatsBase
-using Plots
+using Plots; 
+default(palette=:Set1_3)
 using LogExpFunctions
 using NNlib: NNlib
 using LinearAlgebra
@@ -141,7 +142,6 @@ function solve_dict(X, K, ε, Λ, ρ2; alg, options)
         zero.(X),
         alg,
         options;
-        autodiff=:forward,
     )
     return getprimal_dict(Λ, Optim.minimizer(opt), ρ2)
 end;
@@ -232,8 +232,6 @@ factor = 2 # downscale factor
 Σ = hcat([sum(I(sizex)[:, i:(i + factor - 1)]; dims=2) for i in 1:factor:sizex]...)
 sizex, sizey = sizex ÷ factor, sizey ÷ factor
 N = 256
-# must set this for Documenter
-ENV["DATADEPS_ALWAYS_ACCEPT"] = true
 x, y = MLDatasets.MNIST.traindata(Float64, sample(1:60_000, N; replace=false))
 x = permutedims(x, (2, 1, 3))
 x = cat([Σ' * x[:, :, i] * Σ for i in 1:N]...; dims=3)

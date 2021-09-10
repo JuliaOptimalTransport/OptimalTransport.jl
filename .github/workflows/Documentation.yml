@@ -34,4 +34,5 @@ jobs:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
           GKSwstype: nul # avoid (irrelevant) error messages from GR
           JULIA_DEBUG: Documenter # Print `@debug` statements (https://github.com/JuliaDocs/Documenter.jl/issues/955)
+          DATADEPS_ALWAYS_ACCEPT: true
         run: julia --color=yes --project=docs/ docs/make.jl

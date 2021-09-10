@@ -64,6 +64,7 @@ using LogExpFunctions
 using Optim
 using Plots
 using StatsBase
+using ReverseDiff
 
 using LinearAlgebra
 using Logging
@@ -122,22 +123,25 @@ end;
 # `step` solves the implicit step problem to produce $\rho_{t + \tau}$ from $\rho_t$. 
 function step(ρ0, τ, ε, C, G)
     ## only print error messages
+    obj = u -> G(softmax(u), ρ0, τ, ε, C)
     opt = with_logger(SimpleLogger(stderr, Logging.Error)) do
         optimize(
-            u -> G(softmax(u), ρ0, τ, ε, C),
+            obj,
             ones(size(ρ0)),
             LBFGS(),
             Optim.Options(; iterations=50, g_tol=1e-6);
-            autodiff=:forward,
+            autodiff = :forward
         )
     end
     return softmax(Optim.minimizer(opt))
 end
 # Now we simulate `N = 10` iterates of the gradient flow and plot the result. 
+
 N = 10
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
 for i in 2:N
+    @info i
     ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_fpe)
 end
 colors = range(colorant"red"; stop=colorant"blue", length=N)
@@ -239,15 +243,16 @@ plot(
 #     \sum_i \left[ \left( u_i + \frac{m}{m-1} \right) \left( \frac{m-1}{m} u_i + 1 \right)^{\frac{1}{m-1}} - \frac{1}{m-1} \left( \frac{m-1}{m} u_i + 1 \right)^{\frac{m}{m-1}} \right], & m > 1.
 #     \end{cases}
 # ```
-# 
-function E_dual(u; m=1)
-    if m == 1
-        return sum(exp.(u))
-    elseif m > 1
-        f = m / (m - 1)
-        return sum(@. (u + f) * (u / f + 1)^(1 / (m - 1)) - (1 / (m - 1)) * (u / f + 1)^f)
-    end
-end;
+# In particular, for $m = 2$ we have a simpler formula
+# ```math
+# E_2^*(u) = \left\| \frac{u}{2} + 1 \right\|_2^2 
+# ```
+#
+# We now implement $E_m^*$ for $m = 1, 2$. 
+E_dual(u, m::Val{1}) = sum(exp.(u))
+function E_dual(u, m::Val{2}) 
+    dot(u/2 .+ 1, u/2 .+ 1)
+end; 
 # 
 # So, the dual problem we are dealing with reads
 # ```math
@@ -257,18 +262,19 @@ end;
 #
 function G_dual_fpe(u, ρ0, τ, ε, K)
     return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
-           τ * E_dual(-u / τ - Ψ; m=1)
+        τ * E_dual(-u / τ - Ψ, Val(1))
 end;
 # 
-# Now we set up `step` as previously, except this time we need to convert from the optimal dual variable $u^\star$ to the primal variable $\rho^\star$. In the code, this is handled by `getprimal_ot_entropic_semidual`. 
+# Now we set up `step` as previously, except this time we need to convert from the optimal dual variable $u^\star$ to the primal variable $\rho^\star$. In the code, this is handled by `getprimal_ot_entropic_semidual`. We use `ReverseDiff` in this problem. 
 #
 function step(ρ0, τ, ε, K, G)
+    obj = u -> G(u, ρ0, τ, ε, K)
     opt = optimize(
-        u -> G(u, ρ0, τ, ε, K),
-        ones(size(ρ0)),
+        obj,
+        (∇, u) -> ReverseDiff.gradient!(∇, obj, u), 
+        zeros(size(ρ0)),
         LBFGS(),
         Optim.Options(; iterations=250, g_tol=1e-6);
-        autodiff=:forward,
     )
     return OptimalTransport.Dual.getprimal_ot_entropic_semidual(
         ρ0, Optim.minimizer(opt), ε, K
@@ -290,16 +296,17 @@ plot(
     palette=colors,
     legend=nothing,
 )
-#
+
 # Setting `m = 2`, we can simulate instead the porous medium equation.
 #
 function G_dual_pme(u, ρ0, τ, ε, K)
     return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
-           τ * E_dual(-u / τ - Ψ; m=2)
+        τ * E_dual(-u / τ - Ψ, Val(2))
 end
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
 for i in 2:N
+    @info i
     ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_pme)
 end
 colors = range(colorant"red"; stop=colorant"blue", length=N)
