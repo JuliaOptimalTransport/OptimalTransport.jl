@@ -111,6 +111,12 @@ version = "0.27.5"
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
+[[ExactOptimalTransport]]
+deps = ["Distances", "Distributions", "LinearAlgebra", "MathOptInterface", "PDMats", "QuadGK", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "615791caeb11b3a62bea0527b3f03627352aa90d"
+uuid = "24df6009-d856-477c-ac5c-91f668376b31"
+version = "0.1.0"
+
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
 git-tree-sha1 = "7c365bdef6380b29cfc5caaf99688cd7489f9b87"
@@ -254,10 +260,10 @@ uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.5+0"
 
 [[OptimalTransport]]
-deps = ["Distances", "Distributions", "IterativeSolvers", "LinearAlgebra", "LogExpFunctions", "MathOptInterface", "NNlib", "PDMats", "QuadGK", "SparseArrays", "StatsBase"]
+deps = ["ExactOptimalTransport", "IterativeSolvers", "LinearAlgebra", "LogExpFunctions", "NNlib", "Reexport"]
 path = ".."
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
-version = "0.3.15"
+version = "0.3.16"
 
 [[OrderedCollections]]
 git-tree-sha1 = "85f8e6578bf1f9ee0d11e7bb1b1456435479d47c"
