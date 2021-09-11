@@ -1,7 +1,9 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+ExactOptimalTransport = "24df6009-d856-477c-ac5c-91f668376b31"
 OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 
 [compat]
+ExactOptimalTransport = "0.1"
 Documenter = "0.27"
 OptimalTransport = "0.3"

@@ -39,9 +39,10 @@ isempty(processes) || success(processes) || error("some examples were not run su
 ### Build documentation
 using Documenter
 using OptimalTransport
+using ExactOptimalTransport
 
 makedocs(;
-    modules=[OptimalTransport],
+    modules=[OptimalTransport, ExactOptimalTransport],
     repo="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/{commit}{path}#L{line}",
     sitename="OptimalTransport.jl",
     format=Documenter.HTML(;
