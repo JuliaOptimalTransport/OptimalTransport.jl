@@ -4,34 +4,26 @@
 
 module OptimalTransport
 
-using Distances
+using Reexport
+
+@reexport using ExactOptimalTransport:
+    emd, emd2, ot_cost, ot_plan, wasserstein, squared2wasserstein
+
 using LinearAlgebra
-using IterativeSolvers, SparseArrays
+using IterativeSolvers
 using LogExpFunctions: LogExpFunctions
-using MathOptInterface
-using Distributions
-using PDMats
-using QuadGK
 using NNlib: NNlib
-using StatsBase: StatsBase
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
 export QuadraticOTNewton
 
 export sinkhorn, sinkhorn2
-export emd, emd2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export quadreg
-export ot_cost, ot_plan, wasserstein, squared2wasserstein
 
-const MOI = MathOptInterface
-
-include("distances/bures.jl")
 include("utils.jl")
-include("exact.jl")
-include("wasserstein.jl")
 
 include("entropic/sinkhorn.jl")
 include("entropic/sinkhorn_gibbs.jl")

@@ -40,6 +40,7 @@ Please see the documentation pages for further information.
 
 ## Related packages
 
+- [ExactOptimalTransport.jl](https://github.com/JuliaOptimalTransport/ExactOptimalTransport.jl): Julia implementation of algorithms for exact unregularized (Kantorovich) optimal transport problems.
 - [PythonOT.jl](https://github.com/JuliaOptimalTransport/PythonOT.jl): Julia interface for the [Python Optimal Transport (POT) package](https://pythonot.github.io/).
 - [StochasticOptimalTransport.jl](https://github.com/JuliaOptimalTransport/StochasticOptimalTransport.jl): Julia implementation of stochastic optimization algorithms for large-scale optimal transport.
 

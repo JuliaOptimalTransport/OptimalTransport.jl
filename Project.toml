@@ -4,40 +4,30 @@ authors = ["zsteve <stephenz@student.unimelb.edu.au>"]
 version = "0.3.16"
 
 [deps]
-Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ExactOptimalTransport = "24df6009-d856-477c-ac5c-91f668376b31"
 IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LogExpFunctions = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-PDMats = "90014a1f-27ba-587c-ab20-58faa44d9150"
-QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
-SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
-StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
-Distances = "0.9.0, 0.10"
-Distributions = "0.24, 0.25"
+ExactOptimalTransport = "0.1"
 IterativeSolvers = "0.8.4, 0.9"
 LogExpFunctions = "0.2, 0.3"
-MathOptInterface = "0.9"
 NNlib = "0.6, 0.7"
-PDMats = "0.10, 0.11"
-QuadGK = "2"
-StatsBase = "0.33.8"
+Reexport = "1"
 julia = "1"
 
 [extras]
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
-HCubature = "19dc6840-f33b-545b-b366-655c7e3ffd49"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 PythonOT = "3c485715-4278-42b2-9b5f-8f00e43c12ef"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
 
 [targets]
-test = ["ForwardDiff", "ReverseDiff", "Pkg", "PythonOT", "Random", "SafeTestsets", "Test", "Tulip", "HCubature"]
+test = ["Distances", "ForwardDiff", "ReverseDiff", "Pkg", "PythonOT", "Random", "SafeTestsets", "Test"]

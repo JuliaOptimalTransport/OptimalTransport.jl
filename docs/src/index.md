@@ -3,19 +3,23 @@
 
 ## Exact optimal transport (Kantorovich) problem
 
+OptimalTransport.jl reexports the following functions for exact, i.e.,
+unregularized, optimal transport problems from
+[ExactOptimalTransport.jl](https://github.com/JuliaOptimalTransport/ExactOptimalTransport.jl).
+
 ```@docs
 emd
 emd2
 ot_plan
-ot_plan(::Any, ::OptimalTransport.ContinuousUnivariateDistribution, ::OptimalTransport.UnivariateDistribution)
-ot_plan(::Any, ::OptimalTransport.DiscreteNonParametric, ::OptimalTransport.DiscreteNonParametric)
-ot_plan(::OptimalTransport.SqEuclidean, ::OptimalTransport.Normal, ::OptimalTransport.Normal)
-ot_plan(::OptimalTransport.SqEuclidean, ::OptimalTransport.MvNormal, ::OptimalTransport.MvNormal)
+ot_plan(::Any, ::ExactOptimalTransport.ContinuousUnivariateDistribution, ::ExactOptimalTransport.UnivariateDistribution)
+ot_plan(::Any, ::ExactOptimalTransport.DiscreteNonParametric, ::ExactOptimalTransport.DiscreteNonParametric)
+ot_plan(::ExactOptimalTransport.SqEuclidean, ::ExactOptimalTransport.Normal, ::ExactOptimalTransport.Normal)
+ot_plan(::ExactOptimalTransport.SqEuclidean, ::ExactOptimalTransport.MvNormal, ::ExactOptimalTransport.MvNormal)
 ot_cost
-ot_cost(::Any, ::OptimalTransport.ContinuousUnivariateDistribution, ::OptimalTransport.UnivariateDistribution)
-ot_cost(::Any, ::OptimalTransport.DiscreteNonParametric, ::OptimalTransport.DiscreteNonParametric)
-ot_cost(::OptimalTransport.SqEuclidean, ::OptimalTransport.Normal, ::OptimalTransport.Normal)
-ot_cost(::OptimalTransport.SqEuclidean, ::OptimalTransport.MvNormal, ::OptimalTransport.MvNormal)
+ot_cost(::Any, ::ExactOptimalTransport.ContinuousUnivariateDistribution, ::ExactOptimalTransport.UnivariateDistribution)
+ot_cost(::Any, ::ExactOptimalTransport.DiscreteNonParametric, ::ExactOptimalTransport.DiscreteNonParametric)
+ot_cost(::ExactOptimalTransport.SqEuclidean, ::ExactOptimalTransport.Normal, ::ExactOptimalTransport.Normal)
+ot_cost(::ExactOptimalTransport.SqEuclidean, ::ExactOptimalTransport.MvNormal, ::ExactOptimalTransport.MvNormal)
 wasserstein
 squared2wasserstein
 ```
