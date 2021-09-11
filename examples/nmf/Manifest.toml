@@ -207,6 +207,12 @@ git-tree-sha1 = "3f3a2501fa7236e9b911e0f7a588c657e822bb6d"
 uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
 version = "2.2.3+0"
 
+[[ExactOptimalTransport]]
+deps = ["Distances", "Distributions", "LinearAlgebra", "MathOptInterface", "PDMats", "QuadGK", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "615791caeb11b3a62bea0527b3f03627352aa90d"
+uuid = "24df6009-d856-477c-ac5c-91f668376b31"
+version = "0.1.0"
+
 [[Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "b3bfd02e98aedfa5cf885665493c5598c350cd2f"
@@ -655,7 +661,7 @@ uuid = "429524aa-4258-5aef-a3af-852621145aeb"
 version = "1.4.1"
 
 [[OptimalTransport]]
-deps = ["Distances", "Distributions", "IterativeSolvers", "LinearAlgebra", "LogExpFunctions", "MathOptInterface", "NNlib", "PDMats", "QuadGK", "SparseArrays", "StatsBase"]
+deps = ["ExactOptimalTransport", "IterativeSolvers", "LinearAlgebra", "LogExpFunctions", "NNlib", "Reexport"]
 path = "../.."
 uuid = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 version = "0.3.16"
