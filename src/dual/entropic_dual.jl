@@ -2,7 +2,6 @@ module Dual
 
 using LinearAlgebra
 using LogExpFunctions
-using StatsBase
 import OptimalTransport.add_singleton
 import OptimalTransport.dot_vecwise
 
