@@ -64,6 +64,7 @@ using LogExpFunctions
 using Optim
 using Plots
 using StatsBase
+using ReverseDiff
 
 using LinearAlgebra
 using Logging
@@ -102,7 +103,7 @@ plot(support, ψ.(support); color="black", label="Scalar potential")
 # Define the time step $\tau$ and entropic regularisation level $\varepsilon$, and form the associated Gibbs kernel $K = e^{-C/\varepsilon}$. 
 τ = 0.05
 ε = 0.01
-K = @. exp(-C / ε)
+K = @. exp(-C / ε);
 
 # We define the (non-smooth) initial condition $\rho_0$ in terms of step functions. 
 H(x) = x > 0
@@ -122,9 +123,10 @@ end;
 # `step` solves the implicit step problem to produce $\rho_{t + \tau}$ from $\rho_t$. 
 function step(ρ0, τ, ε, C, G)
     ## only print error messages
+    obj = u -> G(softmax(u), ρ0, τ, ε, C)
     opt = with_logger(SimpleLogger(stderr, Logging.Error)) do
         optimize(
-            u -> G(softmax(u), ρ0, τ, ε, C),
+            obj,
             ones(size(ρ0)),
             LBFGS(),
             Optim.Options(; iterations=50, g_tol=1e-6);
@@ -134,10 +136,12 @@ function step(ρ0, τ, ε, C, G)
     return softmax(Optim.minimizer(opt))
 end
 # Now we simulate `N = 10` iterates of the gradient flow and plot the result. 
+
 N = 10
 ρ = similar(ρ0, size(ρ0, 1), N)
 ρ[:, 1] = ρ0
 for i in 2:N
+    @info i
     ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_fpe)
 end
 colors = range(colorant"red"; stop=colorant"blue", length=N)
@@ -170,6 +174,142 @@ N = 10
 for i in 2:N
     ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_pme)
 end
+plot(
+    support,
+    ρ;
+    title=raw"$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle$",
+    palette=colors,
+    legend=nothing,
+)
+
+# ## Exploiting duality 
+# 
+# The previous examples solved the minimisation problem for the implicit gradient flow step directly, involving automatic differentiation through the Sinkhorn iterations used to compute $\operatorname{OT}_\varepsilon(\rho_t, \rho)$ each time a gradient needs to be evaluated. 
+# While this is straightforward to implement, it is computationally costly. 
+# An alternative approach for convex variational problems is to proceed via the [dual problem](https://en.wikipedia.org/wiki/Duality_(optimization)). 
+# The benefit of proceeding via the dual problem is that the part of the dual minimisation problem corresponding to the (entropy-regularised) optimal transport loss is typically available in closed form. This is in contrast to the primal problem, where evaluation of the objective and its gradients requires potentially many Sinkhorn iterations.
+#
+# Consider a general convex and unconstrained problem. Under (usually satisfied) conditions for strong duality to hold, we have 
+# ```math
+# \begin{aligned}
+# &\min_{\rho} \operatorname{OT}_{\varepsilon}(\rho_0, \rho) + \mathcal{F}(\rho)  \\
+# &= \min_{\rho} \sup_{u}\left[\langle \rho, u \rangle - \operatorname{OT}^*_{\varepsilon}(\rho_0, u)\right] + \mathcal{F}(\rho)  \\
+# &= \sup_{u} \min_{\rho} \langle \rho, u \rangle - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \mathcal{F}(\rho) \\
+# &= \sup_{u} - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \min_{\rho} \langle \rho, u \rangle + \mathcal{F}(\rho) \\
+# &= \sup_{u} - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) - \sup_{\rho} \langle \rho, -u \rangle - \mathcal{F}(\rho) \\
+# &= \sup_{u} - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) - \mathcal{F}^*(-u). 
+# \end{aligned}
+# ```
+# Thus, the dual problem is 
+# ```math
+# \min_{u} \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \mathcal{F}^*(-u). 
+# ```
+#
+# The upshot here is that $u \mapsto \operatorname{OT}^*_{\varepsilon}(\rho_0, u)$ and its gradient is available in closed form. This is a known result in the literature [^CP18].
+#
+# [^CP18]: Cuturi, Marco, and Gabriel Peyré. “Semi-Dual Regularized Optimal Transport.” ArXiv: Learning, 2018.
+#
+# The formulas we state below are lifted from statements in [^Z21]. 
+#
+# [^Z21]: Zhang, Stephen Y. “A Unified Framework for Non-Negative Matrix and Tensor Factorisations with a Smoothed Wasserstein Loss.” ArXiv: Machine Learning, 2021.
+#
+# ```math
+# \begin{aligned}
+# \operatorname{OT}^*_{\varepsilon}(\rho_0, u) &= -\varepsilon \left\langle \rho_0, \log\left( \dfrac{\rho_0}{K e^{u/\varepsilon}} \right) - 1\right\rangle, \\
+# \nabla_u \operatorname{OT}^*_{\varepsilon}(\rho_0, u) &= K^\top \left( \dfrac{\rho_0}{K e^{u/\varepsilon}} \right) \odot e^{u/\varepsilon}. 
+# \end{aligned}
+# ```
+# At optimality, we can recover the primal optimal point $\rho^\star$ from the dual optimal point $u^\star$ following the formula
+# ```math
+# \rho^\star = e^{u^\star/\varepsilon} \odot K^\top \dfrac{\rho_0}{K e^{u^\star/\varepsilon}}. 
+# ```
+# 
+# When $\mathcal{F}^*(\cdot)$ is also available in closed form (this is not always the case), the dual problem has a closed form objective and can generally be solved much more efficiently than the primal problem. 
+#
+# In the setting of the Fokker-Planck and porous medium equations, the function $\mathcal{F}$ can be identified with
+#
+# ```math
+# \mathcal{F}(\rho) = \tau \left[ \langle \psi, \rho \rangle + E_m(\rho) \right]. 
+# ```
+#
+# A straightforward computation shows that
+# ```math
+# \mathcal{F}^*(u) = \tau E_m^*\left( \frac{u}{\tau}-\psi \right), 
+# ```
+# where 
+# ```math
+#     E_m^*(u) = \begin{cases}
+#     \langle e^u, \mathbf{1} \rangle, & m = 1 \\ 
+#     \sum_i \left[ \left( u_i + \frac{m}{m-1} \right) \left( \frac{m-1}{m} u_i + 1 \right)^{\frac{1}{m-1}} - \frac{1}{m-1} \left( \frac{m-1}{m} u_i + 1 \right)^{\frac{m}{m-1}} \right], & m > 1.
+#     \end{cases}
+# ```
+# In particular, for $m = 2$ we have a simpler formula
+# ```math
+# E_2^*(u) = \left\| \frac{u}{2} + 1 \right\|_2^2 
+# ```
+#
+# We now implement $E_m^*$ for $m = 1, 2$. 
+E_dual(u, m::Val{1}) = sum(exp.(u))
+function E_dual(u, m::Val{2})
+    return dot(u / 2 .+ 1, u / 2 .+ 1)
+end;
+# 
+# So, the dual problem we are dealing with reads
+# ```math
+# \min_{u} \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \tau E_m^*\left( \frac{-u}{\tau}-\psi \right), 
+# ```
+# and we can thus set up `G_dual_fpe`, the dual objective. 
+#
+function G_dual_fpe(u, ρ0, τ, ε, K)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
+           τ * E_dual(-u / τ - Ψ, Val(1))
+end;
+# 
+# Now we set up `step` as previously, except this time we need to convert from the optimal dual variable $u^\star$ to the primal variable $\rho^\star$. In the code, this is handled by `getprimal_ot_entropic_semidual`. We use `ReverseDiff` in this problem. 
+#
+function step(ρ0, τ, ε, K, G)
+    obj = u -> G(u, ρ0, τ, ε, K)
+    opt = optimize(
+        obj,
+        (∇, u) -> ReverseDiff.gradient!(∇, obj, u),
+        zeros(size(ρ0)),
+        LBFGS(),
+        Optim.Options(; iterations=250, g_tol=1e-6),
+    )
+    return OptimalTransport.Dual.getprimal_ot_entropic_semidual(
+        ρ0, Optim.minimizer(opt), ε, K
+    )
+end;
+# 
+# Now we can solve the dual problem as previously, and we note that the dual formulation is solved an order of magnitude faster than the primal formulation.
+#
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_fpe)
+end
+colors = range(colorant"red"; stop=colorant"blue", length=N)
+plot(
+    support,
+    ρ;
+    title=raw"$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle$",
+    palette=colors,
+    legend=nothing,
+)
+
+# Setting `m = 2`, we can simulate instead the porous medium equation.
+#
+function G_dual_pme(u, ρ0, τ, ε, K)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
+           τ * E_dual(-u / τ - Ψ, Val(2))
+end
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+for i in 2:N
+    @info i
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_pme)
+end
+colors = range(colorant"red"; stop=colorant"blue", length=N)
 plot(
     support,
     ρ;

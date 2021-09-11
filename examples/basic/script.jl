@@ -60,10 +60,10 @@ emd2(μ, ν, C, Tulip.Optimizer())
 # We may add an entropy term to the Monge-Kantorovich problem to obtain the
 # **entropically regularised** optimal transport problem
 # ```math
-# \inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle + \epsilon \Omega(\gamma),
+# \inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle + \varepsilon \Omega(\gamma),
 # ```
 # where $\Omega(\gamma) = \sum_{i, j} \gamma_{ij} \log(\gamma_{ij})$ is the negative
-# entropy of the coupling $\gamma$ and $\epsilon$ controls the strength of the regularisation.
+# entropy of the coupling $\gamma$ and $\varepsilon$ controls the strength of the regularisation.
 #
 # This problem is *strictly convex* and admits a very efficient iterative scaling scheme for
 # its solution known as the [Sinkhorn algorithm](https://doi.org/10.1214/aoms/1177703591).
@@ -88,7 +88,7 @@ sinkhorn2(μ, ν, C, ε)
 # Instead of the common entropically regularised optimal transport problem, we can solve the
 # [quadratically regularised optimal transport problem](https://doi.org/10.1007/s00245-019-09614-w)
 # ```math
-# \inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle + \epsilon \frac{\| \gamma \|_F^2}{2}.
+# \inf_{\gamma \in \Pi(\mu, \nu)} \langle \gamma, C \rangle + \varepsilon \frac{\| \gamma \|_F^2}{2}.
 # ```
 # One property of the quadratically regularised optimal transport problem is that the
 # resulting transport plan $\gamma$ is *sparse*. We take advantage of this and represent it as
@@ -98,7 +98,7 @@ quadreg(μ, ν, C, ε; maxiter=100);
 
 # ## Stabilized Sinkhorn algorithm
 #
-# When $\epsilon$ is very small, we can use a
+# When $\varepsilon$ is very small, we can use a
 # [log-stabilised version of the Sinkhorn algorithm](https://doi.org/10.1137/16M1106018).
 
 ε = 0.005
@@ -109,9 +109,9 @@ quadreg(μ, ν, C, ε; maxiter=100);
 γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000)
 norm(γ - γ_pot, Inf)
 
-# ## Stabilized Sinkhorn algorithm with $\epsilon$-scaling
+# ## Stabilized Sinkhorn algorithm with $\varepsilon$-scaling
 #
-# In addition to log-stabilisation, we can use [$\epsilon$-scaling](https://doi.org/10.1137/16M1106018):
+# In addition to log-stabilisation, we can use [$\varepsilon$-scaling](https://doi.org/10.1137/16M1106018):
 
 γ = sinkhorn_stabilized_epsscaling(μ, ν, C, ε; maxiter=5_000);
 
@@ -127,9 +127,9 @@ norm(γ - γpot, Inf)
 # source and target marginals $\mu$ and $\nu$ and a cost matrix $C$, entropically
 # regularised unbalanced optimal transport solves
 # ```math
-# \inf_{\gamma \geq 0} \langle \gamma, C \rangle + \epsilon \Omega(\gamma) + \lambda_1 \mathrm{KL}(\gamma 1 | \mu) + \lambda_2 \mathrm{KL}(\gamma^{\mathsf{T}} 1 | \nu),
+# \inf_{\gamma \geq 0} \langle \gamma, C \rangle + \varepsilon \Omega(\gamma) + \lambda_1 \mathrm{KL}(\gamma 1 | \mu) + \lambda_2 \mathrm{KL}(\gamma^{\mathsf{T}} 1 | \nu),
 # ```
-# where $\epsilon$ controls the strength of the entropic regularisation, and $\lambda_1$ and
+# where $\varepsilon$ controls the strength of the entropic regularisation, and $\lambda_1$ and
 # $\lambda_2$ control how strongly we enforce the marginal constraints.
 #
 # We construct two random measures, now with different total masses:
@@ -147,7 +147,7 @@ N = 200
 C = pairwise(SqEuclidean(), μsupport', νsupport'; dims=2);
 
 # Now we solve the corresponding unbalanced, entropy-regularised transport problem with
-# $\epsilon = 0.01$ and $\lambda_1 = \lambda_2 = 1$:
+# $\varepsilon = 0.01$ and $\lambda_1 = \lambda_2 = 1$:
 
 ε = 0.01
 λ = 1
@@ -204,11 +204,11 @@ heatmap(
 # the entropically regularised **barycenter** in $\mathcal{P}$ is the discrete probability
 # measure $\mu$ that solves
 # ```math
-# \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \operatorname{OT}_{\epsilon}(\mu, \mu_i)
+# \inf_{\mu \in \mathcal{P}} \sum_{i = 1}^N \lambda_i \operatorname{OT}_{\varepsilon}(\mu, \mu_i)
 # ```
-# where $\operatorname{OT}_\epsilon(\mu, \mu_i)$ denotes the entropically regularised
+# where $\operatorname{OT}_\varepsilon(\mu, \mu_i)$ denotes the entropically regularised
 # optimal transport cost with marginals $\mu$ and $\mu_i$, cost matrix $C$, and entropic
-# regularisation parameter $\epsilon$.
+# regularisation parameter $\varepsilon$.
 #
 # We set up two measures and compute the weighted barycenters. We choose weights
 # $\lambda_1 \in \{0.25, 0.5, 0.75\}$.
