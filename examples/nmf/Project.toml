@@ -14,4 +14,10 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 NMF = "0.5"
+LineSearches = "7"
+Optim = "1"
+Distances = "0.10"
+Literate = "2"
+OptimalTransport = "0.3"
+LogExpFunctions = "0.3"
 Plots = "1"
