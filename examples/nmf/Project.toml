@@ -14,4 +14,5 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 OptimalTransport = "0.3"
+LogExpFunctions = "0.3"
 Plots = "1"
