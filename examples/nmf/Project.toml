@@ -13,4 +13,5 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
+OptimalTransport = "0.3"
 Plots = "1"
