@@ -63,7 +63,7 @@ opt = with_logger(SimpleLogger(stderr, Logging.Error)) do
         (∇, x) -> ReverseDiff.gradient!(∇, compiled_loss_tape, x),
         ν_spt,
         GradientDescent(),
-        Optim.Options(; iterations=10, g_tol=1e-6, show_trace=true);,
+        Optim.Options(; iterations=10, g_tol=1e-6, show_trace=true),
     )
 end
 ν_opt = Optim.minimizer(opt)
@@ -83,7 +83,7 @@ opt_biased = with_logger(SimpleLogger(stderr, Logging.Error)) do
         (∇, x) -> ReverseDiff.gradient!(∇, compiled_loss_biased_tape, x),
         ν_spt,
         GradientDescent(),
-        Optim.Options(; iterations=25, g_tol=1e-6, show_trace=true);,
+        Optim.Options(; iterations=25, g_tol=1e-6, show_trace=true),
     )
 end
 ν_opt_biased = Optim.minimizer(opt_biased)
