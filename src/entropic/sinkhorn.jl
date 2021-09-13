@@ -229,13 +229,9 @@ between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively.
 The formulation for the Sinkhorn Divergence may have slight variations depending on the paper consulted.
 The Sinkhorn Divergence was initially proposed by [^GPC18], although, this package uses the formulation given by
 [^FeydyP19], which is also the one used on the Python Optimal Transport package.
-[^GPC18]: Aude Genevay, Gabriel Peyré, Marco Cuturi, Learning Generative Models with Sinkhorn Divergences,
-Proceedings of the Twenty-First International Conference on Artficial Intelligence and Statistics, (AISTATS) 21, 2018
-[^FeydyP19]: Jean Feydy, Thibault Séjourné, François-Xavier Vialard, Shun-ichi
-Amari, Alain Trouvé, and Gabriel Peyré. Interpolating between op-
-timal transport and mmd using sinkhorn divergences. In The 22nd In-
-ternational Conference on Artificial Intelligence and Statistics, pages
-2681–2690. PMLR, 2019.
+
+[^GPC18]: Aude Genevay, Gabriel Peyré, Marco Cuturi, Learning Generative Models with Sinkhorn Divergences, Proceedings of the Twenty-First International Conference on Artficial Intelligence and Statistics, (AISTATS) 21, 2018
+[^FeydyP19]: Jean Feydy, Thibault Séjourné, François-Xavier Vialard, Shun-ichi Amari, Alain Trouvé, and Gabriel Peyré. Interpolating between optimal transport and mmd using sinkhorn divergences. In The 22nd International Conference on Artificial Intelligence and Statistics, pages 2681–2690. PMLR, 2019.
 See also: [`sinkhorn2`](@ref)
 """
 function sinkhorn_divergence(
