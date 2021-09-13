@@ -2,6 +2,7 @@
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
