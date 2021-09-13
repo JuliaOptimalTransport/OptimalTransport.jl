@@ -209,3 +209,102 @@ function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=noth
 
     return cost
 end
+
+"""
+    sinkhorn_divergence(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C, ε, alg::Sinkhorn = SinkhornGibbs(); regularization = nothing, plan = nothing, kwargs...)
+Compute the Sinkhorn Divergence between finite discrete
+measures `μ` and `ν` with respect to a common cost matrix `C`,
+entropic regularization parameter `ε` and algorithm `alg`. 
+Since there is a single cost matrix, this implementation takes advantage of batch Sinkhorn iterations. 
+The default algorithm is the `SinkhornGibbs`.
+A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
+The Sinkhorn Divergence is computed as:
+```math
+\\operatorname{S}_{c,ε}(μ,ν) := \\operatorname{OT}_{c,ε}(μ,ν)
+- \\frac{1}{2}(\\operatorname{OT}_{c,ε}(μ,μ) + \\operatorname{OT}_{c,ε}(ν,ν)),
+```
+where ``\\operatorname{OT}_{c,ε}(μ,ν)``, ``\\operatorname{OT}_{c,ε}(μ,μ)`` and
+``\\operatorname{OT}_{c,ε}(ν,ν)`` are the entropically regularized optimal transport cost
+between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively.
+The formulation for the Sinkhorn Divergence may have slight variations depending on the paper consulted.
+The Sinkhorn Divergence was initially proposed by [^GPC18], although, this package uses the formulation given by
+[^FeydyP19], which is also the one used on the Python Optimal Transport package.
+[^GPC18]: Aude Genevay, Gabriel Peyré, Marco Cuturi, Learning Generative Models with Sinkhorn Divergences,
+Proceedings of the Twenty-First International Conference on Artficial Intelligence and Statistics, (AISTATS) 21, 2018
+[^FeydyP19]: Jean Feydy, Thibault Séjourné, François-Xavier Vialard, Shun-ichi
+Amari, Alain Trouvé, and Gabriel Peyré. Interpolating between op-
+timal transport and mmd using sinkhorn divergences. In The 22nd In-
+ternational Conference on Artificial Intelligence and Statistics, pages
+2681–2690. PMLR, 2019.
+See also: [`sinkhorn2`](@ref)
+"""
+function sinkhorn_divergence(
+    μ::AbstractVecOrMat,
+    ν::AbstractVecOrMat,
+    C,
+    ε,
+    alg::Sinkhorn=SinkhornGibbs();
+    regularization=nothing,
+    plan=nothing,
+    kwargs...,
+)
+    M = max(size(μ, 2), size(ν, 2))
+    _μ = size(μ, 2) != M ? repeat(μ, 1, M ÷ size(μ, 2)) : μ
+    _ν = size(ν, 2) != M ? repeat(ν, 1, M ÷ size(ν, 2)) : ν
+    losses = sinkhorn2(
+        hcat(_μ, μ, ν),
+        hcat(_ν, μ, ν),
+        C,
+        ε,
+        alg;
+        plan=plan,
+        regularization=false,
+        kwargs...,
+    )
+    OTμν = losses[1:M]
+    OTμ = losses[(M + 1):(M + size(μ, 2))]
+    OTν = losses[(M + size(μ, 2) + 1):end]
+    return 0 .+ reshape(max.(0, OTμν .- (OTμ .+ OTν) / 2), checksize2(μ, ν))
+end
+
+"""
+    function sinkhorn_divergence(
+        μ,
+        ν,
+        Cμν,
+        Cμ,
+        Cν,
+        ε,
+        alg::Sinkhorn=SinkhornGibbs();
+        regularization=nothing,
+        plan=nothing,
+        kwargs...,
+    )
+Compute the Sinkhorn Divergence between finite discrete
+measures `μ` and `ν` with respect to the precomputed cost matrices `Cμν`,
+`Cμμ` and `Cνν`, entropic regularization parameter `ε` and algorithm `alg`.
+The default algorithm is the `SinkhornGibbs`.
+A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
+See also: [`sinkhorn2`](@ref)
+"""
+function sinkhorn_divergence(
+    μ,
+    ν,
+    Cμν,
+    Cμ,
+    Cν,
+    ε,
+    alg::Sinkhorn=SinkhornGibbs();
+    regularization=nothing,
+    plan=nothing,
+    kwargs...,
+)
+    if regularization !== nothing
+        @warn "`sinkhorn_divergence` does not support the `regularization` keyword argument"
+    end
+
+    OTμν = sinkhorn2(μ, ν, Cμν, ε, alg; plan=plan, regularization=false, kwargs...)
+    OTμ = sinkhorn2(μ, μ, Cμ, ε, alg; plan=nothing, regularization=false, kwargs...)
+    OTν = sinkhorn2(ν, ν, Cν, ε, alg; plan=nothing, regularization=false, kwargs...)
+    return max.(0, OTμν - (OTμ + OTν) / 2)
+end
