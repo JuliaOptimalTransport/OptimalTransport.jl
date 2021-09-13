@@ -5,7 +5,7 @@ using ForwardDiff
 using ReverseDiff
 using LogExpFunctions
 using PythonOT: PythonOT
-
+using StatsBase
 using LinearAlgebra
 using Random
 using Test
