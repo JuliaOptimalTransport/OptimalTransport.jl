@@ -26,17 +26,17 @@ using Optim
 
 # As a ground truth distribution, we set $\rho$ to be a Gaussian mixture model with `k = 5` components, equally spaced around a circle, and sample an empirical distribution of size $N$, $\mu \sim \rho$.
 
-k = 5
+k = 3
 d = 2
 θ = π * range(0, 2(1 - 1 / k); length=k)
 μ = 2 * hcat(sin.(θ), cos.(θ))
 ρ = MixtureModel(MvNormal[MvNormal(x, 0.25 * I) for x in eachrow(μ)])
-N = 250
+N = 100
 μ_spt = rand(ρ, N)'
 scatter(μ_spt[:, 1], μ_spt[:, 2]; markeralpha=0.25, title=raw"$\mu$")
 
 # Now, suppose we want to approximate $\mu$ with another empirical distribution $\nu$, i.e. we want to minimise $\nu \mapsto \operatorname{S}_{\varepsilon}(\mu, \nu)$ over possible empirical distributions $\nu$. In this case we have $M$ particles in $\nu$, which we initialise following a Gaussian distribution. 
-M = 250
+M = 100
 ν_spt = rand(M, d);
 # Assign uniform weights to the Diracs in each empirical distribution. 
 μ = fill(1 / N, N)
@@ -49,7 +49,7 @@ C_μ = pairwise(SqEuclidean(), μ_spt');
 function loss(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
     C_ν = pairwise(SqEuclidean(), x')
-    return sinkhorn_divergence(μ, ν, C_μν, C_μ, C_ν, ε; maxiter=250)
+    return sinkhorn_divergence(μ, ν, C_μν, C_μ, C_ν, ε; maxiter=50)
 end
 # Set entropy regularisation parameter
 ε = 1.0;
@@ -73,7 +73,7 @@ scatter!(ν_opt[:, 1], ν_opt[:, 2]);
 # For comparison, let us do the same computation again, but this time we want to minimise $\nu \mapsto \operatorname{OT}_{\varepsilon}(\mu, \nu)$. 
 function loss_biased(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
-    return sinkhorn2(μ, ν, C_μν, ε; maxiter=250)
+    return sinkhorn2(μ, ν, C_μν, ε; maxiter=50)
 end
 const loss_biased_tape = ReverseDiff.GradientTape(x -> loss_biased(x, ε), ν_spt)
 const compiled_loss_biased_tape = ReverseDiff.compile(loss_biased_tape)
@@ -83,7 +83,7 @@ opt_biased = with_logger(SimpleLogger(stderr, Logging.Error)) do
         (∇, x) -> ReverseDiff.gradient!(∇, compiled_loss_biased_tape, x),
         ν_spt,
         GradientDescent(),
-        Optim.Options(; iterations=25, g_tol=1e-6, show_trace=true),
+        Optim.Options(; iterations=10, g_tol=1e-6, show_trace=true),
     )
 end
 ν_opt_biased = Optim.minimizer(opt_biased)
