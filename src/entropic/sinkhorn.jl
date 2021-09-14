@@ -230,24 +230,35 @@ function sinkhorn_loss(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
 end
 
 """
-    sinkhorn_divergence(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C, ε, alg::Sinkhorn = SinkhornGibbs(); regularization = nothing, plan = nothing, kwargs...)
+    sinkhorn_divergence(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C, ε, alg::Sinkhorn = SinkhornGibbs(), algμ = SymmetricSinkhornGibbs(), algν = SymmetricSinkhornGibbs(); regularization = nothing, plan = nothing, kwargs...)
 Compute the Sinkhorn Divergence between finite discrete
 measures `μ` and `ν` with respect to a common cost matrix `C`,
 entropic regularization parameter `ε` and algorithm `alg`. 
-Since there is a single cost matrix, this implementation takes advantage of batch Sinkhorn iterations. 
-The default algorithm is the `SinkhornGibbs`.
-A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
-The Sinkhorn Divergence is computed as:
+
+For `regularization = true`, the Sinkhorn Divergence is that of [^FeydyP19] and is computed as:
 ```math
-\\operatorname{S}_{c,ε}(μ,ν) := \\operatorname{OT}_{c,ε}(μ,ν)
-- \\frac{1}{2}(\\operatorname{OT}_{c,ε}(μ,μ) + \\operatorname{OT}_{c,ε}(ν,ν)),
+\\operatorname{S}_{ε}(μ,ν) := \\operatorname{OT}_{ε}(μ,ν)
+- \\frac{1}{2}(\\operatorname{OT}_{ε}(μ,μ) + \\operatorname{OT}_{ε}(ν,ν)),
 ```
-where ``\\operatorname{OT}_{c,ε}(μ,ν)``, ``\\operatorname{OT}_{c,ε}(μ,μ)`` and
-``\\operatorname{OT}_{c,ε}(ν,ν)`` are the entropically regularized optimal transport cost
+where ``\\operatorname{OT}_{ε}(μ,ν)``, ``\\operatorname{OT}_{ε}(μ,μ)`` and
+``\\operatorname{OT}_{ε}(ν,ν)`` are the entropically regularized optimal transport loss 
 between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively.
-The formulation for the Sinkhorn Divergence may have slight variations depending on the paper consulted.
-The Sinkhorn Divergence was initially proposed by [^GPC18], although, this package uses the formulation given by
-[^FeydyP19], which is also the one used on the Python Optimal Transport package.
+
+For `regularization = false`, the Sinkhorn Divergence is that of [^GPC18] and is computed as:
+```math
+\\operatorname{S}_{ε}(μ,ν) := \\operatorname{W}_{ε}(μ,ν)
+- \\frac{1}{2}(\\operatorname{W}_{ε}(μ,μ) + \\operatorname{W}_{ε}(ν,ν)),
+```
+where ``\\operatorname{W}_{ε}(μ,ν)``, ``\\operatorname{W}_{ε}(μ,μ)`` and
+``\\operatorname{W}_{ε}(ν,ν)`` are the entropically regularized optimal transport *cost*
+between `(μ,ν)`, `(μ,μ)` and `(ν,ν)`, respectively, defined as 
+```math
+\\operatorname{W}_{ε}(μ, ν) = \\langle C, γ^\\star \\rangle
+```
+where ``γ^\\star`` is the entropy-regularised transport plan between `μ` and `ν`. 
+The default algorithm for computing the term ``\\operatorname{OT}_{ε}(μ, ν)`` is the `SinkhornGibbs` algorithm.
+For the terms ``\\operatorname{OT}_{ε}(μ, μ)`` and ``\\operatorname{OT}_{ε}(ν, ν)``, the symmetric fixed point iteration of [^FeydyP19] is used. 
+Alternatively, a pre-computed optimal transport `plan` between `μ` and `ν` may be provided.  
 
 [^GPC18]: Aude Genevay, Gabriel Peyré, Marco Cuturi, Learning Generative Models with Sinkhorn Divergences, Proceedings of the Twenty-First International Conference on Artficial Intelligence and Statistics, (AISTATS) 21, 2018
 [^FeydyP19]: Jean Feydy, Thibault Séjourné, François-Xavier Vialard, Shun-ichi Amari, Alain Trouvé, and Gabriel Peyré. Interpolating between optimal transport and mmd using sinkhorn divergences. In The 22nd International Conference on Artificial Intelligence and Statistics, pages 2681–2690. PMLR, 2019.
@@ -294,7 +305,7 @@ measures `μ` and `ν` with respect to the precomputed cost matrices `Cμν`,
 `Cμμ` and `Cνν`, entropic regularization parameter `ε` and algorithm `alg`.
 The default algorithm is the `SinkhornGibbs`.
 A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
-See also: [`sinkhorn2`](@ref)
+See also: [`sinkhorn2`](@ref) 
 """
 function sinkhorn_divergence(
     μ,
