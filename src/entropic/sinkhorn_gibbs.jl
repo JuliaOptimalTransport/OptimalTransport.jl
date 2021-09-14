@@ -119,6 +119,16 @@ function sinkhorn2(
     )
 end
 
+function sinkhorn_loss(μ, ν, C, ε, alg::SinkhornGibbs; kwargs...)
+    # build solver
+    solver = build_solver(μ, ν, C, ε, alg; kwargs...)
+    # perform Sinkhorn algorithm
+    solve!(solver)
+    # return loss
+    cache = solver.cache
+    return obj(cache.u, cache.v, solver.source, solver.target, solver.eps)
+end
+
 # interface
 
 prestep!(::SinkhornSolver{SinkhornGibbs}, ::Int) = nothing

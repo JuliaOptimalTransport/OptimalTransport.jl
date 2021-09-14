@@ -219,6 +219,12 @@ function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=noth
     return cost
 end
 
+function sinkhorn_loss(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
+    return error(
+        "sinkhorn_loss is only implemented for alg::SinkhornGibbs. For other algorithms please use sinkhorn2",
+    )
+end
+
 """
     sinkhorn_divergence(μ::AbstractVecOrMat, ν::AbstractVecOrMat, C, ε, alg::Sinkhorn = SinkhornGibbs(); regularization = nothing, plan = nothing, kwargs...)
 Compute the Sinkhorn Divergence between finite discrete
@@ -251,13 +257,19 @@ function sinkhorn_divergence(
     alg::Sinkhorn=SinkhornGibbs(),
     algμ::Sinkhorn=SymmetricSinkhornGibbs(),
     algν::Sinkhorn=SymmetricSinkhornGibbs();
-    regularization=nothing,
+    regularization=true,
     plan=nothing,
     kwargs...,
 )
-    OTμν = sinkhorn2(μ, ν, C, ε, alg; plan=plan, regularization=false, kwargs...)
-    OTμ = sinkhorn2(μ, C, ε, algμ; plan=nothing, regularization=false, kwargs...)
-    OTν = sinkhorn2(ν, C, ε, algν; plan=nothing, regularization=false, kwargs...)
+    OTμν, OTμ, OTν = if (regularization == true) && (plan === nothing)
+        sinkhorn_loss(μ, ν, C, ε, alg; kwargs...),
+        sinkhorn_loss(μ, C, ε, algμ; kwargs...),
+        sinkhorn_loss(ν, C, ε, algν; kwargs...)
+    else
+        sinkhorn2(μ, ν, C, ε, alg; plan=plan, regularization=false, kwargs...),
+        sinkhorn2(μ, C, ε, algμ; plan=nothing, regularization=false, kwargs...),
+        sinkhorn2(ν, C, ε, algν; plan=nothing, regularization=false, kwargs...)
+    end
     return max.(0, OTμν .- (OTμ .+ OTν) / 2)
 end
 """
@@ -290,16 +302,18 @@ function sinkhorn_divergence(
     alg::Sinkhorn=SinkhornGibbs(),
     algμ::Sinkhorn=SymmetricSinkhornGibbs(),
     algν::Sinkhorn=SymmetricSinkhornGibbs();
-    regularization=nothing,
+    regularization=true,
     plan=nothing,
     kwargs...,
 )
-    if regularization !== nothing
-        @warn "`sinkhorn_divergence` does not support the `regularization` keyword argument"
+    OTμν, OTμ, OTν = if (regularization == true) && (plan === nothing)
+        sinkhorn_loss(μ, ν, Cμν, ε, alg; kwargs...),
+        sinkhorn_loss(μ, Cμ, ε, algμ; kwargs...),
+        sinkhorn_loss(ν, Cν, ε, algν; kwargs...)
+    else
+        sinkhorn2(μ, ν, Cμν, ε, alg; plan=plan, regularization=false, kwargs...),
+        sinkhorn2(μ, Cμ, ε, algμ; plan=nothing, regularization=false, kwargs...),
+        sinkhorn2(ν, Cν, ε, algν; plan=nothing, regularization=false, kwargs...)
     end
-
-    OTμν = sinkhorn2(μ, ν, Cμν, ε, alg; plan=plan, regularization=false, kwargs...)
-    OTμ = sinkhorn2(μ, Cμ, ε, algμ; plan=nothing, regularization=false, kwargs...)
-    OTν = sinkhorn2(ν, Cν, ε, algν; plan=nothing, regularization=false, kwargs...)
     return max.(0, OTμν - (OTμ + OTν) / 2)
 end

@@ -143,3 +143,13 @@ function sinkhorn2(
 
     return cost
 end
+
+function sinkhorn_loss(μ, C, ε, alg::SymmetricSinkhornGibbs; kwargs...)
+    # build solver
+    solver = build_solver(μ, C, ε, alg; kwargs...)
+    # perform Sinkhorn algorithm
+    solve!(solver)
+    # return loss
+    cache = solver.cache
+    return obj(cache.u, cache.u, solver.source, solver.source, solver.eps)
+end

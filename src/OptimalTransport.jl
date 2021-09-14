@@ -18,7 +18,7 @@ export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
 export QuadraticOTNewton
 
-export sinkhorn, sinkhorn2
+export sinkhorn, sinkhorn2, sinkhorn_loss
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export sinkhorn_divergence
