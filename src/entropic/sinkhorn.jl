@@ -120,7 +120,7 @@ function check_convergence(solver::SinkhornSolver)
     )
 end
 
-function plan(u, v, K)
+function sinkhorn_plan(u, v, K)
     return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
 end
 
