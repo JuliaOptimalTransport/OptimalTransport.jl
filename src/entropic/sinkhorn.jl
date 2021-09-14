@@ -120,6 +120,15 @@ function check_convergence(solver::SinkhornSolver)
     )
 end
 
+function plan(u, v, K)
+    return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
+end
+
+# dual objective 
+function obj(u, v, μ, ν, ε)
+    return ε * (dot_vecwise(log.(u), μ) .+ dot_vecwise(log.(v), ν))
+end
+
 # API
 
 """
@@ -239,30 +248,18 @@ function sinkhorn_divergence(
     ν::AbstractVecOrMat,
     C,
     ε,
-    alg::Sinkhorn=SinkhornGibbs();
+    alg::Sinkhorn=SinkhornGibbs(),
+    algμ::Sinkhorn=SymmetricSinkhornGibbs(),
+    algν::Sinkhorn=SymmetricSinkhornGibbs();
     regularization=nothing,
     plan=nothing,
     kwargs...,
 )
-    M = max(size(μ, 2), size(ν, 2))
-    _μ = size(μ, 2) != M ? repeat(μ, 1, M ÷ size(μ, 2)) : μ
-    _ν = size(ν, 2) != M ? repeat(ν, 1, M ÷ size(ν, 2)) : ν
-    losses = sinkhorn2(
-        hcat(_μ, μ, ν),
-        hcat(_ν, μ, ν),
-        C,
-        ε,
-        alg;
-        plan=plan,
-        regularization=false,
-        kwargs...,
-    )
-    OTμν = losses[1:M]
-    OTμ = losses[(M + 1):(M + size(μ, 2))]
-    OTν = losses[(M + size(μ, 2) + 1):end]
-    return 0 .+ reshape(max.(0, OTμν .- (OTμ .+ OTν) / 2), checksize2(μ, ν))
+    OTμν = sinkhorn2(μ, ν, C, ε, alg; plan=plan, regularization=false, kwargs...)
+    OTμ = sinkhorn2(μ, C, ε, algμ; plan=nothing, regularization=false, kwargs...)
+    OTν = sinkhorn2(ν, C, ε, algν; plan=nothing, regularization=false, kwargs...)
+    return max.(0, OTμν .- (OTμ .+ OTν) / 2)
 end
-
 """
     function sinkhorn_divergence(
         μ,
@@ -290,7 +287,9 @@ function sinkhorn_divergence(
     Cμ,
     Cν,
     ε,
-    alg::Sinkhorn=SinkhornGibbs();
+    alg::Sinkhorn=SinkhornGibbs(),
+    algμ::Sinkhorn=SymmetricSinkhornGibbs(),
+    algν::Sinkhorn=SymmetricSinkhornGibbs();
     regularization=nothing,
     plan=nothing,
     kwargs...,
@@ -300,7 +299,7 @@ function sinkhorn_divergence(
     end
 
     OTμν = sinkhorn2(μ, ν, Cμν, ε, alg; plan=plan, regularization=false, kwargs...)
-    OTμ = sinkhorn2(μ, μ, Cμ, ε, alg; plan=nothing, regularization=false, kwargs...)
-    OTν = sinkhorn2(ν, ν, Cν, ε, alg; plan=nothing, regularization=false, kwargs...)
+    OTμ = sinkhorn2(μ, Cμ, ε, algμ; plan=nothing, regularization=false, kwargs...)
+    OTν = sinkhorn2(ν, Cν, ε, algν; plan=nothing, regularization=false, kwargs...)
     return max.(0, OTμν - (OTμ + OTν) / 2)
 end

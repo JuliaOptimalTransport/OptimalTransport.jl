@@ -125,6 +125,10 @@ prestep!(::SinkhornSolver{SinkhornGibbs}, ::Int) = nothing
 
 function plan(solver::SinkhornSolver{SinkhornGibbs})
     cache = solver.cache
-    γ = cache.K .* add_singleton(cache.u, Val(2)) .* add_singleton(cache.v, Val(1))
-    return γ
+    return plan(cache.u, cache.v, cache.K)
+end
+
+function cost(solver::SinkhornSolver{SinkhornGibbs})
+    cache = solver.cache
+    return obj(cache.u, cache.v, solver.source, solver.target, solver.eps)
 end

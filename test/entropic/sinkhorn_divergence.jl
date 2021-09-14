@@ -31,9 +31,16 @@ Random.seed!(100)
             ν_all = [normalize!(f.(x; μ=y, σ=0.5), 1) for y in range(-1, 1; length=M)]
 
             loss = map(ν -> sinkhorn_divergence(μ, ν, C, ε), ν_all)
+            loss_ = map(
+                ν ->
+                    sinkhorn2(μ, ν, C, ε) -
+                    (sinkhorn2(μ, μ, C, ε) + sinkhorn2(ν, ν, C, ε)) / 2,
+                ν_all,
+            )
 
+            @test loss ≈ loss_
             @test all(loss .≥ 0)
-            @test sinkhorn_divergence(μ, μ, C, ε) ≈ 0
+            @test sinkhorn_divergence(μ, μ, C, ε) ≈ 0 atol = 1e-9
         end
         @testset "batch" begin
             M = 10
@@ -60,7 +67,7 @@ Random.seed!(100)
                 ∇ = Diff.gradient(log.(μ)) do xs
                     sinkhorn_divergence(μ, softmax(xs), C, ε)
                 end
-                @test norm(∇, Inf) ≈ 0  # Sinkhorn divergence has minimum at SD(μ, μ)
+                @test norm(∇, Inf) ≈ 0 rtol = 1e-9 # Sinkhorn divergence has minimum at SD(μ, μ)
             end
         end
     end
