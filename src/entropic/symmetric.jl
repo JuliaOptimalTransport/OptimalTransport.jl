@@ -151,5 +151,5 @@ function sinkhorn_loss(μ, C, ε, alg::SymmetricSinkhornGibbs; kwargs...)
     solve!(solver)
     # return loss
     cache = solver.cache
-    return obj(cache.u, cache.u, solver.source, solver.source, solver.eps)
+    return obj(cache.u, cache.u, cache.Kv, cache.K, solver.eps)
 end

@@ -103,7 +103,7 @@ Random.seed!(100)
         @testset "basic" begin
             for reg in (true, false)
                 @test sinkhorn_divergence(μ, ν, Cμν, Cμ, Cν, ε; regularization=reg) ≥ 0
-                @test sinkhorn_divergence(μ, μ, Cμ, Cμ, Cμ, ε; regularization=reg) ≈ 0 rtol =
+                @test sinkhorn_divergence(μ, μ, Cμ, Cμ, Cμ, ε; regularization=reg) ≈ 0 atol =
                     1e-6
             end
         end
@@ -122,7 +122,7 @@ Random.seed!(100)
                         Cν = pairwise(SqEuclidean(), xs'; dims=2)
                         sinkhorn_divergence(μ, μ, Cμν, Cμ, Cν, ε)
                     end
-                    @test norm(∇, Inf) ≈ 0 rtol = 1e-6
+                    @test norm(∇, Inf) ≈ 0 atol = 1e-6
                 end
             end
         end

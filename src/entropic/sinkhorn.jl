@@ -125,8 +125,12 @@ function plan(u, v, K)
 end
 
 # dual objective 
-function obj(u, v, μ, ν, ε)
-    return ε * (dot_vecwise(log.(u), μ) .+ dot_vecwise(log.(v), ν))
+function obj(u, v, Kv, K, ε)
+    # return ε * (dot_vecwise(log.(u), μ) .+ dot_vecwise(log.(v), ν))
+    return ε * (
+        dot_vecwise(LogExpFunctions.xlogx.(u), Kv) +
+        dot_vecwise(LogExpFunctions.xlogx.(v), K' * u)
+    )
 end
 
 # API
