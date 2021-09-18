@@ -5,10 +5,14 @@
 # 
 # While entropy-regularised optimal transport $\operatorname{OT}_{\varepsilon}(\cdot, \cdot)$ is commonly used as a loss function, it suffers from a problem of *bias*: namely that $\nu \mapsto \operatorname{OT}_{\varepsilon}(\mu, \nu)$ is *not* minimised at $\nu = \mu$. 
 #
-# Feydy et al. fix this problem by introducing the *Sinkhorn divergence* between two measures $\mu$ and $\nu$, defined as 
+# A fix to this problem is proposed by Genevay et al [GPC18] and subsequently Feydy et al. [FSV+19], which introduce the *Sinkhorn divergence* between two measures $\mu$ and $\nu$, defined as 
 # ```math
 # \operatorname{S}_{\varepsilon}(\mu, \nu) = \operatorname{OT}_{\varepsilon}(\mu, \nu) - \frac{1}{2} \operatorname{OT}_{\varepsilon}(\mu, \mu) - \frac{1}{2} \operatorname{OT}_{\varepsilon}(\nu, \nu).
 # ```
+# In the above, we have followed the convention taken by Feydy et al. and included the entropic regularisation in the definition of $\operatorname{OT}_\varepsilon$. 
+# [GPC18]: Aude Genevay, Gabriel Peyré, Marco Cuturi, Learning Generative Models with Sinkhorn Divergences, Proceedings of the Twenty-First International Conference on Artficial Intelligence and Statistics, (AISTATS) 21, 2018
+# [FSV+19]: Feydy, Jean, et al. "Interpolating between optimal transport and MMD using Sinkhorn divergences." The 22nd International Conference on Artificial Intelligence and Statistics. PMLR, 2019.
+#
 # Like the Sinkhorn loss, the Sinkhorn divergence is smooth and convex in both of its arguments. However, the Sinkhorn divergence is unbiased -- i.e. $S_{\varepsilon}(\mu, \nu) = 0$ iff $\mu = \nu$. 
 #
 # Unlike previous examples, here we demonstrate a learning problem similar to Figure 1 of Feydy et al. over *empirical measures*, i.e. measures that have the form $\mu = \frac{1}{N} \sum_{i = 1}^{N} \delta_{x_i}$ where $\delta_x$ is the Dirac delta function at $x$. 
@@ -49,7 +53,7 @@ C_μ = pairwise(SqEuclidean(), μ_spt');
 function loss(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
     C_ν = pairwise(SqEuclidean(), x')
-    return sinkhorn_divergence(μ, ν, C_μν, C_μ, C_ν, ε; maxiter=50)
+    return sinkhorn_divergence(μ, ν, C_μν, C_μ, C_ν, ε; maxiter=50, atol=rtol = 0)
 end
 # Set entropy regularisation parameter
 ε = 1.0;
@@ -68,12 +72,12 @@ opt = with_logger(SimpleLogger(stderr, Logging.Error)) do
 end
 ν_opt = Optim.minimizer(opt)
 plt1 = scatter(μ_spt[:, 1], μ_spt[:, 2]; markeralpha=0.25, title="Sinkhorn divergence")
-scatter!(ν_opt[:, 1], ν_opt[:, 2]);
+scatter!(plt1, ν_opt[:, 1], ν_opt[:, 2]);
 
 # For comparison, let us do the same computation again, but this time we want to minimise $\nu \mapsto \operatorname{OT}_{\varepsilon}(\mu, \nu)$. 
 function loss_biased(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
-    return sinkhorn2(μ, ν, C_μν, ε; maxiter=50)
+    return sinkhorn2(μ, ν, C_μν, ε; maxiter=50, atol=rtol = 0)
 end
 const loss_biased_tape = ReverseDiff.GradientTape(x -> loss_biased(x, ε), ν_spt)
 const compiled_loss_biased_tape = ReverseDiff.compile(loss_biased_tape)
@@ -88,7 +92,7 @@ opt_biased = with_logger(SimpleLogger(stderr, Logging.Error)) do
 end
 ν_opt_biased = Optim.minimizer(opt_biased)
 plt2 = scatter(μ_spt[:, 1], μ_spt[:, 2]; markeralpha=0.25, title="Sinkhorn loss")
-scatter!(ν_opt_biased[:, 1], ν_opt_biased[:, 2]);
+scatter!(plt2, ν_opt_biased[:, 1], ν_opt_biased[:, 2]);
 
 # Observe that the Sinkhorn divergence results in $\nu$ that matches $\mu$ quite well, while entropy-regularised transport is biased to producing $\nu$ that seems to concentrate around the mean of each Gaussian component. 
-plot(plt1, plt2)
+lot(plt1, plt2)

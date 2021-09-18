@@ -27,6 +27,7 @@ export quadreg
 include("utils.jl")
 
 include("entropic/sinkhorn.jl")
+include("entropic/sinkhorn_divergence.jl")
 include("entropic/sinkhorn_gibbs.jl")
 include("entropic/symmetric.jl")
 include("entropic/sinkhorn_stabilized.jl")
