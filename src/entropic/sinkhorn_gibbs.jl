@@ -126,7 +126,7 @@ function sinkhorn_loss(μ, ν, C, ε, alg::SinkhornGibbs; kwargs...)
     solve!(solver)
     # return loss
     cache = solver.cache
-    return obj(cache.u, cache.v, cache.Kv, cache.K, solver.eps)
+    return sinkhorn_dual_objective(cache.u, cache.v, cache.Kv, cache.K, solver.eps)
 end
 
 # interface
@@ -135,5 +135,5 @@ prestep!(::SinkhornSolver{SinkhornGibbs}, ::Int) = nothing
 
 function plan(solver::SinkhornSolver{SinkhornGibbs})
     cache = solver.cache
-    return plan(cache.u, cache.v, cache.K)
+    return sinkhorn_plan(cache.u, cache.v, cache.K)
 end
