@@ -120,12 +120,12 @@ function check_convergence(solver::SinkhornSolver)
     )
 end
 
-function plan(u, v, K)
+function sinkhorn_plan(u, v, K)
     return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
 end
 
 # dual objective 
-function obj(u, v, Kv, K, ε)
+function sinkhorn_dual_objective(u, v, Kv, K, ε)
     # return ε * (dot_vecwise(log.(u), μ) .+ dot_vecwise(log.(v), ν))
     return ε * (
         dot_vecwise(LogExpFunctions.xlogx.(u), Kv) +
