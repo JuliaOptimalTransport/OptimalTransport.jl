@@ -119,21 +119,41 @@ function sinkhorn2(
     )
 end
 
-function sinkhorn_loss(μ, ν, C, ε, alg::SinkhornGibbs; kwargs...)
-    # build solver
-    solver = build_solver(μ, ν, C, ε, alg; kwargs...)
-    # perform Sinkhorn algorithm
-    solve!(solver)
-    # return loss
-    cache = solver.cache
-    return sinkhorn_dual_objective(cache.u, cache.v, cache.Kv, cache.K, solver.eps)
+# spceialised sinkhorn2 for SinkhornGibbs
+function sinkhorn2(
+    μ, ν, C, ε, alg::SinkhornGibbs; regularization=false, plan=nothing, kwargs...
+)
+    cost = if (regularization == true) && (plan === nothing)
+        # special case where we can take advantage of dual objective formula 
+        # build solver
+        solver = build_solver(μ, ν, C, ε, alg; kwargs...)
+        # perform Sinkhorn algorithm
+        solve!(solver)
+        # return loss
+        cache = solver.cache
+        sinkhorn_dual_objective(cache.u, cache.v, cache.Kv, cache.K, solver.eps)
+    else
+        γ = if plan === nothing
+            sinkhorn(μ, ν, C, ε, alg; kwargs...)
+        else
+            # check dimensions
+            checksize(μ, ν, C)
+            size(plan) == size(C) || error(
+                "optimal transport plan `plan` and cost matrix `C` must be of the same size",
+            )
+            plan
+        end
+        cost = sinkhorn_cost_from_plan(γ, C, ε; regularization=regularization)
+        cost
+    end
+    return cost
 end
 
 # interface
 
 prestep!(::SinkhornSolver{SinkhornGibbs}, ::Int) = nothing
 
-function plan(solver::SinkhornSolver{SinkhornGibbs})
+function sinkhorn_plan(solver::SinkhornSolver{SinkhornGibbs})
     cache = solver.cache
     return sinkhorn_plan(cache.u, cache.v, cache.K)
 end

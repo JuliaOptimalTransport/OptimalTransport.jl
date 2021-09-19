@@ -178,9 +178,19 @@ function sinkhorn(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
     solve!(solver)
 
     # compute optimal transport plan
-    γ = plan(solver)
+    γ = sinkhorn_plan(solver)
 
     return γ
+end
+
+function sinkhorn_cost_from_plan(γ, C, ε; regularization=false)
+    cost = if regularization
+        dot_matwise(γ, C) .+
+        ε .* reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
+    else
+        dot_matwise(γ, C)
+    end
+    return cost
 end
 
 """
@@ -202,6 +212,7 @@ supported here are the same as those in the [`sinkhorn`](@ref) function.
 
 See also: [`sinkhorn`](@ref)
 """
+
 function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε, alg; kwargs...)
@@ -213,18 +224,6 @@ function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=noth
         )
         plan
     end
-    cost = if regularization
-        dot_matwise(γ, C) .+
-        ε .* reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
-    else
-        dot_matwise(γ, C)
-    end
-
+    cost = sinkhorn_cost_from_plan(γ, C, ε; regularization=regularization)
     return cost
-end
-
-function sinkhorn_loss(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
-    return error(
-        "sinkhorn_loss is only implemented for alg::SinkhornGibbs. For other algorithms please use sinkhorn2",
-    )
 end

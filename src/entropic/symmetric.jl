@@ -103,9 +103,9 @@ function step!(solver::SymmetricSinkhornSolver{SymmetricSinkhornGibbs}, iter::In
     return A_batched_mul_B!(Kv, K, u)
 end
 
-function plan(solver::SymmetricSinkhornSolver{SymmetricSinkhornGibbs})
+function sinkhorn_plan(solver::SymmetricSinkhornSolver{SymmetricSinkhornGibbs})
     cache = solver.cache
-    return plan(cache.u, cache.u, cache.K)
+    return sinkhorn_plan(cache.u, cache.u, cache.K)
 end
 
 function sinkhorn(μ, C, ε, alg::SymmetricSinkhornGibbs; kwargs...)
@@ -116,7 +116,7 @@ function sinkhorn(μ, C, ε, alg::SymmetricSinkhornGibbs; kwargs...)
     solve!(solver)
 
     # compute optimal transport plan
-    γ = plan(solver)
+    γ = sinkhorn_plan(solver)
 
     return γ
 end

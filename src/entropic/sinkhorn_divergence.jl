@@ -88,7 +88,7 @@ function sinkhorn_divergence(
     alg::SinkhornDivergence=SinkhornDivergence(
         SinkhornGibbs(), SymmetricSinkhornGibbs(), SymmetricSinkhornGibbs()
     );
-    regularization=true,
+    regularization=false,
     kwargs...,
 )
     OTμν, OTμ, OTν = if (regularization == true) && (plan === nothing)

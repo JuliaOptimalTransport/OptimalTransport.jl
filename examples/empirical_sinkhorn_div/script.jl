@@ -50,6 +50,9 @@ M = 100
 C_μ = pairwise(SqEuclidean(), μ_spt');
 
 # Define the loss function to minimise, where `x` specifies the locations of the Diracs in $\nu$. 
+# 
+# We will be using `ReverseDiff` with a precompiled tape. For this reason, we need the Sinkhorn algorithm to perform a fixed number of (e.g. 50) iterations.
+# Currently, this can be achieved by setting `maxiter = 50` and `atol = rtol = 0` in calls to `sinkhorn` and `sinkhorn_divergence`. 
 function loss(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
     C_ν = pairwise(SqEuclidean(), x')

@@ -59,7 +59,7 @@ function sinkhorn(μ, ν, C, ε, alg::SinkhornEpsilonScaling; kwargs...)
     solve!(solver)
 
     # compute final plan
-    γ = plan(solver)
+    γ = sinkhorn_plan(solver)
 
     return γ
 end
