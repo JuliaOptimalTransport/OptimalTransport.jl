@@ -212,7 +212,6 @@ supported here are the same as those in the [`sinkhorn`](@ref) function.
 
 See also: [`sinkhorn`](@ref)
 """
-
 function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=nothing, kwargs...)
     γ = if plan === nothing
         sinkhorn(μ, ν, C, ε, alg; kwargs...)
