@@ -56,7 +56,9 @@ C_μ = pairwise(SqEuclidean(), μ_spt');
 function loss(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
     C_ν = pairwise(SqEuclidean(), x')
-    return sinkhorn_divergence(μ, ν, C_μν, C_μ, C_ν, ε; maxiter=50, atol=rtol = 0, regularization = true)
+    return sinkhorn_divergence(
+        μ, ν, C_μν, C_μ, C_ν, ε; maxiter=50, atol=rtol = 0, regularization=true
+    )
 end
 # Set entropy regularisation parameter
 ε = 1.0;
@@ -80,7 +82,7 @@ scatter!(plt1, ν_opt[:, 1], ν_opt[:, 2]);
 # For comparison, let us do the same computation again, but this time we want to minimise $\nu \mapsto \operatorname{OT}_{\varepsilon}(\mu, \nu)$. 
 function loss_biased(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt', x')
-    return sinkhorn2(μ, ν, C_μν, ε; maxiter=50, atol=rtol = 0, regularization = true)
+    return sinkhorn2(μ, ν, C_μν, ε; maxiter=50, atol=rtol = 0, regularization=true)
 end
 const loss_biased_tape = ReverseDiff.GradientTape(x -> loss_biased(x, ε), ν_spt)
 const compiled_loss_biased_tape = ReverseDiff.compile(loss_biased_tape)
