@@ -28,7 +28,7 @@ using Plots
 using Logging
 using Optim
 
-# As a ground truth distribution, we set $\rho$ to be a Gaussian mixture model with `k = 5` components, equally spaced around a circle, and sample an empirical distribution of size $N$, $\mu \sim \rho$.
+# As a ground truth distribution, we set $\rho$ to be a Gaussian mixture model with `k = 3` components, equally spaced around a circle, and sample an empirical distribution of size $N$, $\mu \sim \rho$.
 
 k = 3
 d = 2
