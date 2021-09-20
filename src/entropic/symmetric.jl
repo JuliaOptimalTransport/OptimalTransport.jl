@@ -142,8 +142,7 @@ function sinkhorn2(
             )
             plan
         end
-        cost = sinkhorn_cost_from_plan(γ, C, ε; regularization=regularization)
-        cost
+        sinkhorn_cost_from_plan(γ, C, ε; regularization=regularization)
     end
     return cost
 end
