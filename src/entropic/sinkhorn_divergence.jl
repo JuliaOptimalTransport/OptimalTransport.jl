@@ -66,15 +66,15 @@ end
         alg::SinkhornDivergence=SinkhornDivergence(
             SinkhornGibbs(), SymmetricSinkhornGibbs(), SymmetricSinkhornGibbs()
         );
-        regularization=true,
         kwargs...,
     )
 
 Compute the Sinkhorn Divergence between finite discrete
 measures `μ` and `ν` with respect to the precomputed cost matrices `Cμν`,
 `Cμμ` and `Cνν`, entropic regularization parameter `ε` and algorithm `alg`.
-The default algorithm is the `SinkhornGibbs`.
+
 A pre-computed optimal transport `plan` between `μ` and `ν` may be provided.
+
 See also: [`sinkhorn2`](@ref), [`sinkhorn_divergence`](@ref)
 """
 function sinkhorn_divergence(
@@ -87,11 +87,10 @@ function sinkhorn_divergence(
     alg::SinkhornDivergence=SinkhornDivergence(
         SinkhornGibbs(), SymmetricSinkhornGibbs(), SymmetricSinkhornGibbs()
     );
-    regularization=false,
     kwargs...,
 )
-    OTμν = sinkhorn2(μ, ν, Cμν, ε, alg.algμν; regularization=regularization, kwargs...)
-    OTμμ = sinkhorn2(μ, Cμ, ε, alg.algμμ; regularization=regularization, kwargs...)
-    OTνν = sinkhorn2(ν, Cν, ε, alg.algνν; regularization=regularization, kwargs...)
+    OTμν = sinkhorn2(μ, ν, Cμν, ε, alg.algμν; kwargs...)
+    OTμμ = sinkhorn2(μ, Cμ, ε, alg.algμμ; kwargs...)
+    OTνν = sinkhorn2(ν, Cν, ε, alg.algνν; kwargs...)
     return max.(0, OTμν .- (OTμμ .+ OTνν) / 2)
 end
