@@ -124,7 +124,7 @@ end
 function sinkhorn2(
     μ, C, ε, alg::SymmetricSinkhornGibbs; regularization=false, plan=nothing, kwargs...
 )
-    cost = if (regularization == true) && (plan === nothing)
+    cost = if regularization && plan === nothing
         # special case where we can take advantage of dual objective formula 
         # build solver
         solver = build_solver(μ, C, ε, alg; kwargs...)
