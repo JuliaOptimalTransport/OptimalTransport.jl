@@ -8,6 +8,7 @@ using PythonOT: PythonOT
 using LinearAlgebra
 using Random
 using Test
+using Compat
 
 const POT = PythonOT
 
@@ -52,17 +53,17 @@ Random.seed!(100)
             ν = hcat([normalize!(f.(x; μ=randn(), σ=0.5), 1) for _ in 1:M]...)
             for reg in (true, false)
                 loss_batch = sinkhorn_divergence(μ, ν, C, ε; regularization=reg)
-                @test loss_batch ≈ [
+                @compat @test loss_batch ≈ [
                     sinkhorn_divergence(x, y, C, ε; regularization=reg) for
                     (x, y) in zip(eachcol(μ), eachcol(ν))
                 ]
                 loss_batch_μ = sinkhorn_divergence(μ, ν[:, 1], C, ε; regularization=reg)
-                @test loss_batch_μ ≈ [
+                @compat @test loss_batch_μ ≈ [
                     sinkhorn_divergence(x, ν[:, 1], C, ε; regularization=reg) for
                     x in eachcol(μ)
                 ]
                 loss_batch_ν = sinkhorn_divergence(μ[:, 1], ν, C, ε; regularization=reg)
-                @test loss_batch_ν ≈ [
+                @compat @test loss_batch_ν ≈ [
                     sinkhorn_divergence(μ[:, 1], y, C, ε; regularization=reg) for
                     y in eachcol(ν)
                 ]
