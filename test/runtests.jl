@@ -28,6 +28,9 @@ const GROUP = get(ENV, "GROUP", "All")
             @safetestset "Sinkhorn barycenter" begin
                 include(joinpath("entropic", "sinkhorn_barycenter.jl"))
             end
+            @safetestset "Sinkhorn divergence" begin
+                include(joinpath("entropic", "sinkhorn_divergence.jl"))
+            end
         end
 
         @safetestset "Quadratically regularized OT" begin
