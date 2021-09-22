@@ -5,7 +5,6 @@ using ForwardDiff
 using ReverseDiff
 using LogExpFunctions
 using PythonOT: PythonOT
-using StatsBase
 using LinearAlgebra
 using Random
 using Test
@@ -54,18 +53,18 @@ Random.seed!(100)
             for reg in (true, false)
                 loss_batch = sinkhorn_divergence(μ, ν, C, ε; regularization=reg)
                 @test loss_batch ≈ [
-                    sinkhorn_divergence(x, y, C, ε; regularization=reg) for
-                    (x, y) in zip(eachcol(μ), eachcol(ν))
+                    sinkhorn_divergence(μ[:, i], ν[:, i], C, ε; regularization=reg) for
+                    i in 1:M
                 ]
                 loss_batch_μ = sinkhorn_divergence(μ, ν[:, 1], C, ε; regularization=reg)
                 @test loss_batch_μ ≈ [
-                    sinkhorn_divergence(x, ν[:, 1], C, ε; regularization=reg) for
-                    x in eachcol(μ)
+                    sinkhorn_divergence(μ[:, i], ν[:, 1], C, ε; regularization=reg) for
+                    i in 1:M
                 ]
                 loss_batch_ν = sinkhorn_divergence(μ[:, 1], ν, C, ε; regularization=reg)
                 @test loss_batch_ν ≈ [
-                    sinkhorn_divergence(μ[:, 1], y, C, ε; regularization=reg) for
-                    y in eachcol(ν)
+                    sinkhorn_divergence(μ[:, 1], ν[:, i], C, ε; regularization=reg) for
+                    i in 1:M
                 ]
             end
         end
@@ -98,7 +97,7 @@ Random.seed!(100)
         Cμν = pairwise(SqEuclidean(), μ_spt', ν_spt'; dims=2)
         Cμ = pairwise(SqEuclidean(), μ_spt'; dims=2)
         Cν = pairwise(SqEuclidean(), ν_spt'; dims=2)
-        ε = 0.1 * max(mean(Cμν), mean(Cμ), mean(Cν))
+        ε = 1.0
 
         @testset "basic" begin
             for reg in (true, false)
