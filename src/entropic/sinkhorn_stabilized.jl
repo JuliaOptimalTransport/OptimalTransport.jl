@@ -133,7 +133,7 @@ function update_K!(solver::SinkhornSolver{<:SinkhornStabilized})
 end
 
 # obtain plan
-function plan(solver::SinkhornSolver{<:SinkhornStabilized})
+function sinkhorn_plan(solver::SinkhornSolver{<:SinkhornStabilized})
     absorb!(solver)
     return copy(solver.cache.K)
 end

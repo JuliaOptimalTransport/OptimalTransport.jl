@@ -29,6 +29,7 @@ squared2wasserstein
 ```@docs
 sinkhorn
 sinkhorn2
+sinkhorn_divergence
 sinkhorn_barycenter
 ```
 

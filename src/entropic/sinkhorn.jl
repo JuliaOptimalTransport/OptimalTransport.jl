@@ -120,6 +120,19 @@ function check_convergence(solver::SinkhornSolver)
     )
 end
 
+function sinkhorn_plan(u, v, K)
+    return K .* add_singleton(u, Val(2)) .* add_singleton(v, Val(1))
+end
+
+# dual objective 
+function sinkhorn_dual_objective(u, v, Kv, K, ε)
+    # return ε * (dot_vecwise(log.(u), μ) .+ dot_vecwise(log.(v), ν))
+    return ε * (
+        dot_vecwise(LogExpFunctions.xlogx.(u), Kv) +
+        dot_vecwise(LogExpFunctions.xlogx.(v), K' * u)
+    )
+end
+
 # API
 
 """
@@ -165,9 +178,19 @@ function sinkhorn(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
     solve!(solver)
 
     # compute optimal transport plan
-    γ = plan(solver)
+    γ = sinkhorn_plan(solver)
 
     return γ
+end
+
+function sinkhorn_cost_from_plan(γ, C, ε; regularization=false)
+    cost = if regularization
+        dot_matwise(γ, C) .+
+        ε .* reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
+    else
+        dot_matwise(γ, C)
+    end
+    return cost
 end
 
 """
@@ -200,12 +223,6 @@ function sinkhorn2(μ, ν, C, ε, alg::Sinkhorn; regularization=false, plan=noth
         )
         plan
     end
-    cost = if regularization
-        dot_matwise(γ, C) .+
-        ε .* reshape(sum(LogExpFunctions.xlogx, γ; dims=(1, 2)), size(γ)[3:end])
-    else
-        dot_matwise(γ, C)
-    end
-
+    cost = sinkhorn_cost_from_plan(γ, C, ε; regularization=regularization)
     return cost
 end

@@ -55,7 +55,9 @@ function check_convergence(
 end
 
 # Common solve! operation 
-function solve!(solver::Union{SinkhornSolver,SinkhornBarycenterSolver})
+function solve!(
+    solver::Union{SinkhornSolver,SinkhornBarycenterSolver,SymmetricSinkhornSolver}
+)
     # unpack solver
     atol = solver.atol
     rtol = solver.rtol
