@@ -25,7 +25,7 @@ end
 dot_matwise(x::AbstractMatrix, y::AbstractArray) = dot_matwise(y, x)
 
 function dot_vecwise(x::AbstractMatrix, y::AbstractMatrix)
-    return [dot(u, v) for (u, v) in zip(eachcol(x), eachcol(y))]
+    Compat.@compat return [dot(u, v) for (u, v) in zip(eachcol(x), eachcol(y))]
 end
 
 dot_vecwise(x::AbstractMatrix, y::AbstractVector) = x' * y
