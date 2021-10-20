@@ -13,7 +13,7 @@
 using OptimalTransport
 using Distances
 using Distributions
-using Plots
+using StatsPlots
 
 using LinearAlgebra
 using Random
