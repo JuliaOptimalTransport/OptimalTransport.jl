@@ -6,7 +6,6 @@
 # one does no need to use Linear Programming solvers
 # to obtain the exact solution to the problem.
 
-
 # ## Packages
 #
 # We load the following packages into our environment:
@@ -45,24 +44,23 @@ Random.seed!(1234)
 N = 10
 ν = Poisson(N)
 
-
 # Nest, we define a cost function.
-c(x,y) = (abs(x - y))^2 # could have used `sqeuclidean` from `Distances.jl`
+c(x, y) = (abs(x - y))^2 # could have used `sqeuclidean` from `Distances.jl`
 
 T = ot_plan(c, μ, ν)
 
 # `T` is the Monge Map. Let's visualize it.
-p1 = plot(μ, label='μ')
-p1 = plot!(ν, marker=:circle, label='ν')
-p2 = plot(-2:0.1:2, T(-2:0.1:2), label="Monge map", color=:green, legend=:topleft)
-plot(p1,p2)
+p1 = plot(μ; label='μ')
+p1 = plot!(ν; marker=:circle, label='ν')
+p2 = plot(-2:0.1:2, T(-2:0.1:2); label="Monge map", color=:green, legend=:topleft)
+plot(p1, p2)
 
 # The optimal transport cost can be computed with
 ot_cost(c, μ, ν)
 
 # If instead you want the 2-Wasserstein distance (which is the square root
 # of the optimal transport with the Square Euclidean distatce, then use
-wasserstein(μ, ν, p=2)
+wasserstein(μ, ν; p=2)
 
 # ## Finite Discrete Distributions
 #
@@ -89,20 +87,20 @@ N = 10
 # We create a function `curve` just as a helper to draw the transport plan.
 
 function curve(x1, x2, y1, y2)
-    a = min(y1, y2) 
+    a = min(y1, y2)
     b = (y1 - y2 + a * (x1^2 - x2^2)) / (x1 - x2)
     c = y1 + a * x1^2 - b * x1
-    f(x) = -a * x^2 + b * x + c 
+    f(x) = -a * x^2 + b * x + c
     return f
 end
 
-p = plot(μ, marker=:circle, label='μ')
-p = plot!(ν, marker=:circle, label='ν', ylims=(0, 0.2))
+p = plot(μ; marker=:circle, label='μ')
+p = plot!(ν; marker=:circle, label='ν', ylims=(0, 0.2))
 for i in 1:M, j in 1:N
-    if γ[i,j] > 0
+    if γ[i, j] > 0
         transport = curve(μ.support[i], ν.support[j], 1 / M, 1 / N)
-        x = range(μ.support[i], ν.support[j], length=100)
-        p = plot!(x, transport.(x), color=:green, label=nothing, alpha=0.5)
+        x = range(μ.support[i], ν.support[j]; length=100)
+        p = plot!(x, transport.(x); color=:green, label=nothing, alpha=0.5)
     end
 end
 p
