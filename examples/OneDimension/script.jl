@@ -1,4 +1,4 @@
-# # 1D Cases
+# # One-Dimensional Cases
 #
 # The 1D case in Optimal Transport is a special case where one can
 # easily obtain closed form solutions efficiently
