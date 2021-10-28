@@ -1,4 +1,4 @@
-# # 1D Cases
+# # One-Dimensional Cases
 #
 # The 1D case in Optimal Transport is a special case where one can
 # easily obtain closed form solutions efficiently
@@ -18,7 +18,7 @@ using StatsPlots
 using LinearAlgebra
 using Random
 
-Random.seed!(1234)
+Random.seed!(1234);
 
 # ## Continuous Distribution
 #
@@ -26,15 +26,15 @@ Random.seed!(1234)
 # has the form ``c(x, y) = h(|x - y|)`` where ``h`` is a convex function,
 # the optimal transport plan is the Monge map
 # ```math
-# T = F_\\nu^{-1} \\circ F_\\mu
+# T = F_\nu^{-1} \circ F_\mu
 # ```
-# where ``F_\\mu`` is the cumulative distribution function of `μ` and ``F_\\nu^{-1}`` is the
+# where ``F_\mu`` is the cumulative distribution function of `μ` and ``F_\nu^{-1}`` is the
 # quantile function of `ν`.
 # In this setting, the optimal transport cost can be computed as
 # ```math
-# \\int_0^1 c(F_\\mu^{-1}(x), F_\\nu^{-1}(x)) \\mathrm{d}x
+# \int_0^1 c(F_\mu^{-1}(x), F_\nu^{-1}(x)) \mathrm{d}x
 # ```
-# where ``F_\\mu^{-1}`` and ``F_\\nu^{-1}`` are the quantile functions of `μ` and `ν`,
+# where ``F_\mu^{-1}`` and ``F_\nu^{-1}`` are the quantile functions of `μ` and `ν`,
 # respectively.
 # 
 # We start by defining the distributions.
@@ -42,12 +42,12 @@ Random.seed!(1234)
 μ = Normal(0, 1)
 
 N = 10
-ν = Poisson(N)
+ν = Poisson(N);
 
 # Nest, we define a cost function.
 c(x, y) = (abs(x - y))^2 # could have used `sqeuclidean` from `Distances.jl`
 
-T = ot_plan(c, μ, ν)
+T = ot_plan(c, μ, ν);
 
 # `T` is the Monge Map. Let's visualize it.
 p1 = plot(μ; label='μ')
