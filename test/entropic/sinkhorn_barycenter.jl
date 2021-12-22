@@ -44,6 +44,6 @@ Random.seed!(100)
         α = sinkhorn_barycenter(μ32, C32, ε32, w32, SinkhornGibbs())
 
         α_pot = POT.barycenter(μ32, C32, ε32; weights=w32, stopThr=1e-9)
-        @test α ≈ α_pot rtol = 1e-6
+        @test α ≈ α_pot rtol = 1e-5
     end
 end
