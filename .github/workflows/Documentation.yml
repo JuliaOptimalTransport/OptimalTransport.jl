@@ -7,6 +7,12 @@ on:
     tags: '*'
   pull_request:
 
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,8 +23,6 @@ jobs:
         with:
           python-version: '3.9'
           architecture: ${{ matrix.arch }}
-      # Limitation of pip: https://pythonot.github.io/index.html#pip-installation
-      - run: python -m pip install cython numpy
       - run: python -m pip install pot
       - uses: julia-actions/setup-julia@latest
         with:
