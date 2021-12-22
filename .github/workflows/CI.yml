@@ -28,11 +28,6 @@ jobs:
           - windows-latest
         arch:
           - x64
-        include:
-          - version: '1'
-            os: ubuntu-latest
-            arch: x64
-            coverage: true
     steps:
       - uses: actions/checkout@v2
       - name: Install python
@@ -58,18 +53,18 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
         with:
-          coverage: ${{ matrix.coverage || false }}
+          coverage: ${{ matrix.version == '1' && matrix.os == 'ubuntu-latest' }}
         env:
           PYTHON: python
           GROUP: OptimalTransport
       - uses: julia-actions/julia-processcoverage@v1
-        if: matrix.coverage
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v2
-        if: matrix.coverage
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
         with:
           file: lcov.info
       - uses: coverallsapp/github-action@master
-        if: matrix.coverage
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: lcov.info
