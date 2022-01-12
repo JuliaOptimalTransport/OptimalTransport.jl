@@ -9,43 +9,9 @@ function SymmetricQuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5, armijo_max=50)
     return SymmetricQuadraticOTNewton(θ, κ, δ, armijo_max)
 end
 
-struct SymmetricQuadraticOTNewtonCache{U,C,P,GT,X}
-    u::U
-    δu::U
-    σ::C
-    γ::P
-    G::GT
-    x::X
-    M::Int
-end
-
-function build_cache(
-    ::Type{T},
-    ::SymmetricQuadraticOTNewton,
-    μ::AbstractVector,
-    C::AbstractMatrix,
-    ε::Real,
-) where {T}
-    # create and initialize dual potentials
-    u = similar(μ, T, size(μ, 1))
-    fill!(u, zero(T))
-    δu = similar(u, T)
-    # intermediate variables (don't need to be initialised)
-    σ = similar(C, T)
-    γ = similar(C, T)
-    M = size(μ, 1)
-    N = M
-    G = similar(u, T, M + N, M + N)
-    fill!(G, zero(T))
-    # initial guess for conjugate gradient 
-    x = similar(u, T, M + N)
-    fill!(x, zero(T))
-    return SymmetricQuadraticOTNewtonCache(u, δu, σ, γ, G, x, M)
-end
-
 function check_convergence(
     μ::AbstractVector,
-    cache::SymmetricQuadraticOTNewtonCache,
+    cache::QuadraticOTNewtonCache,
     convergence_cache::QuadraticOTConvergenceCache,
     atol::Real,
     rtol::Real,
@@ -173,6 +139,36 @@ function solve!(solver::QuadraticOTSolver{<:SymmetricQuadraticOTNewton})
     return nothing
 end
 
+function build_cache(
+    ::Type{T},
+    ::SymmetricQuadraticOTNewton,
+    μ::AbstractVector,
+    ν::AbstractVector,
+    C::AbstractMatrix,
+    ε::Real,
+) where {T}
+    # create and initialize dual potentials
+    u = similar(μ, T, size(μ, 1))
+    v = similar(ν, T, size(ν, 1))
+    fill!(u, zero(T))
+    fill!(v, zero(T))
+    δu = similar(u, T)
+    δv = similar(v, T)
+    # intermediate variables (don't need to be initialised)
+    σ = similar(C, T)
+    γ = similar(C, T)
+    M = size(μ, 1)
+    N = size(ν, 1)
+    G = similar(u, T, M + N, M + N)
+    fill!(G, zero(T))
+    # initial guess for conjugate gradient 
+    x = similar(u, T, M + N)
+    fill!(x, zero(T))
+    return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, x, M, N)
+end
+
+
+
 function build_solver(
     μ::AbstractVector,
     C::AbstractMatrix,
@@ -191,7 +187,7 @@ function build_solver(
     T = float(Base.promote_eltype(μ, one(eltype(C)) / ε))
 
     # build caches
-    cache = build_cache(T, alg, μ, C, ε)
+    cache = build_cache(T, alg, μ, μ, C, ε)
     convergence_cache = build_convergence_cache(T, μ, μ)
 
     # set tolerances
