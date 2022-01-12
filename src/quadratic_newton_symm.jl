@@ -35,10 +35,10 @@ function build_cache(
     γ = similar(C, T)
     M = size(μ, 1)
     N = M
-    G = similar(u, T, M + N, M + N)
+    G = similar(u, T, M, M)
     fill!(G, zero(T))
     # initial guess for conjugate gradient 
-    x = similar(u, T, M + N)
+    x = similar(u, T, M)
     fill!(x, zero(T))
     return SymmetricQuadraticOTNewtonCache(u, δu, σ, γ, G, x, M)
 end
