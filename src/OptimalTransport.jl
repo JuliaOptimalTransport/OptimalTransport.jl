@@ -17,6 +17,7 @@ using NNlib: NNlib
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
 export QuadraticOTNewton
+export Greenkhorn
 
 export sinkhorn, sinkhorn2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
@@ -36,6 +37,7 @@ include("entropic/sinkhorn_unbalanced.jl")
 include("entropic/sinkhorn_barycenter.jl")
 include("entropic/sinkhorn_barycenter_gibbs.jl")
 include("entropic/sinkhorn_solve.jl")
+include("entropic/greenkhorn.jl")
 
 include("quadratic.jl")
 include("quadratic_newton.jl")
