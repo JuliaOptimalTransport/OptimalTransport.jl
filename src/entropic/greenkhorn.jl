@@ -14,7 +14,7 @@ struct GreenkhornCache{U,V,KT}
     u::U
     v::V
     K::KT
-    Kv::U
+    Kv::U #placeholder
     G::KT
     du::U
     dv::V
@@ -47,9 +47,6 @@ function build_cache(
     Kv = similar(u)
 
     # improve this!
-    # du = similar(u)
-    # fill!(du, 1.0)
-    # dv = similar(v)
     du = sum(G', dims=1)[:] - μ
     dv = sum(G', dims=2)[:] - ν
 
@@ -58,9 +55,7 @@ end
 
 prestep!(::SinkhornSolver{Greenkhorn}, ::Int) = nothing
 
-function init_step!(solver::SinkhornSolver{<:Greenkhorn})
-    return A_batched_mul_B!(solver.cache.Kv, solver.cache.K, solver.cache.v)
-end
+init_step!(solver::SinkhornSolver{<:Greenkhorn}) = nothing
 
 function step!(solver::SinkhornSolver{<:Greenkhorn}, iter::Int)
     μ = solver.source
@@ -72,6 +67,10 @@ function step!(solver::SinkhornSolver{<:Greenkhorn}, iter::Int)
     G = cache.G
     Δμ= cache.du
     Δν= cache.dv
+
+    # The implementation in POT does not compute `μ .* log.(μ ./ sum(G', dims=1)[:])`
+    # or `ν .* log.(ν ./ sum(G', dims=2)[:])`. Yet, this term is present in the original
+    # paper, where it uses ρ(a,b) = b - a + a log(a/b).
 
     ρμ = abs.(Δμ + μ .* log.(μ ./ sum(G', dims=1)[:]))
     ρν = abs.(Δν + ν .* log.(ν ./ sum(G', dims=2)[:]))
@@ -85,30 +84,22 @@ function step!(solver::SinkhornSolver{<:Greenkhorn}, iter::Int)
         Δ = u[i₁] - old_u
         G[i₁, :] = u[i₁] * K[i₁,:] .* v
         Δμ[i₁] = u[i₁] * (K[i₁,:] ⋅ v) - μ[i₁]
-        Δν = Δν .+  Δ .* K[i₁,:] .* v
+        # Δν = Δν .+  Δ .* K[i₁,:] .* v
+        @. Δν = Δν +  Δ * K[i₁,:] * v
     else
         old_v = v[i₂]
         v[i₂] = ν[i₂]/ (K[:,i₂] ⋅ u)
         Δ = v[i₂] - old_v
         G[:, i₂] = v[i₂] * K[:,i₂] .* u
         Δν[i₂] = v[i₂] * (K[:,i₂] ⋅ u) - ν[i₂]
-        Δμ = Δμ .+  Δ .* K[:,i₂] .* u
+        @. Δμ = Δμ +  Δ * K[:,i₂] * u
     end
-    cache.du .= Δμ
-    cache.dv .= Δν
-    A_batched_mul_B!(solver.cache.Kv, K, v)
+
+    A_batched_mul_B!(solver.cache.Kv, K, v) # Compute to evaluate convergence
 end
 
 function sinkhorn_plan(solver::SinkhornSolver{Greenkhorn})
     cache = solver.cache
-    # println("OK")
-    # println('K',cache.K)
-    # println('u',cache.u)
-    # println('v',cache.v)
-    # 
-    # println("μ",solver.source)
-    # println("ν",solver.target)
-    # return sinkhorn_plan(cache.u, cache.v, cache.K)
     return cache.G
 end
 
