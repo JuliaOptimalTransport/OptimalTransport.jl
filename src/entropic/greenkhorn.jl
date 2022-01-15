@@ -84,7 +84,6 @@ function step!(solver::SinkhornSolver{<:Greenkhorn}, iter::Int)
         Δ = u[i₁] - old_u
         G[i₁, :] = u[i₁] * K[i₁,:] .* v
         Δμ[i₁] = u[i₁] * (K[i₁,:] ⋅ v) - μ[i₁]
-        # Δν = Δν .+  Δ .* K[i₁,:] .* v
         @. Δν = Δν +  Δ * K[i₁,:] * v
     else
         old_v = v[i₂]
