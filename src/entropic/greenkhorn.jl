@@ -41,14 +41,25 @@ function build_cache(
     fill!(u, one(T)/size(μ, 1))
     fill!(v, one(T)/size(ν, 1))
 
-    # G = sinkhorn_plan(u, v, K)
-    G = diagm(u) * K * diagm(v) 
+    G = sinkhorn_plan(u, v, K)
+    # G = diagm(u) * K * diagm(v)
 
     Kv = similar(u)
 
+    # This is me triying to get the `batch tests to work`
     # improve this!
-    du = sum(G', dims=1)[:] - μ
-    dv = sum(G', dims=2)[:] - ν
+    # if (length(size(μ)) == 2 && length(size(ν)) == 1)
+    #     du = reshape(sum(G, dims=2), size(μ)) - μ
+    #     dv = reshape(sum(G, dims=1),size(v)) - repeat(ν,1,size(v)[2])
+    # elseif (length(size(μ)) == 1 && length(size(ν)) == 2)
+    #     du = reshape(sum(G, dims=2),size(u)) - repeat(μ,1,size(u)[2])
+    #     dv = reshape(sum(G, dims=1), size(ν)) - ν
+    # else
+        du = reshape(sum(G, dims=2), size(μ)) - μ
+        dv = reshape(sum(G, dims=1), size(ν)) - ν
+    # end
+
+    println(size(G), size(du), size(dv))
 
     return GreenkhornCache(u, v, K, Kv, G, du, dv)
 end
@@ -71,14 +82,14 @@ function step!(solver::SinkhornSolver{<:Greenkhorn}, iter::Int)
     # The implementation in POT does not compute `μ .* log.(μ ./ sum(G', dims=1)[:])`
     # or `ν .* log.(ν ./ sum(G', dims=2)[:])`. Yet, this term is present in the original
     # paper, where it uses ρ(a,b) = b - a + a log(a/b).
-
-    ρμ = abs.(Δμ + μ .* log.(μ ./ sum(G', dims=1)[:]))
-    ρν = abs.(Δν + ν .* log.(ν ./ sum(G', dims=2)[:]))
+    # ρμ = abs.(Δμ + μ .* log.(μ ./ sum(G', dims=1)[:]))
+    # ρν = abs.(Δν + ν .* log.(ν ./ sum(G', dims=2)[:]))
     
-    i₁ = argmax(ρμ)
-    i₂ = argmax(ρν)
+    i₁ = argmax(abs.(Δμ))
+    i₂ = argmax(abs.(Δν))
 
-    if ρμ[i₁]> ρν[i₂]
+    # if ρμ[i₁]> ρν[i₂]
+    if abs(Δμ[i₁]) > abs(Δν[i₂])
         old_u = u[i₁]
         u[i₁] = μ[i₁]/ (K[i₁,:] ⋅ v)
         Δ = u[i₁] - old_u
