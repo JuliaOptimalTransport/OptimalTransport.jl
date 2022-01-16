@@ -63,9 +63,9 @@ Random.seed!(100)
               sinkhorn2(similar(μ), similar(ν), C, ε; plan=γ, regularization=true)
 
 
-        ###################################################
-        # FIX!!! Not working for Greenkhorn implementation#
-        ###################################################
+        ################################################################
+        # FIX BATCHES CASE!!! Not working for Greenkhorn implementation#
+        ################################################################
         
         # # batches of histograms
         # d = 10
@@ -95,72 +95,81 @@ Random.seed!(100)
         # end
     end
 
-    # # different element type
-    # @testset "Float32" begin
-    #     # create histograms and cost matrix with element type `Float32`
-    #     μ32 = map(Float32, μ)
-    #     ν32 = map(Float32, ν)
-    #     C32 = map(Float32, C)
-    #     ε32 = Float32(ε)
+    # different element type
+    @testset "Float32" begin
+        # create histograms and cost matrix with element type `Float32`
+        μ32 = map(Float32, μ)
+        ν32 = map(Float32, ν)
+        C32 = map(Float32, C)
+        ε32 = Float32(ε)
 
-    #     # compute optimal transport plan and optimal transport cost
-    #     γ = sinkhorn(μ32, ν32, C32, ε32, Greenkhorn(); maxiter=5_000, rtol=1e-6)
-    #     c = sinkhorn2(μ32, ν32, C32, ε32, Greenkhorn(); maxiter=5_000, rtol=1e-6)
-    #     @test eltype(γ) === Float32
-    #     @test typeof(c) === Float32
+        # compute optimal transport plan and optimal transport cost
+        γ = sinkhorn(μ32, ν32, C32, ε32, Greenkhorn(); maxiter=200_000, rtol=1e-6)
+        c = sinkhorn2(μ32, ν32, C32, ε32, Greenkhorn(); maxiter=200_000, rtol=1e-6)
+        @test eltype(γ) === Float32
+        @test typeof(c) === Float32
 
-    #     # check that plan and cost are consistent
-    #     @test c ≈ dot(γ, C32)
+        # check that plan and cost are consistent
+        @test c ≈ dot(γ, C32)
 
-    #     # compare with default algorithm
-    #     γ_default = sinkhorn(μ32, ν32, C32, ε32; maxiter=5_000, rtol=1e-6)
-    #     c_default = sinkhorn2(μ32, ν32, C32, ε32; maxiter=5_000, rtol=1e-6)
-    #     @test γ_default == γ
-    #     @test c_default == c
+        # compare with default algorithm
+        γ_default = sinkhorn(μ32, ν32, C32, ε32; maxiter=5_000, rtol=1e-6)
+        c_default = sinkhorn2(μ32, ν32, C32, ε32; maxiter=5_000, rtol=1e-6)
+        @test γ_default ≈ γ rtol=1e-4
+        @test c_default ≈ c rtol=1e-4
 
-    #     # compare with POT
-    #     γ_pot = POT.sinkhorn(μ32, ν32, C32, ε32; numItermax=5_000, stopThr=1e-6)
-    #     c_pot = POT.sinkhorn2(μ32, ν32, C32, ε32; numItermax=5_000, stopThr=1e-6)[1]
-    #     @test map(Float32, γ_pot) ≈ γ rtol = 1e-3
-    #     @test Float32(c_pot) ≈ c rtol = 1e-3
+        # compare with POT
+        γ_pot = POT.sinkhorn(μ32, ν32, C32, ε32; numItermax=5_000, stopThr=1e-6)
+        c_pot = POT.sinkhorn2(μ32, ν32, C32, ε32; numItermax=5_000, stopThr=1e-6)[1]
+        @test map(Float32, γ_pot) ≈ γ rtol = 1e-3
+        @test Float32(c_pot) ≈ c rtol = 1e-3
 
-    #     # batches of histograms
-    #     d = 10
-    #     for (size2_μ, size2_ν) in
-    #         (((), (d,)), ((1,), (d,)), ((d,), ()), ((d,), (1,)), ((d,), (d,)))
-    #         # generate batches of histograms
-    #         μ32_batch = repeat(μ32, 1, size2_μ...)
-    #         ν32_batch = repeat(ν32, 1, size2_ν...)
+        ################################################################
+        # FIX BATCHES CASE!!! Not working for Greenkhorn implementation#
+        ################################################################
+        
+        # batches of histograms
+        # d = 10
+        # for (size2_μ, size2_ν) in
+        #     (((), (d,)), ((1,), (d,)), ((d,), ()), ((d,), (1,)), ((d,), (d,)))
+        #     # generate batches of histograms
+        #     μ32_batch = repeat(μ32, 1, size2_μ...)
+        #     ν32_batch = repeat(ν32, 1, size2_ν...)
 
-    #         # compute optimal transport plan and check that it is consistent with the
-    #         # plan for individual histograms
-    #         γ_all = sinkhorn(
-    #             μ32_batch, ν32_batch, C32, ε32, Greenkhorn(); maxiter=5_000, rtol=1e-6
-    #         )
-    #         @test size(γ_all) == (M, N, d)
-    #         @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
-    #         @test γ_all ==
-    #               sinkhorn(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
+        #     # compute optimal transport plan and check that it is consistent with the
+        #     # plan for individual histograms
+        #     γ_all = sinkhorn(
+        #         μ32_batch, ν32_batch, C32, ε32, Greenkhorn(); maxiter=5_000, rtol=1e-6
+        #     )
+        #     @test size(γ_all) == (M, N, d)
+        #     @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
+        #     @test γ_all ==
+        #           sinkhorn(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
 
-    #         # compute optimal transport cost and check that it is consistent with the
-    #         # cost for individual histograms
-    #         c_all = sinkhorn2(
-    #             μ32_batch, ν32_batch, C32, ε32, Greenkhorn(); maxiter=5_000, rtol=1e-6
-    #         )
-    #         @test size(c_all) == (d,)
-    #         @test all(x ≈ c for x in c_all)
-    #         @test c_all ==
-    #               sinkhorn2(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
-    #     end
-    # end
+        #     # compute optimal transport cost and check that it is consistent with the
+        #     # cost for individual histograms
+        #     c_all = sinkhorn2(
+        #         μ32_batch, ν32_batch, C32, ε32, Greenkhorn(); maxiter=5_000, rtol=1e-6
+        #     )
+        #     @test size(c_all) == (d,)
+        #     @test all(x ≈ c for x in c_all)
+        #     @test c_all ==
+        #           sinkhorn2(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
+        # end
+    end
 
-    # # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/86
+
+        ################################################################
+        # FIX AD !!! Not working for Greenkhorn implementation         #
+        ################################################################
+
+    # https://github.com/JuliaOptimalTransport/OptimalTransport.jl/issues/86
     # @testset "AD" begin
     #     # compute gradients with respect to source and target marginals separately and
-    #     # together. test against gradient computed using analytic formula of Proposition 2.3 of 
+    #     # together. test against gradient computed using analytic formula of Proposition 2.3 of
     #     # Cuturi, Marco, and Gabriel Peyré. "A smoothed dual approach for variational Wasserstein problems." SIAM Journal on Imaging Sciences 9.1 (2016): 320-343.
     #     #
-    #     ε = 0.05 # use a larger ε to avoid having to do many iterations 
+    #     ε = 0.05 # use a larger ε to avoid having to do many iterations
     #     # target marginal
     #     for Diff in [ReverseDiff, ForwardDiff]
     #         ∇ = Diff.gradient(log.(ν)) do xs

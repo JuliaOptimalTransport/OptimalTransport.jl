@@ -59,7 +59,6 @@ function build_cache(
         dv = reshape(sum(G, dims=1), size(ν)) - ν
     # end
 
-    println(size(G), size(du), size(dv))
 
     return GreenkhornCache(u, v, K, Kv, G, du, dv)
 end
