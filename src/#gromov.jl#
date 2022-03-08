@@ -45,7 +45,7 @@ function entropic_gromov_wasserstein(μ::AbstractVector, ν::AbstractVector, Cμ
             to_check_step = check_convergence
             isconverged = sum(abs, plan - plan_prev) < max(_atol, _rtol * norm_plan)
             if isconverged
-                @debug "Gromov Wasserstein with $(solver.alg) ($iter/$maxiter): converged"
+                @debug "$Gromov Wasserstein with $(solver.alg) ($iter/$maxiter): converged"
                 break
             end
             plan_prev .= plan
