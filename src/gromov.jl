@@ -2,12 +2,12 @@
 
 abstract type EntropicGromovWasserstein end
 
-struct EntropicGromovWassersteinGibbs <: EntropicGromovWasserstein 
+struct EntropicGromovWassersteinSinkhorn <: EntropicGromovWasserstein 
     alg_step::Sinkhorn
 end
 
 function entropic_gromov_wasserstein(μ::AbstractVector, ν::AbstractVector, Cμ::AbstractMatrix, Cν::AbstractMatrix, ε::Real,
-                                    alg::EntropicGromovWasserstein = EntropicGromovWassersteinGibbs(SinkhornGibbs()); atol = nothing, rtol = nothing, check_convergence = 10, maxiter::Int=1_000, kwargs...)
+                                    alg::EntropicGromovWasserstein = EntropicGromovWassersteinSinkhorn(SinkhornGibbs()); atol = nothing, rtol = nothing, check_convergence = 10, maxiter::Int=1_000, kwargs...)
     T = float(Base.promote_eltype(μ, one(eltype(Cμ)) / ε, eltype(Cν)))
     C = similar(Cμ, T, size(μ, 1), size(ν, 1))
     tmp = similar(C)

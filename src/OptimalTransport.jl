@@ -18,12 +18,14 @@ using Logging
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
 export QuadraticOTNewton
+export EntropicGromovWassersteinSinkhorn
 
 export sinkhorn, sinkhorn2
 export sinkhorn_stabilized, sinkhorn_stabilized_epsscaling, sinkhorn_barycenter
 export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export sinkhorn_divergence
 export quadreg
+export entropic_gromov_wasserstein
 
 include("utils.jl")
 
