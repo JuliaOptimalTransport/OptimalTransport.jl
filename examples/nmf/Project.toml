@@ -14,7 +14,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 MLDatasets = "0.5"
-NNlib = "0.7"
+NNlib = "0.8"
 NMF = "0.5"
 LineSearches = "7"
 Optim = "1"

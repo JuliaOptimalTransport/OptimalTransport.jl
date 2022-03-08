@@ -22,6 +22,7 @@ ot_cost(::ExactOptimalTransport.SqEuclidean, ::ExactOptimalTransport.Normal, ::E
 ot_cost(::ExactOptimalTransport.SqEuclidean, ::ExactOptimalTransport.MvNormal, ::ExactOptimalTransport.MvNormal)
 wasserstein
 squared2wasserstein
+discretemeasure
 ```
 
 ## Entropically regularised optimal transport
