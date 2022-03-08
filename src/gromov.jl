@@ -26,7 +26,7 @@ function entropic_gromov_wasserstein(μ::AbstractVector, ν::AbstractVector, Cμ
         # perform Sinkhorn algorithm
         solve!(solver_step)
         # compute optimal transport plan
-        plan = sinkhorn_plan(solver)
+        plan = sinkhorn_plan(solver_step)
 
         to_check_step -= 1
         if to_check_step == 0 || iter == maxiter
