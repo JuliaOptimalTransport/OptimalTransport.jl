@@ -2,12 +2,23 @@
 
 abstract type EntropicGromovWasserstein end
 
-struct EntropicGromovWassersteinSinkhorn <: EntropicGromovWasserstein 
+struct EntropicGromovWassersteinSinkhorn <: EntropicGromovWasserstein
     alg_step::Sinkhorn
 end
 
-function entropic_gromov_wasserstein(μ::AbstractVector, ν::AbstractVector, Cμ::AbstractMatrix, Cν::AbstractMatrix, ε::Real,
-                                    alg::EntropicGromovWasserstein = EntropicGromovWassersteinSinkhorn(SinkhornGibbs()); atol = nothing, rtol = nothing, check_convergence = 10, maxiter::Int=1_000, kwargs...)
+function entropic_gromov_wasserstein(
+    μ::AbstractVector,
+    ν::AbstractVector,
+    Cμ::AbstractMatrix,
+    Cν::AbstractMatrix,
+    ε::Real,
+    alg::EntropicGromovWasserstein=EntropicGromovWassersteinSinkhorn(SinkhornGibbs());
+    atol=nothing,
+    rtol=nothing,
+    check_convergence=10,
+    maxiter::Int=1_000,
+    kwargs...,
+)
     T = float(Base.promote_eltype(μ, one(eltype(Cμ)) / ε, eltype(Cν)))
     C = similar(Cμ, T, size(μ, 1), size(ν, 1))
     tmp = similar(C)
@@ -22,7 +33,7 @@ function entropic_gromov_wasserstein(μ::AbstractVector, ν::AbstractVector, Cμ
 
     function get_new_cost!(C, plan, tmp, Cμ, Cν)
         A_batched_mul_B!(tmp, Cμ, plan)
-        A_batched_mul_B!(C, tmp, -4Cν)
+        return A_batched_mul_B!(C, tmp, -4Cν)
         # seems to be a missing factor of 4 (or something like that...) compared to the POT implementation?
         # added the factor of 4 here to ensure reproducibility for the same value of ε.
         # https://github.com/PythonOT/POT/blob/9412f0ad1c0003e659b7d779bf8b6728e0e5e60f/ot/gromov.py#L247
