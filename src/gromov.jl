@@ -6,6 +6,29 @@ struct EntropicGromovWassersteinSinkhorn <: EntropicGromovWasserstein
     alg_step::Sinkhorn
 end
 
+"""
+    entropic_gromov_wasserstein(
+        μ, ν, Cμ, Cν, ε, alg=EntropicGromovWassersteinSinkhorn(SinkhornGibbs()); 
+        atol = nothing, rtol = nothing, check_convergence = 10, maxiter = 1_000, kwargs...
+    )
+
+Computes the transport map for the entropically regularized Gromov-Wasserstein optimal transport problem with source and target 
+marginals `μ` and `ν` and corresponding cost matrices `Cμ` and `Cν`. That is, we seek `γ` a local minimizer of 
+```math
+    \\inf_{\\gamma \\in \\Pi(\\mu, \\nu)} \\sum_{i, j, i', j'} |C^{(\\mu)}_{i,i'} - C^{(\\nu)}_{j,j'}| \\gamma_{i,j} \\gamma_{i',j'} + \\varepsilon \\Omega(\\gamma),
+```
+where ``\\Omega(\\gamma)`` is the entropic regularization term, see e.g. [`sinkhorn`](@ref). 
+
+This function employs the iterative method described in (Section 10.6.4, [^PC19]), which solves a series of Sinkhorn iteration sub-problems to arrive at a solution. Note that the Gromov-Wasserstein problem is non-convex owing to the cross-terms in the 
+objective function, and thus in general one is guaranteed to arrive at a local optimum. 
+
+Every `check_convergence` steps, the current iteration of `γ` is compared with `γ_prev` (the previous iteration from `check_convergence` ago). 
+The quantity ``\\| \\gamma - \\gamma_\\text{prev} \\|_1`` is compared against `atol` and `rtol`. 
+
+[^PC19]: Peyré, G. and Cuturi, M., 2019. Computational optimal transport: With applications to data science. Foundations and Trends® in Machine Learning, 11(5-6), pp.355-607. 
+
+See also: [`sinkhorn`](@ref)
+"""
 function entropic_gromov_wasserstein(
     μ::AbstractVector,
     ν::AbstractVector,
