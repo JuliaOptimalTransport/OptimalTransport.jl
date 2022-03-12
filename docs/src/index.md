@@ -67,6 +67,15 @@ Currently the following algorithms for solving quadratically regularised optimal
 QuadraticOTNewton
 ```
 
+## Gromov-Wasserstein optimal transport
+
+```@docs
+entropic_gromov_wasserstein
+```
+
+Currently, only entropy-regularised Gromov-Wasserstein is supported. For exact computations, we refer the user to
+[PythonOT](https://github.com/JuliaOptimalTransport/PythonOT.jl) to access functionality from the [Python Optimal Transport library](https://pythonot.github.io/). 
+
 ## Dual
 
 ```@docs
