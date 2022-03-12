@@ -13,7 +13,6 @@ using LinearAlgebra
 using IterativeSolvers
 using LogExpFunctions: LogExpFunctions
 using NNlib: NNlib
-using Logging
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
