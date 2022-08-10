@@ -89,6 +89,29 @@ Random.seed!(100)
         @test c_balanced ≈ c rtol = 1e-4
     end
 
+    @testset "unbalanced Sinkhorn divergences" begin
+        μ = fill(1 / M, M)
+        μ_spt = rand(1, M)
+        ν = fill(1 / N, N)
+        ν_spt = rand(1, N)
+        ε = 0.01
+        λ = 1.0
+        Cμν = pairwise(SqEuclidean(), μ_spt, ν_spt; dims=2)
+        Cμμ = pairwise(SqEuclidean(), μ_spt, μ_spt; dims=2)
+        Cνν = pairwise(SqEuclidean(), ν_spt, ν_spt; dims=2)
+
+        # check the symmetric terms 
+        @test sinkhorn_unbalanced(μ, Cμμ, λ, ε) ≈ sinkhorn_unbalanced(μ, μ, Cμμ, λ, λ, ε) rtol =
+            1e-4
+        @test sinkhorn_unbalanced(ν, Cνν, λ, ε) ≈ sinkhorn_unbalanced(ν, ν, Cνν, λ, λ, ε) rtol =
+            1e-4
+
+        # check against balanced case 
+        proxdivF!(s, p, ε) = (s .= p ./ s)
+        @test sinkhorn_divergence_unbalanced(μ, ν, Cμν, Cμμ, Cνν, proxdivF!, ε) ≈
+            sinkhorn_divergence(μ, ν, Cμν, Cμμ, Cνν, ε) rtol = 1e-6
+    end
+
     @testset "deprecations" begin
         μ = fill(1 / N, M)
         ν = fill(1 / N, N)

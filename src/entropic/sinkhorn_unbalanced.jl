@@ -1,4 +1,14 @@
 """
+    proxdivKL!(s, p, ε, λ)
+
+Operator ``\\operatorname{proxdiv}_F(s, p, ε)`` associated with the marginal penalty
+``q \\mapsto \\lambda \\operatorname{KL}(q | p)``. For further details see [^CPSV18]. 
+
+[^CPSV18]: Chizat, L., Peyré, G., Schmitzer, B., & Vialard, F.-X. (2018). [Scaling algorithms for unbalanced optimal transport problems](https://doi.org/10.1090/mcom/3303). Mathematics of Computation, 87(314), 2563–2609.
+"""
+proxdivKL!(s, p, ε, λ) = (s .= (p ./ s) .^ (λ / (ε + λ)))
+
+"""
     sinkhorn_unbalanced(μ, ν, C, λ1::Real, λ2::Real, ε; kwargs...)
 
 Compute the optimal transport plan for the unbalanced entropically regularized optimal
@@ -39,11 +49,15 @@ function sinkhorn_unbalanced(
     end
 
     # define "proxdiv" functions for the unbalanced OT problem
-    proxdivF!(s, p, ε, λ) = (s .= (p ./ s) .^ (λ / (ε + λ)))
-    proxdivF1!(s, p, ε) = proxdivF!(s, p, ε, λ1)
-    proxdivF2!(s, p, ε) = proxdivF!(s, p, ε, λ2)
+    proxdivF1!(s, p, ε) = proxdivKL!(s, p, ε, λ1)
+    proxdivF2!(s, p, ε) = proxdivKL!(s, p, ε, λ2)
 
     return sinkhorn_unbalanced(μ, ν, C, proxdivF1!, proxdivF2!, ε; kwargs...)
+end
+
+function sinkhorn_unbalanced(μ, C, λ::Real, ε; kwargs...)
+    proxdivF!(s, p, ε) = proxdivKL!(s, p, ε, λ)
+    return sinkhorn_unbalanced(μ, C, proxdivF!, ε; kwargs...)
 end
 
 """
@@ -177,11 +191,11 @@ function sinkhorn_unbalanced(
             b_old .-= b
             sqeuclidean_a_b = sum(abs2, a_old) + sum(abs2, b_old)
             @debug "Sinkhorn algorithm (" *
-                   string(iter) *
-                   "/" *
-                   string(_maxiter) *
-                   ": squared Euclidean distance of iterates = " *
-                   string(sqeuclidean_a_b)
+                string(iter) *
+                "/" *
+                string(_maxiter) *
+                ": squared Euclidean distance of iterates = " *
+                string(sqeuclidean_a_b)
 
             # check convergence of `a`
             if sqeuclidean_a_b < max(sqatol, sqrtol * max(sqnorm_a_b, sqnorm_a_b_old))
@@ -197,6 +211,67 @@ function sinkhorn_unbalanced(
     end
 
     return K .* a .* b'
+end
+
+"""
+    function sinkhorn_unbalanced(
+            μ, C, proxdivF!, ε; atol = nothing, rtol = nothing, maxiter::Int = 1_000, check_convergence::Int=10
+    )
+
+    Specialised case of [`sinkhorn_unbalanced`](@ref) to the special symmetric case where both inputs `μ, ν` are identical and the cost `C` is symmetric.
+"""
+function sinkhorn_unbalanced(
+    μ,
+    C,
+    proxdivF!,
+    ε;
+    atol=nothing,
+    rtol=nothing,
+    maxiter::Int=1_000,
+    check_convergence::Int=10,
+)
+    # compute Gibbs kernel
+    K = @. exp(-C / ε)
+
+    # set default values of squared tolerances
+    T = float(Base.promote_eltype(μ, K))
+    sqatol = atol === nothing ? 0 : atol^2
+    sqrtol = rtol === nothing ? (sqatol > zero(sqatol) ? zero(T) : eps(T)) : rtol^2
+
+    # initialize iterate and cache
+    a = similar(μ, T)
+    sum!(a, K)
+    tmp = similar(a)
+
+    isconverged = false
+    for iter in 1:maxiter
+        ischeck = iter % check_convergence == 0
+        mul!(tmp, K, a)
+        proxdivF!(tmp, μ, ε)
+        if ischeck
+            sqnorm_a = sum(abs2, tmp)
+            sqnorm_a_old = sum(abs2, a)
+            sqeuclidean_a = sum(abs2, a - tmp)
+            @debug "Sinkhorn algorithm (" *
+                string(iter) *
+                "/" *
+                string(maxiter) *
+                ": squared Euclidean distance of iterates = " *
+                string(sqeuclidean_a)
+
+            # check convergence of `a`
+            if sqeuclidean_a < max(sqatol, sqrtol * max(sqnorm_a, sqnorm_a_old))
+                @debug "Sinkhorn algorithm ($iter/$maxiter): converged"
+                isconverged = true
+                break
+            end
+        end
+        @. a = 0.5 * (a + tmp)
+    end
+    if !isconverged
+        @warn "Sinkhorn algorithm ($maxiter/$maxiter): not converged"
+    end
+    return K .* a .* a'
 end
 
 """
@@ -216,18 +291,45 @@ optimal transport problems with general soft marginal constraints.
 See also: [`sinkhorn_unbalanced`](@ref)
 """
 function sinkhorn_unbalanced2(
-    μ, ν, C, λ1_or_proxdivF1, λ2_or_proxdivF2, ε; plan=nothing, kwargs...
+    μ, ν, c, λ1_or_proxdivf1, λ2_or_proxdivf2, ε; plan=nothing, kwargs...
 )
     γ = if plan === nothing
-        sinkhorn_unbalanced(μ, ν, C, λ1_or_proxdivF1, λ2_or_proxdivF2, ε; kwargs...)
+        sinkhorn_unbalanced(μ, ν, c, λ1_or_proxdivf1, λ2_or_proxdivf2, ε; kwargs...)
     else
         # check dimensions
-        size(C) == (length(μ), length(ν)) ||
-            error("cost matrix `C` must be of size `(length(μ), length(ν))`")
-        size(plan) == size(C) || error(
-            "optimal transport plan `plan` and cost matrix `C` must be of the same size",
+        size(c) == (length(μ), length(ν)) ||
+            error("cost matrix `c` must be of size `(length(μ), length(ν))`")
+        size(plan) == size(c) || error(
+            "optimal transport plan `plan` and cost matrix `c` must be of the same size",
         )
         plan
     end
-    return dot(γ, C)
+    return dot(γ, c)
+end
+
+function sinkhorn_unbalanced2(μ, c, λ_or_proxdivf, ε; plan=nothing, kwargs...)
+    γ = if plan === nothing
+        sinkhorn_unbalanced(μ, c, λ_or_proxdivf, ε; kwargs...)
+    else
+        # check dimensions
+        size(c) == (length(μ), length(μ)) ||
+            error("cost matrix `c` must be of size `(length(μ), length(μ))`")
+        size(plan) == size(c) || error(
+            "optimal transport plan `plan` and cost matrix `c` must be of the same size",
+        )
+        plan
+    end
+    return dot(γ, c)
+end
+
+"""
+Unbalanced Sinkhorn divergence, following [^SFVTP19]
+
+[^SFVTP19]: Séjourné, T., Feydy, J., Vialard, F.X., Trouvé, A. and Peyré, G., 2019. Sinkhorn divergences for unbalanced optimal transport. arXiv preprint arXiv:1910.12958.
+"""
+function sinkhorn_divergence_unbalanced(μ, ν, cμν, cμ, cν, λ, ε; kwargs...)
+    Sμν = sinkhorn_unbalanced2(μ, ν, cμν, λ, λ, ε; kwargs...)
+    Sμ = sinkhorn_unbalanced2(μ, cμ, λ, ε; kwargs...)
+    Sν = sinkhorn_unbalanced2(ν, cν, λ, ε; kwargs...)
+    return max(0, Sμν - (Sμ + Sν) / 2 + ε * (sum(μ) - sum(ν))^2 / 2)
 end

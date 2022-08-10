@@ -85,12 +85,12 @@ function solve!(
 
             isconverged, abserror = OptimalTransport.check_convergence(solver)
             @debug string(solver.alg) *
-                   " (" *
-                   string(iter) *
-                   "/" *
-                   string(maxiter) *
-                   ": absolute error of source marginal = " *
-                   string(maximum(abserror))
+                " (" *
+                string(iter) *
+                "/" *
+                string(maxiter) *
+                ": absolute error of source marginal = " *
+                string(maximum(abserror))
 
             if isconverged
                 @debug "$(solver.alg) ($iter/$maxiter): converged"
