@@ -266,7 +266,7 @@ function sinkhorn_unbalanced(
                 break
             end
         end
-        @. a = 0.5 * (a + tmp)
+        @. a = exp.(0.5 * (log.(a) + log.(tmp)))
     end
     if !isconverged
         @warn "Sinkhorn algorithm ($maxiter/$maxiter): not converged"
