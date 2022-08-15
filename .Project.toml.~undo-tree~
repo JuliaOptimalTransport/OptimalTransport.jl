@@ -1,5 +1,0 @@
-(undo-tree-save-format-version . 1)
-"132428a2d2c5a6a10f79de9b3f01f1f1f63d9831"
-[nil nil nil nil (25331 7162 545747 544000) 0 nil]
-([nil current ((143 . 145) (#("1" 0 1 (fontified t face font-lock-string-face)) . -143) (undo-tree-id0 . -1) (undo-tree-id1 . -1) (undo-tree-id2 . -1) (undo-tree-id3 . -1) (undo-tree-id4 . -1) (undo-tree-id5 . -1) (undo-tree-id6 . -1) (undo-tree-id7 . -1) (undo-tree-id8 . -1) (undo-tree-id9 . -1) (undo-tree-id10 . -1) (undo-tree-id11 . -1) (undo-tree-id12 . -1) (undo-tree-id13 . -1) (#("9" 0 1 (fontified t face font-lock-string-face)) . -144) (undo-tree-id14 . -1) 145 (t 25331 663 134767 271000)) nil (25331 7162 545737 486000) 0 nil])
-nil
