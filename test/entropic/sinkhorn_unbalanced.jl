@@ -27,7 +27,7 @@ Random.seed!(100)
 
         # compare with POT
         γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda; stopThr=1e-9)
-        @test γ_pot ≈ γ
+        @test γ_pot ≈ γ 
 
         # compute optimal transport cost
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps; maxiter=5_000)
@@ -105,11 +105,11 @@ Random.seed!(100)
             1e-4
         @test sinkhorn_unbalanced(ν, Cνν, λ, ε) ≈ sinkhorn_unbalanced(ν, ν, Cνν, λ, λ, ε) rtol =
             1e-4
-
+        
         # check against balanced case 
         proxdivF!(s, p, ε) = (s .= p ./ s)
         @test sinkhorn_divergence_unbalanced(μ, ν, Cμν, Cμμ, Cνν, proxdivF!, ε) ≈
-            sinkhorn_divergence(μ, ν, Cμν, Cμμ, Cνν, ε) rtol = 1e-6
+            sinkhorn_divergence(μ, ν, Cμν, Cμμ, Cνν, ε) rtol = 1e-4
     end
 
     @testset "deprecations" begin

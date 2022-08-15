@@ -219,6 +219,10 @@ end
     )
 
     Specialised case of [`sinkhorn_unbalanced`](@ref) to the special symmetric case where both inputs `μ, ν` are identical and the cost `C` is symmetric.
+    This implementation takes advantage of additional structure in the symmetric case which allows for a fixed point iteration with much faster convergence,
+    similar to that described by [^FeydyP19] and also employed in [`sinkhorn_divergence`](@ref) for the balanced case.
+
+    [^FeydyP19]: Jean Feydy, Thibault Séjourné, François-Xavier Vialard, Shun-ichi Amari, Alain Trouvé, and Gabriel Peyré. Interpolating between optimal transport and mmd using sinkhorn divergences. In The 22nd International Conference on Artificial Intelligence and Statistics, pages 2681–2690. PMLR, 2019.
 """
 function sinkhorn_unbalanced(
     μ,
@@ -323,7 +327,19 @@ function sinkhorn_unbalanced2(μ, c, λ_or_proxdivf, ε; plan=nothing, kwargs...
 end
 
 """
-Unbalanced Sinkhorn divergence, following [^SFVTP19]
+    sinkhorn_divergence_unbalanced(μ, ν, cμν, cμ, cν, λ, ε; kwargs...)
+
+Compute the unbalanced Sinkhorn divergence between unnormalized inputs `μ` and `ν` with cost matrix `cμν`, `cμ` and `cν` between `(μ,ν)`, `(μ, μ)` and `(ν, ν)` respectively,
+regularization level `ε` and marginal constraint parameter `λ`. Following [^SFVTP19], the unbalanced Sinkhorn divergence is defined as
+```math
+    \\operatorname{S}_{\\varepsilon, \\lambda} (\\mu, \\nu) := \\operatorname{OT}_{ε, λ}(μ,ν)
+    - \\frac{1}{2}(\\operatorname{OT}_{ε, λ}(μ,μ) + \\operatorname{OT}_{ε, λ}(ν,ν)) + \\frac{ε}{2}(m(μ) + m(ν))^2,
+```
+where ``\\operatorname{OT}_{ε, λ}(\\alpha, \\beta)`` is defined to be 
+```
+        \\operatorname{OT}_{ε, λ}(\\alpha, \\beta) = \inf_{\\gamma} \\langle C, \\gamma \\rangle + \\varepsilon \\operatorname{KL}(\\gamma | \\alpha \\otimes \\beta) + \\lambda ( \\operatorname{KL}(\\gamma_1 | \\alpha) + \\operatorname{KL}(\\gamma_2 | \\beta) ),
+```
+i.e. the output of calling `sinkhorn_unbalanced2` with the default Kullback-Leibler marginal penalties. 
 
 [^SFVTP19]: Séjourné, T., Feydy, J., Vialard, F.X., Trouvé, A. and Peyré, G., 2019. Sinkhorn divergences for unbalanced optimal transport. arXiv preprint arXiv:1910.12958.
 """
