@@ -336,7 +336,7 @@ regularization level `ε` and marginal constraint parameter `λ`. Following [^SF
     - \\frac{1}{2}(\\operatorname{OT}_{ε, λ}(μ,μ) + \\operatorname{OT}_{ε, λ}(ν,ν)) + \\frac{ε}{2}(m(μ) + m(ν))^2,
 ```
 where ``\\operatorname{OT}_{ε, λ}(\\alpha, \\beta)`` is defined to be 
-```
+```math
         \\operatorname{OT}_{ε, λ}(\\alpha, \\beta) = \inf_{\\gamma} \\langle C, \\gamma \\rangle + \\varepsilon \\operatorname{KL}(\\gamma | \\alpha \\otimes \\beta) + \\lambda ( \\operatorname{KL}(\\gamma_1 | \\alpha) + \\operatorname{KL}(\\gamma_2 | \\beta) ),
 ```
 i.e. the output of calling `sinkhorn_unbalanced2` with the default Kullback-Leibler marginal penalties. 
