@@ -35,7 +35,7 @@ Random.seed!(100)
         ε = 0.05f0
 
         @testset "sinkhorn" begin
-           for alg in (
+            for alg in (
                 (),
                 (SinkhornGibbs(),),
                 (SinkhornStabilized(),),
