@@ -140,6 +140,5 @@ Random.seed!(100)
         )
         @test γ_proxdiv ≈ γ
         @test c_proxdiv ≈ c
-
     end
 end
