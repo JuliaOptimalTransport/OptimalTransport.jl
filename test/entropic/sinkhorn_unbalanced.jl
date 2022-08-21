@@ -141,20 +141,5 @@ Random.seed!(100)
         @test γ_proxdiv ≈ γ
         @test c_proxdiv ≈ c
 
-        # deprecated `tol` keyword argument
-        γ = sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; atol=1e-7)
-        c = sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; atol=1e-7)
-        γ_tol = @test_deprecated sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; tol=1e-7)
-        c_tol = @test_deprecated sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; tol=1e-7)
-        @test γ_tol == γ
-        @test c_tol == c
-
-        # deprecated `max_iter` keyword argument
-        γ = sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; maxiter=50)
-        c = sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; maxiter=50)
-        γ_max_iter = @test_deprecated sinkhorn_unbalanced(μ, ν, C, λ1, λ2, ε; max_iter=50)
-        c_max_iter = @test_deprecated sinkhorn_unbalanced2(μ, ν, C, λ1, λ2, ε; max_iter=50)
-        @test γ_max_iter == γ
-        @test c_max_iter == c
     end
 end
