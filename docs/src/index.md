@@ -54,6 +54,7 @@ sinkhorn_stabilized_epsscaling
 ```@docs
 sinkhorn_unbalanced
 sinkhorn_unbalanced2
+sinkhorn_divergence_unbalanced
 ```
 
 ## Quadratically regularised optimal transport
