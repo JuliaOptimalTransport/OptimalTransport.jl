@@ -89,12 +89,12 @@ Random.seed!(100)
     @testset "infinite absorption tolerance" begin
         # compute optimal transport plan with infinite absorption tolerance
         alg = SinkhornStabilized(; absorb_tol=Inf)
-        γ = sinkhorn(μ, ν, C, ε, alg; maxiter=100)
-        c = sinkhorn(μ, ν, C, ε, alg; maxiter=100)
+        γ = sinkhorn(μ, ν, C, ε, alg; maxiter=5_000)
+        c = sinkhorn(μ, ν, C, ε, alg; maxiter=5_000)
 
         # compare with regular Sinkhorn algorithm
-        γ_sinkhorn = sinkhorn(μ, ν, C, ε; maxiter=100)
-        c_sinkhorn = sinkhorn(μ, ν, C, ε; maxiter=100)
+        γ_sinkhorn = sinkhorn(μ, ν, C, ε; maxiter=5_000)
+        c_sinkhorn = sinkhorn(μ, ν, C, ε; maxiter=5_000)
         @test γ_sinkhorn ≈ γ
         @test c_sinkhorn ≈ c
     end
