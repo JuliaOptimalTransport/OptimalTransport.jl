@@ -83,11 +83,11 @@ function prestep!(solver::SinkhornSolver{<:SinkhornStabilized}, iter::Int)
     # absorption step
     if maximum(abs, u) > absorb_tol || maximum(abs, v) > absorb_tol
         @debug string(solver.alg) *
-               " (" *
-               string(iter) *
-               "/" *
-               string(maxiter) *
-               ": absorbing `u` and `v` into `α` and `β`"
+            " (" *
+            string(iter) *
+            "/" *
+            string(maxiter) *
+            ": absorbing `u` and `v` into `α` and `β`"
 
         # absorb `u` and `v` into `α` and `β`
         absorb!(solver)
