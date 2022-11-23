@@ -40,6 +40,7 @@ Currently the following variants of the Sinkhorn algorithm are supported:
 SinkhornGibbs
 SinkhornStabilized
 SinkhornEpsilonScaling
+Greenkhorn
 ```
 
 The following methods are deprecated and will be removed:
