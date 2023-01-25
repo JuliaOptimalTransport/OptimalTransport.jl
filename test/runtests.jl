@@ -1,5 +1,5 @@
 using OptimalTransport
-using Pkg: Pkg
+using Pkg
 using SafeTestsets
 
 using Test
@@ -43,7 +43,7 @@ const GROUP = get(ENV, "GROUP", "All")
     end
 
     # CUDA requires Julia >= 1.6
-    if (GROUP == "All" || GROUP == "GPU") && VERSION >= v"1.6"
+    if (GROUP == "All" || GROUP == "GPU") && VERSION >= v"1.8"
         # activate separate environment: CUDA can't be added to test/Project.toml since it
         # is not available on older Julia versions
         Pkg.activate("gpu")
