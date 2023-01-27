@@ -56,7 +56,8 @@ function entropic_gromov_wasserstein(
 
     function get_new_cost!(C, plan, tmp, Cμ, Cν)
         A_batched_mul_B!(tmp, Cμ, plan)
-        return A_batched_mul_B!(C, tmp, -4Cν)
+        lmul!(-4, tmp)
+        return A_batched_mul_B!(C, tmp, Cν)
         # seems to be a missing factor of 4 (or something like that...) compared to the POT implementation?
         # added the factor of 4 here to ensure reproducibility for the same value of ε.
         # https://github.com/PythonOT/POT/blob/9412f0ad1c0003e659b7d779bf8b6728e0e5e60f/ot/gromov.py#L247
@@ -77,7 +78,8 @@ function entropic_gromov_wasserstein(
         if to_check_step == 0 || iter == maxiter
             # reset counter
             to_check_step = check_convergence
-            isconverged = sum(abs, plan - plan_prev) < max(_atol, _rtol * norm_plan)
+            plan_prev .-= plan 
+            isconverged = sum(abs, plan_prev) < max(_atol, _rtol * norm_plan)
             if isconverged
                 @debug "Gromov Wasserstein with $(solver.alg) ($iter/$maxiter): converged"
                 break
