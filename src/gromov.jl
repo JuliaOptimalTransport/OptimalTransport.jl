@@ -78,7 +78,7 @@ function entropic_gromov_wasserstein(
         if to_check_step == 0 || iter == maxiter
             # reset counter
             to_check_step = check_convergence
-            plan_prev .-= plan 
+            plan_prev .-= plan
             isconverged = sum(abs, plan_prev) < max(_atol, _rtol * norm_plan)
             if isconverged
                 @debug "Gromov Wasserstein with $(solver.alg) ($iter/$maxiter): converged"
