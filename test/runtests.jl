@@ -1,5 +1,5 @@
 using OptimalTransport
-using Pkg
+using Pkg: Pkg
 using SafeTestsets
 
 using Test
