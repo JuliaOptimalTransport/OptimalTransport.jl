@@ -32,7 +32,7 @@ Random.seed!(100)
         cu_C = cu(C)
 
         # regularization parameter
-        ε = 0.01f0
+        ε = 0.05f0
 
         @testset "sinkhorn" begin
             for alg in (
@@ -97,11 +97,13 @@ Random.seed!(100)
         @testset "quadreg" begin
             # use a different reg parameter
             ε_quad = 1.0f0
-            γ = quadreg(cu_μ, cu_ν, cu_C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1f-5, 50))
+            γ = quadreg(
+                cu_μ, cu_ν, cu_C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1.0f-5, 50)
+            )
             # compare with results on the CPU
             @test convert(Array, γ) ≈
-                  quadreg(μ, ν, C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1f-5, 50)) atol =
-                1f-4 rtol = 1f-4
+                quadreg(μ, ν, C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1.0f-5, 50)) atol =
+                1.0f-4 rtol = 1.0f-4
         end
     end
 end

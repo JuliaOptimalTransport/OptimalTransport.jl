@@ -55,7 +55,7 @@ Random.seed!(100)
         )
         @test c_w_regularization ≈ c + ε * sum(x -> iszero(x) ? x : x * log(x), γ)
         @test c_w_regularization ==
-              sinkhorn2(μ, ν, C, ε; maxiter=5_000, regularization=true)
+            sinkhorn2(μ, ν, C, ε; maxiter=5_000, regularization=true)
 
         # ensure that provided plan is used and correct
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(), SinkhornGibbs(); plan=γ)
@@ -66,7 +66,7 @@ Random.seed!(100)
         )
         @test c2_w_regularization ≈ c_w_regularization
         @test c2_w_regularization ==
-              sinkhorn2(similar(μ), similar(ν), C, ε; plan=γ, regularization=true)
+            sinkhorn2(similar(μ), similar(ν), C, ε; plan=γ, regularization=true)
 
         # batches of histograms
         d = 10
@@ -141,7 +141,7 @@ Random.seed!(100)
             @test size(γ_all) == (M, N, d)
             @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
             @test γ_all ==
-                  sinkhorn(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
+                sinkhorn(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
 
             # compute optimal transport cost and check that it is consistent with the
             # cost for individual histograms
@@ -151,7 +151,7 @@ Random.seed!(100)
             @test size(c_all) == (d,)
             @test all(x ≈ c for x in c_all)
             @test c_all ==
-                  sinkhorn2(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
+                sinkhorn2(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
         end
     end
 
