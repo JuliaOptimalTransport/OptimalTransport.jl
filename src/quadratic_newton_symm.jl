@@ -5,6 +5,11 @@ struct SymmetricQuadraticOTNewton{T<:Real,K<:Real,D<:Real} <: QuadraticOT
     armijo_max::Int
 end
 
+struct SymmetricQuadraticOTNewtonActiveSet{A<:SymmetricQuadraticOTNewton, ST<:AbstractSparseArray}
+    alg::A
+    S::ST
+end
+
 function SymmetricQuadraticOTNewton(; θ=0.1, κ=0.5, δ=1e-5, armijo_max=50)
     return SymmetricQuadraticOTNewton(θ, κ, δ, armijo_max)
 end
