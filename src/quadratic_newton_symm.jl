@@ -246,6 +246,10 @@ function solve!(solver::QuadraticOTSolver{<:SymmetricQuadraticOTNewtonAS})
     u_prev = similar(solver.cache.u)
     copy!(u_prev, solver.cache.u)
 
+    # active-set method only works for symmetric case with uniform weights.
+    # verify this is indeed the case
+    if !all(maximum(μ) .== μ) throw(ArgumentError("Active set method only works for uniform weights.")) end
+
     function check_convergence_dual(u, u_prev, atol, rtol)
         norm_diff = norm(u - u_prev)
         isconverged =
@@ -385,7 +389,6 @@ end
 
 
 # interface 
-
 function quadreg(μ, C, ε, alg::SymmetricQuadraticOTNewton; kwargs...)
     solver = build_solver(μ, C, ε, alg; kwargs...)
     solve!(solver)
