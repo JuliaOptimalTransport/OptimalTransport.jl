@@ -1,8 +1,8 @@
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
+NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 
 [compat]
-CUDA = "3"
-NNlibCUDA = "0.2"
+CUDA = "5"
+NNlib = "0.9"
 julia = "1.6"

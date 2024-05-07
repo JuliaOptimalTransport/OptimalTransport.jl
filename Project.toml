@@ -15,7 +15,7 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 ExactOptimalTransport = "0.1, 0.2"
 IterativeSolvers = "0.8.4, 0.9"
 LogExpFunctions = "0.2, 0.3"
-NNlib = "0.6, 0.7, 0.8"
+NNlib = "0.6, 0.7, 0.8, 0.9"
 Reexport = "1"
 julia = "1"
 
