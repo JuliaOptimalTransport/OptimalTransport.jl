@@ -6,8 +6,6 @@ steps:
           python: ""
       - JuliaCI/julia-test#v1:
           coverage: false
-    command:
-      - mkdir -p "$${JULIA_DEPOT_PATH}/conda/3/x86_64"
     agents:
       queue: "juliagpu"
       cuda: "*"
