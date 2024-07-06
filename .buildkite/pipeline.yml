@@ -3,6 +3,7 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "1"
+          python: ""
       - JuliaCI/julia-test#v1:
           coverage: false
     command:
