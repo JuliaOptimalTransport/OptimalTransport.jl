@@ -183,6 +183,52 @@ function sinkhorn(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
     return γ
 end
 
+"""
+    sinkhorn_potentials(
+        μ, ν, C, ε, alg=SinkhornGibbs();
+        atol=0, rtol=atol > 0 ? 0 : √eps, check_convergence=10, maxiter=1_000,
+    )
+
+Compute the dual potentials for the entropically regularized optimal transport
+problem with source and target marginals `μ` and `ν`, cost matrix `C` of size
+`(length(μ), length(ν))`, and entropic regularization parameter `ε`.
+
+Every `check_convergence` steps it is assessed if the algorithm is converged by checking if
+the iterate of the transport plan `G` satisfies
+```julia
+isapprox(sum(G; dims=2), μ; atol=atol, rtol=rtol, norm=x -> norm(x, 1))
+```
+The default `rtol` depends on the types of `μ`, `ν`, and `C`. After `maxiter` iterations,
+the computation is stopped.
+
+Batch computations for multiple histograms with a common cost matrix `C` can be performed by
+passing `μ` or `ν` as matrices whose columns correspond to histograms. It is required that
+the number of source and target marginals is equal or that a single source or single target
+marginal is provided (either as matrix or as vector). The optimal transport plans are
+returned as three-dimensional array where `γ[:, :, i]` is the optimal transport plan for the
+`i`th pair of source and target marginals.
+
+See also: [`sinkhorn2`](@ref)
+"""
+
+function sinkhorn_potentials(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
+    # build solver
+    solver = build_solver(μ, ν, C, ε, alg; kwargs...)
+
+    # perform Sinkhorn algorithm
+    solve!(solver)
+
+    # compute optimal transport plan
+    u = solver.cache.u
+    v = solver.cache.v
+    f = ε * log.(u)
+    g = ε * log.(v)
+
+    return (f, g)
+end
+
+
+
 function sinkhorn_cost_from_plan(γ, C, ε; regularization=false)
     cost = if regularization
         dot_matwise(γ, C) .+
