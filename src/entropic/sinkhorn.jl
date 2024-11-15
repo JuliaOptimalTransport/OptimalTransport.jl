@@ -265,7 +265,7 @@ function entropic_transport_map(μ, ν, samples_ν, C, ε, alg::Sinkhorn; kwargs
             y = x .- samples_ν[i,:]
             b[i] = exp(1/ε * (g[i] - 0.5 * sum(y .* y)))
         end
-        return sum(b .* ν) / sum(b)
+        return sum(b .* samples_ν) / sum(b)
     end
     return T
 end
