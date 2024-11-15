@@ -256,13 +256,13 @@ returned as three-dimensional array where `γ[:, :, i]` is the optimal transport
 See also: [`sinkhorn2`](@ref)
 """
 
-function entropic_transport_map(μ, ν, C, ε, alg::Sinkhorn; kwargs...)
+function entropic_transport_map(μ, ν, samples_ν, C, ε, alg::Sinkhorn; kwargs...)
     _, g = sinkhorn_potentials(μ, ν, C, ε, alg; kwargs...)
     N = size(ν, 1)
     function T(x::AbstractVecOrMat)
         b = zeros(N)
         for i in 1:N
-            y = x .- ν[i,:]
+            y = x .- samples_ν[i,:]
             b[i] = exp(1/ε * (g[i] - 0.5 * sum(y .* y)))
         end
         return sum(b .* ν) / sum(b)
