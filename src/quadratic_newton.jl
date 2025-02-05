@@ -198,12 +198,12 @@ function solve!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
                 μ, ν, cache, convergence_cache, atol, rtol
             )
             @debug string(solver.alg) *
-                   " (" *
-                   string(iter) *
-                   "/" *
-                   string(maxiter) *
-                   ": absolute error of source marginal = " *
-                   string(maximum(abserror))
+                " (" *
+                string(iter) *
+                "/" *
+                string(maxiter) *
+                ": absolute error of source marginal = " *
+                string(maximum(abserror))
 
             if isconverged
                 @debug "$(solver.alg) ($iter/$maxiter): converged"
