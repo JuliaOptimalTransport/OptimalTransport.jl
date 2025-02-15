@@ -1,9 +1,9 @@
 steps:
-  - label: "Julia v1"
+  - label: "Julia v1.10.8"
     plugins:
-      - JuliaCI/julia#v1:
-          version: "1"
-      - JuliaCI/julia-test#v1:
+      - JuliaCI/julia#v1.10.8:
+          version: "1.10.8"
+      - JuliaCI/julia-test#v1.10.8:
           coverage: false
     agents:
       queue: "juliagpu"
