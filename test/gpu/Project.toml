@@ -3,6 +3,6 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
 
 [compat]
-CUDA = "3"
+CUDA = "3, 4, 5"
 NNlibCUDA = "0.2"
 julia = "1.6"
