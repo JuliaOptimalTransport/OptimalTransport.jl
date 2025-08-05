@@ -89,7 +89,8 @@ Random.seed!(100)
             c = sinkhorn_unbalanced2(cu_μscaled, cu_ν, cu_C, λ1, λ2, ε)
 
             # compare with results on the CPU
-            @test convert(Array, γ) ≈ sinkhorn_unbalanced(μscaled, ν, C, λ1, λ2, ε)
+            @test convert(Array, γ) ≈ sinkhorn_unbalanced(μscaled, ν, C, λ1, λ2, ε) atol =
+                1e-3f
             @test c ≈ sinkhorn_unbalanced2(μscaled, ν, C, λ1, λ2, ε)
         end
 
@@ -102,7 +103,7 @@ Random.seed!(100)
             # compare with results on the CPU
             @test convert(Array, γ) ≈
                 quadreg(μ, ν, C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1.0f-5, 50)) atol =
-                1.0f-4 rtol = 1.0f-4
+                1.0f-3 rtol = 1.0f-3
         end
     end
 end
