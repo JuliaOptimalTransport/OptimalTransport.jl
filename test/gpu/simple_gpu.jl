@@ -2,7 +2,6 @@ using OptimalTransport
 
 using CUDA
 using Distances
-using NNlibCUDA
 
 using LinearAlgebra
 using Random
