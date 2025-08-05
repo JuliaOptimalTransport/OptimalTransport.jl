@@ -119,7 +119,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     # setup kernel matrix G
     diagind_G = diagind(G)
     sum!(view(G, @view(diagind_G[begin:(end - N)])), σ)
-    sum!(view(G, @view(diagind_G[(begin + M):end]))', σ)
+    sum!(view(G, @view(diagind_G[(begin + M):end])), σ')
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
     view(G, diagind_G) .+= δ # regularise cg
@@ -129,7 +129,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     sum!(bM, γ)
     @. bM = eps * (μ - bM)
     bN = @view(b[(begin + M):end])
-    sum!(bN', γ)
+    sum!(bN, γ')
     @. bN = eps * (ν - bN)
     fill!(x, zero(eltype(x)))
     cg!(x, G, b; initially_zero = true)
