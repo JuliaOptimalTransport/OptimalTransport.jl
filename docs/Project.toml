@@ -5,5 +5,5 @@ OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 
 [compat]
 ExactOptimalTransport = "0.1, 0.2"
-Documenter = "0.27, 1"
+Documenter = "1"
 OptimalTransport = "0.3"
