@@ -90,7 +90,7 @@ Random.seed!(100)
 
             # compare with results on the CPU
             @test convert(Array, γ) ≈ sinkhorn_unbalanced(μscaled, ν, C, λ1, λ2, ε) atol =
-                1e-3f
+                1f-3
             @test c ≈ sinkhorn_unbalanced2(μscaled, ν, C, λ1, λ2, ε)
         end
 
