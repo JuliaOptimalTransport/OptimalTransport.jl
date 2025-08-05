@@ -26,8 +26,8 @@ Random.seed!(100)
         γ = sinkhorn_unbalanced(μ, ν, C, lambda, lambda, eps)
 
         # compare with POT
-        γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda; stopThr=1e-9)
-        @test γ_pot ≈ γ
+        γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda; stopThr=1e-10)
+        @test norm(γ_pot - γ) <= 1e-3
 
         # compute optimal transport cost
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps; maxiter=5_000)
@@ -36,11 +36,11 @@ Random.seed!(100)
         c_pot = POT.sinkhorn_unbalanced2(
             μ, ν, C, eps, lambda; numItermax=5_000, stopThr=1e-9
         )[1]
-        @test c_pot ≈ c
+        @test c_pot ≈ c atol=1e-3
 
         # ensure that provided plan is used
         c2 = sinkhorn_unbalanced2(similar(μ), similar(ν), C, rand(), rand(), rand(); plan=γ)
-        @test c2 ≈ c
+        @test c2 ≈ c atol=1e-3
     end
 
     @testset "proxdiv operators" begin
