@@ -39,4 +39,5 @@ docs/src/examples/
 \#*\#
 .\#*
 
-.vscode*
+# VS Code settings
+.vscode/*
