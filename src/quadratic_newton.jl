@@ -122,13 +122,15 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
     # G[diagind(G)] .+= δ # regularise cg
-    G += δ * I
+    G .+= δ * I
 
     # cg step
     b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
     cg!(x, G, b)
     δu .= x[1:M]
-    return δv .= x[(M + 1):end]
+    δv .= x[(M + 1):end]
+
+    return nothing
 end
 
 function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
@@ -158,15 +160,21 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
 
     # compute directional derivative
     d = -eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
-    t = 1
+
+    # find step size
+    t = oneunit(κ)
     Φ0 = Φ(u, v, μ, ν, C, eps)
     while (armijo_counter < armijo_max) &&
         (Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d)
         t = κ * t
         armijo_counter += 1
     end
-    u .= u + t * δu
-    return v .= v + t * δv
+
+    # perform step
+    @. u = u - t * δu
+    @. v = v - t * δv
+
+    return nothing
 end
 
 function solve!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
