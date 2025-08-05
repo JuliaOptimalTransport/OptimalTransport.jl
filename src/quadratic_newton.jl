@@ -37,6 +37,7 @@ struct QuadraticOTNewtonCache{U,V,C,P,GT,X}
     σ::C
     γ::P
     G::GT
+    b::X
     x::X
     M::Int
     N::Int
@@ -64,10 +65,10 @@ function build_cache(
     N = size(ν, 1)
     G = similar(u, T, M + N, M + N)
     fill!(G, zero(T))
-    # initial guess for conjugate gradient 
+    # RHS and initial guess for conjugate gradient (don't need to be initialized)
+    b = similar(u, T, M + N)
     x = similar(u, T, M + N)
-    fill!(x, zero(T))
-    return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, x, M, N)
+    return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, b, x, M, N)
 end
 
 function check_convergence(
@@ -103,6 +104,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     σ = cache.σ
     γ = cache.γ
     G = cache.G
+    b = cache.b
     x = cache.x
     M = cache.M
     N = cache.N
@@ -115,20 +117,24 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     @. γ = NNlib.relu(γ) / eps
 
     # setup kernel matrix G
-    # G[diagind(G)[1:M]] .= vec(sum(σ; dims=2))
-    G[1:M, 1:M] .= Diagonal(vec(sum(σ; dims=2)))
-    # G[diagind(G)[(M + 1):end]] .= vec(sum(σ; dims=1))
-    G[(M + 1):end, (M + 1):end] .= Diagonal(vec(sum(σ; dims=1)))
+    diagind_G = diagind(G)
+    sum!(view(G, @view(diagind_G[begin:(end - N)])), σ)
+    sum!(view(G, @view(diagind_G[(begin + M):end]))', σ)
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
-    # G[diagind(G)] .+= δ # regularise cg
-    G .+= δ * I
+    view(G, diagind_G) .+= δ # regularise cg
 
     # cg step
-    b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
-    cg!(x, G, b)
-    δu .= x[1:M]
-    δv .= x[(M + 1):end]
+    bM = @view(b[begin:(end - N)])
+    sum!(bM, γ)
+    @. bM = eps * (μ - bM)
+    bN = @view(b[(begin + M):end])
+    sum!(bN', γ)
+    @. bN = eps * (ν - bN)
+    fill!(x, zero(eltype(x)))
+    cg!(x, G, b; initially_zero = true)
+    copyto!(δu, 1, x, 1, M)
+    copyto!(δv, 1, x, M + 1, N)
 
     return nothing
 end
@@ -155,18 +161,18 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
 
     # dual objective 
     function Φ(u, v, μ, ν, C, ε)
-        return norm(NNlib.relu.(u .+ v' .- C))^2 / 2 - ε * dot(μ, u) - ε * dot(ν, v)
+        return sum(abs2, NNlib.relu.(u .+ v' .- C)) / 2 - ε * (dot(μ, u) + dot(ν, v))
     end
 
     # compute directional derivative
-    d = -eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
+    d = eps * (dot(γ, δu .+ δv') - (dot(δu, μ) + dot(δv, ν)))
 
     # find step size
     t = oneunit(κ)
     Φ0 = Φ(u, v, μ, ν, C, eps)
     while (armijo_counter < armijo_max) &&
         (Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d)
-        t = κ * t
+        t *= κ
         armijo_counter += 1
     end
 
