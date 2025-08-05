@@ -15,7 +15,9 @@ Distances = "0.10"
 Literate = "2.9"
 LogExpFunctions = "0.3"
 Optim = "1.4"
-OptimalTransport = "0.3"
 Plots = "1"
 ReverseDiff = "1"
 StatsBase = "0.34"
+
+[sources.OptimalTransport]
+path = "../.."

@@ -19,6 +19,8 @@ MLDatasets = "0.7"
 NMF = "1"
 NNlib = "0.9"
 Optim = "1"
-OptimalTransport = "0.3"
 Plots = "1"
 StatsBase = "0.34"
+
+[sources.OptimalTransport]
+path = "../.."
