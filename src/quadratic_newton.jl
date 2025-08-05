@@ -37,7 +37,6 @@ struct QuadraticOTNewtonCache{U,V,C,P,GT,X}
     σ::C
     γ::P
     G::GT
-    b::X
     x::X
     M::Int
     N::Int
@@ -65,10 +64,9 @@ function build_cache(
     N = size(ν, 1)
     G = similar(u, T, M + N, M + N)
     fill!(G, zero(T))
-    # RHS and initial guess for conjugate gradient (don't need to be initialized)
-    b = similar(u, T, M + N)
+    # initial guess for conjugate gradient (doesn't need to be initialized)
     x = similar(u, T, M + N)
-    return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, b, x, M, N)
+    return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, x, M, N)
 end
 
 function check_convergence(
@@ -104,7 +102,6 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     σ = cache.σ
     γ = cache.γ
     G = cache.G
-    b = cache.b
     x = cache.x
     M = cache.M
     N = cache.N
@@ -117,20 +114,17 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     @. γ = NNlib.relu(γ) / eps
 
     # setup kernel matrix G
-    diagind_G = diagind(G)
-    sum!(view(G, @view(diagind_G[begin:(end - N)])), σ)
-    sum!(view(G, @view(diagind_G[(begin + M):end])), σ')
+    # G[diagind(G)[1:M]] .= vec(sum(σ; dims=2))
+    G[1:M, 1:M] .= Diagonal(vec(sum(σ; dims=2)))
+    # G[diagind(G)[(M + 1):end]] .= vec(sum(σ; dims=1))
+    G[(M + 1):end, (M + 1):end] .= Diagonal(vec(sum(σ; dims=1)))
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
-    view(G, diagind_G) .+= δ # regularise cg
+    # G[diagind(G)] .+= δ # regularise cg
+    mul!(G, δ, I, true, true)
 
     # cg step
-    bM = @view(b[begin:(end - N)])
-    sum!(bM, γ)
-    @. bM = eps * (μ - bM)
-    bN = @view(b[(begin + M):end])
-    sum!(bN, γ')
-    @. bN = eps * (ν - bN)
+    b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
     fill!(x, zero(eltype(x)))
     cg!(x, G, b; initially_zero = true)
     copyto!(δu, 1, x, 1, M)
@@ -177,8 +171,8 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     end
 
     # perform step
-    @. u = u - t * δu
-    @. v = v - t * δv
+    axpy!(-t, δu, u)
+    axpy!(-t, δv, v)
 
     return nothing
 end
