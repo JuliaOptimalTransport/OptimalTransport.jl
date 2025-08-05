@@ -80,7 +80,7 @@ function check_convergence(
 )
     γ = cache.γ
     norm_diff = max(
-        norm(vec(sum(γ; dims=2)) .- μ, Inf), norm(vec(sum(γ; dims=1) .- ν), Inf)
+        norm(vec(sum(γ; dims=2)) .- μ, Inf), norm(vec(sum(γ; dims=1)) .- ν, Inf)
     )
     isconverged =
         norm_diff <
