@@ -27,7 +27,7 @@ Random.seed!(100)
 
         # compare with POT
         γ_pot = POT.sinkhorn_unbalanced(μ, ν, C, eps, lambda; stopThr=1e-10)
-        @test norm(γ_pot - γ) <= 1e-3
+        @test γ_pot ≈ γ atol=1e-3
 
         # compute optimal transport cost
         c = sinkhorn_unbalanced2(μ, ν, C, lambda, lambda, eps; maxiter=5_000)
