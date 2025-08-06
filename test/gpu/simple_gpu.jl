@@ -95,7 +95,7 @@ Random.seed!(100)
 
         @testset "quadreg" begin
             # use a different reg parameter
-            ε_quad = 0.1f0
+            ε_quad = 0.5f0
             γ = quadreg(
                 cu_μ, cu_ν, cu_C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1.0f-5, 50)
             )
