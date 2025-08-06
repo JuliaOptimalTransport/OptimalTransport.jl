@@ -21,7 +21,7 @@ Random.seed!(100)
     C = pairwise(SqEuclidean(), support'; dims=2)
 
     # regularisation parameter
-    ε = 0.05
+    ε = 0.1
 
     # weights 
     w = ones(N) / N
@@ -30,9 +30,8 @@ Random.seed!(100)
         α = sinkhorn_barycenter(μ, C, ε, w, SinkhornGibbs())
 
         # compare with POT
-        # need to use a larger tolerance here because of a quirk with the POT solver
-        α_pot = POT.barycenter(μ, C, ε; weights=w, stopThr=1e-9)
-        @test α ≈ α_pot rtol = 1e-6
+        α_pot = POT.barycenter(μ, C, ε; weights=w, stopThr=1e-16)
+        @test α ≈ α_pot
     end
 
     # different element type
@@ -43,7 +42,7 @@ Random.seed!(100)
         w32 = map(Float32, w)
         α = sinkhorn_barycenter(μ32, C32, ε32, w32, SinkhornGibbs())
 
-        α_pot = POT.barycenter(μ32, C32, ε32; weights=w32, stopThr=1e-9)
-        @test α ≈ α_pot rtol = 1e-5
+        α_pot = POT.barycenter(μ32, C32, ε32; weights=w32, stopThr=1e-16)
+        @test α ≈ α_pot
     end
 end

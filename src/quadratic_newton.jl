@@ -64,9 +64,8 @@ function build_cache(
     N = size(ν, 1)
     G = similar(u, T, M + N, M + N)
     fill!(G, zero(T))
-    # initial guess for conjugate gradient 
+    # initial guess for conjugate gradient (doesn't need to be initialized)
     x = similar(u, T, M + N)
-    fill!(x, zero(T))
     return QuadraticOTNewtonCache(u, v, δu, δv, σ, γ, G, x, M, N)
 end
 
@@ -80,7 +79,7 @@ function check_convergence(
 )
     γ = cache.γ
     norm_diff = max(
-        norm(vec(sum(γ; dims=2)) .- μ, Inf), norm(vec(sum(γ; dims=1) .- ν), Inf)
+        norm(vec(sum(γ; dims=2)) .- μ, Inf), norm(vec(sum(γ; dims=1)) .- ν, Inf)
     )
     isconverged =
         norm_diff <
@@ -121,14 +120,16 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     G[(M + 1):end, (M + 1):end] .= Diagonal(vec(sum(σ; dims=1)))
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
-    # G[diagind(G)] .+= δ # regularise cg
-    G += δ * I
+    view(G, diagind(G)) .+= δ # regularise cg
 
     # cg step
     b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
-    cg!(x, G, b)
-    δu .= x[1:M]
-    return δv .= x[(M + 1):end]
+    fill!(x, zero(eltype(x)))
+    cg!(x, G, b; initially_zero=true)
+    copyto!(δu, 1, x, 1, M)
+    copyto!(δv, 1, x, M + 1, N)
+
+    return nothing
 end
 
 function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
@@ -153,20 +154,26 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
 
     # dual objective 
     function Φ(u, v, μ, ν, C, ε)
-        return norm(NNlib.relu.(u .+ v' .- C))^2 / 2 - ε * dot(μ, u) - ε * dot(ν, v)
+        return sum(abs2, NNlib.relu.(u .+ v' .- C)) / 2 - ε * (dot(μ, u) + dot(ν, v))
     end
 
     # compute directional derivative
-    d = -eps * (dot(δu, μ) + dot(δv, ν)) + eps * dot(γ, δu .+ δv')
-    t = 1
+    d = eps * (dot(γ, δu .+ δv') - (dot(δu, μ) + dot(δv, ν)))
+
+    # find step size
+    t = oneunit(κ)
     Φ0 = Φ(u, v, μ, ν, C, eps)
     while (armijo_counter < armijo_max) &&
         (Φ(u + t * δu, v + t * δv, μ, ν, C, eps) ≥ Φ0 + t * θ * d)
-        t = κ * t
+        t *= κ
         armijo_counter += 1
     end
-    u .= u + t * δu
-    return v .= v + t * δv
+
+    # perform step
+    axpy!(t, δu, u)
+    axpy!(t, δv, v)
+
+    return nothing
 end
 
 function solve!(solver::QuadraticOTSolver{<:QuadraticOTNewton})

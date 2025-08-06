@@ -119,7 +119,7 @@ function sinkhorn2(
     )
 end
 
-# spceialised sinkhorn2 for SinkhornGibbs
+# specialized sinkhorn2 for SinkhornGibbs
 function sinkhorn2(
     μ, ν, C, ε, alg::SinkhornGibbs; regularization=false, plan=nothing, kwargs...
 )

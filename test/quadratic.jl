@@ -26,9 +26,8 @@ Random.seed!(100)
         eps = 0.25
         γ = quadreg(μ, ν, C, eps, QuadraticOTNewton())
 
-        γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps; stopThr=1e-9)
+        γ_pot = POT.Smooth.smooth_ot_dual(μ, ν, C, eps; stopThr=1e-16)
 
-        # need to use a larger tolerance here because of a quirk with the POT solver
-        @test γ ≈ γ_pot rtol = 1e-1
+        @test γ ≈ γ_pot rtol = 1e-5
     end
 end

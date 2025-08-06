@@ -22,7 +22,7 @@ Random.seed!(100)
         C = pairwise(SqEuclidean(), x)
         f(x; μ, σ) = exp(-((x - μ) / σ)^2)
         # regularization parameter
-        ε = 0.05
+        ε = 0.1
         @testset "basic" begin
             μ = normalize!(f.(x; μ=0, σ=0.5), 1)
             M = 100
@@ -41,7 +41,7 @@ Random.seed!(100)
                     ν_all,
                 )
 
-                @test loss ≈ loss_ rtol = 1e-6
+                @test loss ≈ loss_
                 @test all(loss .≥ 0)
                 @test sinkhorn_divergence(μ, μ, C, ε) ≈ 0 atol = 1e-9
             end
@@ -69,7 +69,7 @@ Random.seed!(100)
             end
         end
         @testset "AD" begin
-            ε = 0.05
+            ε = 0.1
             μ = normalize!(f.(x; μ=-0.5, σ=0.5), 1)
             ν = normalize!(f.(x; μ=0.5, σ=0.5), 1)
             for Diff in [ForwardDiff, ReverseDiff]
