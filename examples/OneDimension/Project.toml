@@ -11,5 +11,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 Distances = "0.10"
 Distributions = "0.25"
 Literate = "2.9"
-OptimalTransport = "0.3"
-julia = "1"
+StatsPlots = "0.15"
+
+[sources.OptimalTransport]
+path = "../.."

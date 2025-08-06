@@ -26,30 +26,30 @@ Random.seed!(100)
     C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
     # regularization parameter
-    ε = 0.01
+    ε = 0.1
 
     @testset "example" begin
         # compute optimal transport plan and cost with POT
-        γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000)
-        c_pot = POT.sinkhorn2(μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000)[1]
+        γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", stopThr=1e-16)
+        c_pot = POT.sinkhorn2(μ, ν, C, ε; method="sinkhorn_stabilized", stopThr=1e-16)[1]
 
         for alg in (SinkhornGibbs(), SinkhornStabilized())
             # compute optimal transport plan and cost
-            γ = sinkhorn(μ, ν, C, ε, SinkhornEpsilonScaling(alg); maxiter=5_000)
-            c = sinkhorn2(μ, ν, C, ε, SinkhornEpsilonScaling(alg); maxiter=5_000)
+            γ = sinkhorn(μ, ν, C, ε, SinkhornEpsilonScaling(alg))
+            c = sinkhorn2(μ, ν, C, ε, SinkhornEpsilonScaling(alg))
 
             # check that plan and cost are consistent
             @test c ≈ dot(γ, C)
 
             # compare with Sinkhorn algorithm without ε-scaling
-            γ_wo_epsscaling = sinkhorn(μ, ν, C, ε, alg; maxiter=5_000)
-            c_wo_epsscaling = sinkhorn2(μ, ν, C, ε, alg; maxiter=5_000)
-            @test γ ≈ γ_wo_epsscaling rtol = 1e-6
+            γ_wo_epsscaling = sinkhorn(μ, ν, C, ε, alg)
+            c_wo_epsscaling = sinkhorn2(μ, ν, C, ε, alg)
+            @test γ ≈ γ_wo_epsscaling
             @test c ≈ c_wo_epsscaling
 
             # compare with POT
-            @test γ ≈ γ_pot rtol = 1e-6
-            @test c ≈ c_pot rtol = 1e-6
+            @test γ ≈ γ_pot
+            @test c ≈ c_pot
         end
     end
 

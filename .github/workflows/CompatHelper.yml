@@ -7,7 +7,7 @@ jobs:
   CompatHelper:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2 # to determine subdirectories of examples
+      - uses: actions/checkout@v4 # to determine subdirectories of examples
       - name: "Add the General registry via Git"
         run: |
           import Pkg

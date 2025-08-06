@@ -13,20 +13,32 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   build:
+    # These permissions are needed to:
+    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
+    # - Delete old caches: https://github.com/julia-actions/cache#usage
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
+      statuses: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-          architecture: ${{ matrix.arch }}
+          python-version: '3.13'
       - run: python -m pip install pot
-      - uses: julia-actions/setup-julia@latest
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
+      - uses: julia-actions/cache@v2
       - name: Install dependencies
         run: |
           using Pkg: Pkg
