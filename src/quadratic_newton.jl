@@ -125,7 +125,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     # cg step
     b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
     fill!(x, zero(eltype(x)))
-    cg!(x, G, b; initially_zero = true)
+    cg!(x, G, b; initially_zero=true)
     copyto!(δu, 1, x, 1, M)
     copyto!(δv, 1, x, M + 1, N)
 
