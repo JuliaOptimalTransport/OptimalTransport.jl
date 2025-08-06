@@ -77,7 +77,7 @@ Random.seed!(100)
             # plan for individual histograms
             γ_all = sinkhorn(μ_batch, ν_batch, C, ε, SinkhornGibbs())
             @test size(γ_all) == (M, N, d)
-            @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
+            @test all(view(γ_all,:,:,i) ≈ γ for i in axes(γ_all, 3))
             @test γ_all == sinkhorn(μ_batch, ν_batch, C, ε)
 
             # compute optimal transport cost and check that it is consistent with the
@@ -130,7 +130,7 @@ Random.seed!(100)
             # plan for individual histograms
             γ_all = sinkhorn(μ32_batch, ν32_batch, C32, ε32, SinkhornGibbs())
             @test size(γ_all) == (M, N, d)
-            @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
+            @test all(view(γ_all,:,:,i) ≈ γ for i in axes(γ_all, 3))
             @test γ_all == sinkhorn(μ32_batch, ν32_batch, C32, ε32)
 
             # compute optimal transport cost and check that it is consistent with the

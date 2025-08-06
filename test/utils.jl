@@ -39,7 +39,7 @@ Random.seed!(100)
 
         y = rand(l, m, n)
         @test OptimalTransport.dot_matwise(x, y) ≈
-            mapreduce(vcat, (view(y, :, :, i) for i in axes(y, 3))) do yi
+            mapreduce(vcat, (view(y,:,:,i) for i in axes(y, 3))) do yi
             dot(x, yi)
         end
         @test OptimalTransport.dot_matwise(y, x) == OptimalTransport.dot_matwise(x, y)
