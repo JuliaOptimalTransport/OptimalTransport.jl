@@ -13,8 +13,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   build:
+    # These permissions are needed to:
+    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
+    # - Delete old caches: https://github.com/julia-actions/cache#usage
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
+      statuses: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
