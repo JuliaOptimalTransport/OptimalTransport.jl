@@ -95,14 +95,14 @@ Random.seed!(100)
 
         @testset "quadreg" begin
             # use a different reg parameter
-            ε_quad = 0.5f0
+            ε_quad = 1.0f0
             γ = quadreg(
                 cu_μ, cu_ν, cu_C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1.0f-5, 50)
             )
             # compare with results on the CPU
             @test convert(Array, γ) ≈
                 quadreg(μ, ν, C, ε_quad, QuadraticOTNewton(0.1f0, 0.5f0, 1.0f-5, 50)) atol =
-                1.0f-3 rtol = 1.0f-3
+                1.0f-4 rtol = 1.0f-4
         end
     end
 end
