@@ -120,8 +120,7 @@ function descent_dir!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     G[(M + 1):end, (M + 1):end] .= Diagonal(vec(sum(σ; dims=1)))
     G[1:M, (M + 1):end] .= σ
     G[(M + 1):end, 1:M] .= σ'
-    # G[diagind(G)] .+= δ # regularise cg
-    mul!(G, δ, I, true, true)
+    view(G, diagind(G)) .+= δ # regularise cg
 
     # cg step
     b = -eps * vcat(vec(sum(γ; dims=2)) .- μ, vec(sum(γ; dims=1)) .- ν)
