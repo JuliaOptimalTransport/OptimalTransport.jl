@@ -27,35 +27,32 @@ Random.seed!(100)
     C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
     # regularization parameter
-    ε = 0.01
+    ε = 0.1
 
     @testset "example" begin
         # compute optimal transport plan and optimal transport cost
-        γ = sinkhorn(μ, ν, C, ε, SinkhornGibbs(); maxiter=5_000, rtol=1e-9)
-        c = sinkhorn2(μ, ν, C, ε, SinkhornGibbs(); maxiter=5_000, rtol=1e-9)
+        γ = sinkhorn(μ, ν, C, ε, SinkhornGibbs())
+        c = sinkhorn2(μ, ν, C, ε, SinkhornGibbs())
 
         # check that plan and cost are consistent
         @test c ≈ dot(γ, C)
 
         # compare with default algorithm
-        γ_default = sinkhorn(μ, ν, C, ε; maxiter=5_000, rtol=1e-9)
-        c_default = sinkhorn2(μ, ν, C, ε; maxiter=5_000, rtol=1e-9)
+        γ_default = sinkhorn(μ, ν, C, ε)
+        c_default = sinkhorn2(μ, ν, C, ε)
         @test γ_default == γ
         @test c_default == c
 
         # compare with POT
-        γ_pot = POT.sinkhorn(μ, ν, C, ε; numItermax=5_000, stopThr=1e-9)
-        c_pot = POT.sinkhorn2(μ, ν, C, ε; numItermax=5_000, stopThr=1e-9)[1]
+        γ_pot = POT.sinkhorn(μ, ν, C, ε; stopThr=1e-16)
+        c_pot = POT.sinkhorn2(μ, ν, C, ε; stopThr=1e-16)[1]
         @test γ_pot ≈ γ rtol = 1e-6
         @test c_pot ≈ c rtol = 1e-7
 
         # compute optimal transport cost with regularization term
-        c_w_regularization = sinkhorn2(
-            μ, ν, C, ε, SinkhornGibbs(); maxiter=5_000, regularization=true
-        )
+        c_w_regularization = sinkhorn2(μ, ν, C, ε, SinkhornGibbs(); regularization=true)
         @test c_w_regularization ≈ c + ε * sum(x -> iszero(x) ? x : x * log(x), γ)
-        @test c_w_regularization ==
-            sinkhorn2(μ, ν, C, ε; maxiter=5_000, regularization=true)
+        @test c_w_regularization == sinkhorn2(μ, ν, C, ε; regularization=true)
 
         # ensure that provided plan is used and correct
         c2 = sinkhorn2(similar(μ), similar(ν), C, rand(), SinkhornGibbs(); plan=γ)
@@ -78,21 +75,17 @@ Random.seed!(100)
 
             # compute optimal transport plan and check that it is consistent with the
             # plan for individual histograms
-            γ_all = sinkhorn(
-                μ_batch, ν_batch, C, ε, SinkhornGibbs(); maxiter=5_000, rtol=1e-9
-            )
+            γ_all = sinkhorn(μ_batch, ν_batch, C, ε, SinkhornGibbs())
             @test size(γ_all) == (M, N, d)
             @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
-            @test γ_all == sinkhorn(μ_batch, ν_batch, C, ε; maxiter=5_000, rtol=1e-9)
+            @test γ_all == sinkhorn(μ_batch, ν_batch, C, ε)
 
             # compute optimal transport cost and check that it is consistent with the
             # cost for individual histograms
-            c_all = sinkhorn2(
-                μ_batch, ν_batch, C, ε, SinkhornGibbs(); maxiter=5_000, rtol=1e-9
-            )
+            c_all = sinkhorn2(μ_batch, ν_batch, C, ε, SinkhornGibbs())
             @test size(c_all) == (d,)
             @test all(x ≈ c for x in c_all)
-            @test c_all == sinkhorn2(μ_batch, ν_batch, C, ε; maxiter=5_000, rtol=1e-9)
+            @test c_all == sinkhorn2(μ_batch, ν_batch, C, ε)
         end
     end
 
@@ -105,8 +98,8 @@ Random.seed!(100)
         ε32 = Float32(ε)
 
         # compute optimal transport plan and optimal transport cost
-        γ = sinkhorn(μ32, ν32, C32, ε32, SinkhornGibbs(); maxiter=5_000, rtol=1e-6)
-        c = sinkhorn2(μ32, ν32, C32, ε32, SinkhornGibbs(); maxiter=5_000, rtol=1e-6)
+        γ = sinkhorn(μ32, ν32, C32, ε32, SinkhornGibbs())
+        c = sinkhorn2(μ32, ν32, C32, ε32, SinkhornGibbs())
         @test eltype(γ) === Float32
         @test typeof(c) === Float32
 
@@ -114,14 +107,14 @@ Random.seed!(100)
         @test c ≈ dot(γ, C32)
 
         # compare with default algorithm
-        γ_default = sinkhorn(μ32, ν32, C32, ε32; maxiter=5_000, rtol=1e-6)
-        c_default = sinkhorn2(μ32, ν32, C32, ε32; maxiter=5_000, rtol=1e-6)
+        γ_default = sinkhorn(μ32, ν32, C32, ε32)
+        c_default = sinkhorn2(μ32, ν32, C32, ε32)
         @test γ_default == γ
         @test c_default == c
 
         # compare with POT
-        γ_pot = POT.sinkhorn(μ32, ν32, C32, ε32; numItermax=5_000, stopThr=1e-6)
-        c_pot = POT.sinkhorn2(μ32, ν32, C32, ε32; numItermax=5_000, stopThr=1e-6)[1]
+        γ_pot = POT.sinkhorn(μ32, ν32, C32, ε32)
+        c_pot = POT.sinkhorn2(μ32, ν32, C32, ε32)[1]
         @test map(Float32, γ_pot) ≈ γ rtol = 1e-3
         @test Float32(c_pot) ≈ c rtol = 1e-3
 
@@ -135,23 +128,17 @@ Random.seed!(100)
 
             # compute optimal transport plan and check that it is consistent with the
             # plan for individual histograms
-            γ_all = sinkhorn(
-                μ32_batch, ν32_batch, C32, ε32, SinkhornGibbs(); maxiter=5_000, rtol=1e-6
-            )
+            γ_all = sinkhorn(μ32_batch, ν32_batch, C32, ε32, SinkhornGibbs())
             @test size(γ_all) == (M, N, d)
             @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
-            @test γ_all ==
-                sinkhorn(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
+            @test γ_all == sinkhorn(μ32_batch, ν32_batch, C32, ε32)
 
             # compute optimal transport cost and check that it is consistent with the
             # cost for individual histograms
-            c_all = sinkhorn2(
-                μ32_batch, ν32_batch, C32, ε32, SinkhornGibbs(); maxiter=5_000, rtol=1e-6
-            )
+            c_all = sinkhorn2(μ32_batch, ν32_batch, C32, ε32, SinkhornGibbs())
             @test size(c_all) == (d,)
             @test all(x ≈ c for x in c_all)
-            @test c_all ==
-                sinkhorn2(μ32_batch, ν32_batch, C32, ε32; maxiter=5_000, rtol=1e-6)
+            @test c_all == sinkhorn2(μ32_batch, ν32_batch, C32, ε32)
         end
     end
 
@@ -161,7 +148,7 @@ Random.seed!(100)
         # together. test against gradient computed using analytic formula of Proposition 2.3 of 
         # Cuturi, Marco, and Gabriel Peyré. "A smoothed dual approach for variational Wasserstein problems." SIAM Journal on Imaging Sciences 9.1 (2016): 320-343.
         #
-        ε = 0.05 # use a larger ε to avoid having to do many iterations 
+        ε = 0.1 # use a larger ε to avoid having to do many iterations 
         # target marginal
         for Diff in [ReverseDiff, ForwardDiff]
             ∇ = Diff.gradient(log.(ν)) do xs
@@ -187,7 +174,7 @@ Random.seed!(100)
             end
             ∇analytic_target = J_softmax * ∇_ot
             # check that gradient obtained by AD matches the analytic formula
-            @test ∇ ≈ ∇analytic_target rtol = 1e-6
+            @test ∇ ≈ ∇analytic_target
 
             # source marginal
             ∇ = Diff.gradient(log.(μ)) do xs
@@ -206,7 +193,7 @@ Random.seed!(100)
             end
             ∇_ot = dualvar_to_grad(solver.cache.u, ε)
             ∇analytic_source = J_softmax * ∇_ot
-            @test ∇ ≈ ∇analytic_source rtol = 1e-6
+            @test ∇ ≈ ∇analytic_source
 
             # both marginals
             ∇ = Diff.gradient(log.(vcat(μ, ν))) do xs
@@ -224,7 +211,7 @@ Random.seed!(100)
             end
             @test ∇ == ∇default
             ∇analytic = vcat(∇analytic_source, ∇analytic_target)
-            @test ∇ ≈ ∇analytic rtol = 1e-6
+            @test ∇ ≈ ∇analytic
         end
     end
 

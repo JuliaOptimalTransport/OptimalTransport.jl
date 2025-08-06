@@ -24,7 +24,7 @@ Random.seed!(100)
 
     # create random cost matrix
     C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
-    ε = 0.01
+    ε = 0.1
     K = exp.(-C / ε)
 
     @testset "semidual_grad" begin

@@ -31,7 +31,7 @@ Random.seed!(100)
         cu_C = cu(C)
 
         # regularization parameter
-        ε = 0.05f0
+        ε = 0.1f0
 
         @testset "sinkhorn" begin
             for alg in (

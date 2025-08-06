@@ -26,29 +26,25 @@ Random.seed!(100)
     C = pairwise(SqEuclidean(), rand(1, M), rand(1, N); dims=2)
 
     # regularization parameter
-    ε = 0.01
+    ε = 0.1
 
     @testset "example" begin
         # compute optimal transport plan and optimal transport cost
-        γ = sinkhorn(μ, ν, C, ε, SinkhornStabilized(); maxiter=5_000, rtol=1e-9)
-        c = sinkhorn2(μ, ν, C, ε, SinkhornStabilized(); maxiter=5_000, rtol=1e-9)
+        γ = sinkhorn(μ, ν, C, ε, SinkhornStabilized())
+        c = sinkhorn2(μ, ν, C, ε, SinkhornStabilized())
 
         # check that plan and cost are consistent
         @test c ≈ dot(γ, C)
 
         # compare with POT
-        γ_pot = POT.sinkhorn(
-            μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000, stopThr=1e-9
-        )
-        c_pot = POT.sinkhorn2(
-            μ, ν, C, ε; method="sinkhorn_stabilized", numItermax=5_000, stopThr=1e-9
-        )[1]
-        @test γ_pot ≈ γ rtol = 1e-6
-        @test c_pot ≈ c rtol = 1e-7
+        γ_pot = POT.sinkhorn(μ, ν, C, ε; method="sinkhorn_stabilized", stopThr=1e-16)
+        c_pot = POT.sinkhorn2(μ, ν, C, ε; method="sinkhorn_stabilized", stopThr=1e-16)[1]
+        @test γ_pot ≈ γ
+        @test c_pot ≈ c
 
         # compute optimal transport cost with regularization term
         c_w_regularization = sinkhorn2(
-            μ, ν, C, ε, SinkhornStabilized(); maxiter=5_000, regularization=true
+            μ, ν, C, ε, SinkhornStabilized(); regularization=true
         )
         @test c_w_regularization ≈ c + ε * sum(x -> iszero(x) ? x : x * log(x), γ)
 
@@ -70,17 +66,13 @@ Random.seed!(100)
 
             # compute optimal transport plan and check that it is consistent with the
             # plan for individual histograms
-            γ_all = sinkhorn(
-                μ_batch, ν_batch, C, ε, SinkhornStabilized(); maxiter=5_000, rtol=1e-9
-            )
+            γ_all = sinkhorn(μ_batch, ν_batch, C, ε, SinkhornStabilized())
             @test size(γ_all) == (M, N, d)
             @test all(view(γ_all, :, :, i) ≈ γ for i in axes(γ_all, 3))
 
             # compute optimal transport cost and check that it is consistent with the
             # cost for individual histograms
-            c_all = sinkhorn2(
-                μ_batch, ν_batch, C, ε, SinkhornStabilized(); maxiter=5_000, rtol=1e-9
-            )
+            c_all = sinkhorn2(μ_batch, ν_batch, C, ε, SinkhornStabilized())
             @test size(c_all) == (d,)
             @test all(x ≈ c for x in c_all)
         end
