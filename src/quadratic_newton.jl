@@ -170,8 +170,8 @@ function descent_step!(solver::QuadraticOTSolver{<:QuadraticOTNewton})
     end
 
     # perform step
-    axpy!(-t, δu, u)
-    axpy!(-t, δv, v)
+    axpy!(t, δu, u)
+    axpy!(t, δv, v)
 
     return nothing
 end
