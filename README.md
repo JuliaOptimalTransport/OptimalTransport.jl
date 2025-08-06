@@ -13,8 +13,7 @@ This package provides some [Julia](https://julialang.org/) implementations of al
 
 Notably, OptimalTransport.jl provides GPU acceleration through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl/) and [NNlibCUDA.jl](https://github.com/FluxML/NNlibCUDA.jl).
 
-This package is inspired by the [Python Optimal Transport](https://optimaltransport.github.io/)
-package.
+This package is inspired by the [Python Optimal Transport](https://pythonot.github.io/) package.
 
 ## Example
 
