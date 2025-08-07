@@ -35,28 +35,28 @@ end
 ν_opt = Optim.minimizer(opt)
 plt1 = scatter(μ_spt[:, 1], μ_spt[:, 2]; markeralpha=0.25, title=&quot;Sinkhorn divergence&quot;)
 scatter!(plt1, ν_opt[:, 1], ν_opt[:, 2]);</code></pre><pre><code class="nohighlight hljs">Iter     Function value   Gradient norm 
-     0     3.507090e+00     4.009151e-02
- * time: 0.03794598579406738
-     1     3.717133e-01     2.245087e-02
- * time: 4.2685158252716064
-     2     2.670875e-02     9.148647e-03
- * time: 4.751037836074829
-     3     6.097463e-03     1.893035e-03
- * time: 5.580798864364624
-     4     2.459430e-03     1.627203e-03
- * time: 6.024760961532593
-     5     1.622110e-03     7.155489e-04
- * time: 6.627019882202148
-     6     1.302597e-03     4.506573e-04
- * time: 7.051878929138184
-     7     1.102291e-03     5.762005e-04
- * time: 7.879719972610474
-     8     9.468882e-04     3.984264e-04
- * time: 8.336877822875977
-     9     8.199127e-04     5.819419e-04
- * time: 9.07645583152771
-    10     6.995710e-04     4.228777e-04
- * time: 9.558443784713745
+     0     3.160389e+00     4.215701e-02
+ * time: 0.07175111770629883
+     1     2.362390e-01     1.822199e-02
+ * time: 4.4657769203186035
+     2     2.533009e-02     6.887872e-03
+ * time: 4.910592079162598
+     3     1.042287e-02     2.363805e-03
+ * time: 5.619369983673096
+     4     5.802803e-03     1.215314e-03
+ * time: 6.140049934387207
+     5     5.007923e-03     1.055775e-03
+ * time: 7.027601957321167
+     6     4.726665e-03     7.724287e-04
+ * time: 7.510733127593994
+     7     4.582490e-03     5.538793e-04
+ * time: 8.247288942337036
+     8     4.465617e-03     4.990538e-04
+ * time: 8.998891115188599
+     9     4.387545e-03     3.175649e-04
+ * time: 9.806802988052368
+    10     4.309309e-03     3.083026e-04
+ * time: 10.376874923706055
 </code></pre><p>For comparison, let us do the same computation again, but this time we want to minimise <span>$\nu \mapsto \operatorname{OT}_{\varepsilon}(\mu, \nu)$</span>.</p><pre><code class="language-julia hljs">function loss_biased(x, ε)
     C_μν = pairwise(SqEuclidean(), μ_spt&#39;, x&#39;)
     return sinkhorn2(μ, ν, C_μν, ε; maxiter=50, atol=rtol = 0, regularization=true)
@@ -75,26 +75,26 @@ end
 ν_opt_biased = Optim.minimizer(opt_biased)
 plt2 = scatter(μ_spt[:, 1], μ_spt[:, 2]; markeralpha=0.25, title=&quot;Sinkhorn loss&quot;)
 scatter!(plt2, ν_opt_biased[:, 1], ν_opt_biased[:, 2]);</code></pre><pre><code class="nohighlight hljs">Iter     Function value   Gradient norm 
-     0    -4.646913e+00     3.295578e-02
- * time: 5.793571472167969e-5
-     1    -6.888673e+00     2.301964e-02
- * time: 0.5836329460144043
-     2    -7.484184e+00     1.254538e-02
- * time: 0.8524990081787109
-     3    -7.599705e+00     8.777189e-03
- * time: 1.24229097366333
-     4    -7.629166e+00     7.114027e-03
- * time: 1.5061731338500977
-     5    -7.639033e+00     6.674264e-03
- * time: 1.7538001537322998
-     6    -7.642377e+00     2.618734e-03
- * time: 2.006798028945923
-     7    -7.643102e+00     1.157841e-03
- * time: 2.402740001678467
-     8    -7.643248e+00     5.428701e-04
- * time: 2.748911142349243
-     9    -7.643282e+00     2.214575e-04
- * time: 3.1384470462799072
-    10    -7.643290e+00     1.326211e-04
- * time: 3.344933032989502
-</code></pre><p>Observe that the Sinkhorn divergence results in <span>$\nu$</span> that matches <span>$\mu$</span> quite well, while entropy-regularised transport is biased to producing <span>$\nu$</span> that seems to concentrate around the mean of each Gaussian component.</p><pre><code class="language-julia hljs">plot(plt1, plt2)</code></pre><p><img src="../empirical_sinkhorn_div-21.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../basic/">« Basics</a><a class="docs-footer-nextpage" href="../nmf/">Wasserstein non-negative matrix factorisation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 7 August 2025 07:39">Thursday 7 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+     0    -5.012466e+00     3.482834e-02
+ * time: 5.91278076171875e-5
+     1    -7.141753e+00     1.712539e-02
+ * time: 0.699653148651123
+     2    -7.561901e+00     1.044208e-02
+ * time: 1.107574224472046
+     3    -7.658958e+00     1.025486e-02
+ * time: 1.4910571575164795
+     4    -7.699329e+00     5.587164e-03
+ * time: 1.8003489971160889
+     5    -7.706332e+00     2.328242e-03
+ * time: 2.063721179962158
+     6    -7.707271e+00     8.091584e-04
+ * time: 2.4126710891723633
+     7    -7.707387e+00     4.843074e-04
+ * time: 2.8417880535125732
+     8    -7.707435e+00     1.671705e-04
+ * time: 3.185458183288574
+     9    -7.707434e+00     1.056849e-04
+ * time: 3.616284132003784
+    10    -7.707440e+00     3.991639e-05
+ * time: 3.8477821350097656
+</code></pre><p>Observe that the Sinkhorn divergence results in <span>$\nu$</span> that matches <span>$\mu$</span> quite well, while entropy-regularised transport is biased to producing <span>$\nu$</span> that seems to concentrate around the mean of each Gaussian component.</p><pre><code class="language-julia hljs">plot(plt1, plt2)</code></pre><p><img src="../empirical_sinkhorn_div-21.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../basic/">« Basics</a><a class="docs-footer-nextpage" href="../nmf/">Wasserstein non-negative matrix factorisation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 7 August 2025 14:16">Thursday 7 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
