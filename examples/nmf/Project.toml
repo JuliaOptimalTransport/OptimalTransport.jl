@@ -11,6 +11,9 @@ OptimalTransport = "7e02d93a-ae51-4f58-b602-d97af76e3b33"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
+[sources.OptimalTransport]
+path = "../.."
+
 [compat]
 Distances = "0.10"
 Literate = "2"
@@ -19,8 +22,6 @@ MLDatasets = "0.7"
 NMF = "1"
 NNlib = "0.9"
 Optim = "1"
+OptimalTransport = "0.3"
 Plots = "1"
 StatsBase = "0.34"
-
-[sources.OptimalTransport]
-path = "../.."
