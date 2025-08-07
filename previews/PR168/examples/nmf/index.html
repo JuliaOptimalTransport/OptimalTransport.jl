@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Wasserstein non-negative matrix factorisation · OptimalTransport.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://juliaoptimaltransport.github.io/OptimalTransport.jl/examples/nmf/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><script src="../../../copy.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="OptimalTransport.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OptimalTransport.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../OneDimension/">One-Dimensional Cases</a></li><li><a class="tocitem" href="../basic/">Basics</a></li><li><a class="tocitem" href="../empirical_sinkhorn_div/">Sinkhorn divergences</a></li><li class="is-active"><a class="tocitem" href>Wasserstein non-negative matrix factorisation</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Set-up-prerequisites"><span>Set up prerequisites</span></a></li><li><a class="tocitem" href="#Implementation"><span>Implementation</span></a></li><li><a class="tocitem" href="#Example:-noisy-univariate-Gaussians"><span>Example: noisy univariate Gaussians</span></a></li><li><a class="tocitem" href="#Example:-image-data-(MNIST)"><span>Example: image data (MNIST)</span></a></li></ul></li><li><a class="tocitem" href="../variational/">Variational problems</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Wasserstein non-negative matrix factorisation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Wasserstein non-negative matrix factorisation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/master/examples/nmf/script.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Wasserstein-non-negative-matrix-factorisation"><a class="docs-heading-anchor" href="#Wasserstein-non-negative-matrix-factorisation">Wasserstein non-negative matrix factorisation</a><a id="Wasserstein-non-negative-matrix-factorisation-1"></a><a class="docs-heading-anchor-permalink" href="#Wasserstein-non-negative-matrix-factorisation" title="Permalink"></a></h1><p><a href="https://nbviewer.jupyter.org/github/JuliaOptimalTransport/OptimalTransport.jl/blob/gh-pages/previews/PR168/examples/nmf.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p><em>You are seeing the HTML output generated by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a> from the <a href="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/master/examples/nmf/script.jl">Julia source file</a>. The corresponding notebook can be viewed in <a href="https://nbviewer.jupyter.org/github/JuliaOptimalTransport/OptimalTransport.jl/blob/gh-pages/previews/PR168/examples/nmf.ipynb">nbviewer</a>.</em></p><p>In this example, we implement Wasserstein non-negative matrix factorisation (W-NMF) following the paper <sup class="footnote-reference"><a id="citeref-RCP16" href="#footnote-RCP16">[RCP16]</a></sup> by Rolet et al.</p><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p>Matrix decomposition is a classical problem in machine learning. Given a <span>$m \times n$</span> matrix <span>$X$</span> representing <span>$n$</span> repeated <span>$m$</span>-dimensional observations, one may seek matrices <span>$D, \Lambda$</span> of appropriate dimensions such that</p><p class="math-container">\[X \approx D \Lambda.\]</p><p>For a target rank <span>$k &lt; \min \{ m, n \}$</span>, i.e. <span>$D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}$</span>, this problem can be thought of as seeking a low-dimensional linear representation <span>$D \Lambda$</span> of the potentially high-dimensional dataset <span>$X$</span>.</p><p>Lee and Seung <sup class="footnote-reference"><a id="citeref-LS99" href="#footnote-LS99">[LS99]</a></sup> observed that the data matrix <span>$X$</span> is non-negative in many practical applications, and that naturally one may want the factor matrices <span>$D, \Lambda$</span> to be also non-negative.</p><p>For a given <span>$m \times n$</span> matrix <span>$X \ge 0$</span>, finding the factor matrices <span>$D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}$</span> such that <span>$X \approx D \Lambda$</span> with <span>$D \ge 0, \Lambda \ge 0$</span> is known as the rank-<span>$k$</span> non-negative matrix factorization (NMF) problem. Typically, such an approximate representation is sought by solving a minimisation problem</p><p class="math-container">\[\min_{D \in \mathbb{R}^{m \times k}, \Lambda \in \mathbb{R}^{k \times n}, D \ge 0, \Lambda \ge 0} \Phi(X, D \Lambda),\]</p><p>where <span>$(X, Y) \mapsto \Psi(X, Y)$</span> is a loss function defined on matrices. Commonly used choices of <span>$\Phi$</span> include the squared Frobenius loss <span>$\Phi(X, Y) = \| X - Y \|_F^2$</span> and Kullback-Leibler divergence <span>$\Phi(X, Y) = \sum_{ij} X_{ij} \log(X_{ij}/Y_{ij})$</span>.</p><p>Both these loss functions (and many other common choices) decompose elementwise in their arguments, that is, they can be written as <span>$\Phi(X, Y) = \sum_{ij} f(X_{ij}, Y_{ij})$</span> for some function <span>$f$</span> acting on scalars.</p><p>Rolet et al. note that pointwise loss functions cannot account for spatial correlations in datasets with underlying geometry, and propose to use entropy-regularised optimal transport as a loss function that is sensitive to the spatial arrangement of the data. They argue that for datasets such as images, optimal transport is a more natural choice of loss function, and that it achieves superior performance.</p><p>In particular, suppose that the columns of <span>$X$</span> encode image data, and that <span>$C \in \mathbb{R}^{m \times m}$</span> encodes the squared Euclidean distances on the imaging domain. The problem that Rolet et al. pose is</p><p class="math-container">\[\min_{D \in \mathbb{R}^{m \times k}_{\ge 0}, \Lambda \in \mathbb{R}^{k \times n}_{\ge 0}} \sum_{i = 1}^{n} \operatorname{OT}_{\varepsilon}(X_i, (D\Lambda)_i) + \rho_1 E(D) + \rho_2 E(\Lambda),\]</p><p>where <span>$\operatorname{OT}_{\varepsilon}(\alpha, \beta)$</span> is the entropy-regularised optimal transport loss between two probability distributions <span>$\alpha, \beta$</span> for a cost <span>$C$</span>, and <span>$E$</span> is an entropy barrier function (a smooth approximation to the non-negativity constraint),</p><p class="math-container">\[E(A) = \sum_{ij} (A_{ij} \log(A_{ij}) - 1).\]</p><p>The parameters <span>$\rho_1, \rho_2$</span> control how &quot;sharp&quot; the non-negativity constraints are. As <span>$\rho_1, \rho_2 \to 0$</span>, the smoothed constraint approaches the hard non-negativity constraint. Finally, <span>$\varepsilon$</span> controls the regularisation level for the optimal transport loss.</p><p>This example shows how this method can be implemented using functions from the <code>Dual</code> submodule of OptimalTransport.jl.</p><h2 id="Set-up-prerequisites"><a class="docs-heading-anchor" href="#Set-up-prerequisites">Set up prerequisites</a><a id="Set-up-prerequisites-1"></a><a class="docs-heading-anchor-permalink" href="#Set-up-prerequisites" title="Permalink"></a></h2><p>Load packages that will be required later.</p><pre><code class="language-julia hljs">using OptimalTransport
+import OptimalTransport.Dual: Dual
+using MLDatasets: MLDatasets
+using StatsBase
+using Plots;
+default(; palette=:Set1_3)
+using LogExpFunctions
+using NNlib: NNlib
+using LinearAlgebra
+using Distances
+using Base.Iterators
+using NMF
+using Optim</code></pre><p>Define <code>simplex_norm!</code>, which normalises <code>x</code> to sum to <code>1</code> along <code>dims</code>.</p><pre><code class="language-julia hljs">function simplex_norm!(x; dims=1)
+    return x .= x ./ sum(x; dims=dims)
+end</code></pre><pre><code class="nohighlight hljs">simplex_norm! (generic function with 1 method)</code></pre><h2 id="Implementation"><a class="docs-heading-anchor" href="#Implementation">Implementation</a><a id="Implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation" title="Permalink"></a></h2><p>We now implement Wasserstein-NMF. Rolet et al. split the original non-convex problem into a pair of convex problems, one for <span>$D$</span> and one for <span>$\Lambda$</span>.</p><p class="math-container">\[\begin{aligned}
+&amp;\min_{D \in \mathbb{R}^{m \times k}} \sum_{i = 1}^{n} \operatorname{OT}_{\varepsilon}(X_i, (D\Lambda)_i) + \rho_2 E(D), \\
+&amp;\min_{\Lambda \in \mathbb{R}^{k \times n}} \sum_{i = 1}^{n} \operatorname{OT}_{\varepsilon}(X_i, (D\Lambda)_i) + \rho_1 E(\Lambda).
+\end{aligned}\]</p><p>For each of these problems, the dual problem can be derived (see Section 3.3 of Rolet et al. for details on how this is done). These turn out to be</p><p class="math-container">\[\begin{aligned}
+&amp;\min_{G \in \mathbb{R}^{m \times n}} \sum_{i = 1}^n \operatorname{OT}_{\varepsilon}^*(X_i, G_i) + \rho_2 \sum_{i = 1}^{n} E^*(-(G \Lambda^\top)_i / \rho_2) \\
+&amp;\min_{G \in \mathbb{R}^{m \times n}} \sum_{i = 1}^n \operatorname{OT}_{\varepsilon}^*(X_i, G_i) + \rho_1 \sum_{i = 1}^{n} E^*(-(D^\top G)_i / \rho_1).
+\end{aligned}\]</p><p>The semi-dual of entropy-regularised optimal transport loss, <span>$\operatorname{OT}_{\varepsilon}$</span>, is implemented as <code>Dual.ot_entropic_semidual</code> and its gradient can be computed by <code>Dual.ot_entropic_semidual_grad</code>. <span>$E^*$</span> turns out to be <code>logsumexp</code>, for which we implement a wrapper function:</p><pre><code class="language-julia hljs">function E_star(x; dims=1)
+    return logsumexp(x; dims=dims)
+end;</code></pre><p>The gradient of <code>logsumexp</code> is <code>softmax</code>, so we define also its gradient:</p><pre><code class="language-julia hljs">function E_star_grad(x; dims=1)
+    return NNlib.softmax(x; dims=1)
+end;</code></pre><p>Thus, for each problem we may define the dual objective and its gradient. We note that <code>ot_entropic_semidual(_grad)</code> automatically broadcasts along columns of its input. There is therefore no need to make multiple calls to the function, thus allowing for more efficient evaluation.</p><pre><code class="language-julia hljs">function dual_obj_weights(X, K, ε, D, G, ρ1)
+    return sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ1 * sum(E_star(-D&#39; * G / ρ1))
+end
+function dual_obj_weights_grad!(∇, X, K, ε, D, G, ρ1)
+    return ∇ .= Dual.ot_entropic_semidual_grad(X, G, ε, K) - D * E_star_grad(-D&#39; * G / ρ1)
+end
+function dual_obj_dict(X, K, ε, Λ, G, ρ2)
+    return sum(Dual.ot_entropic_semidual(X, G, ε, K)) + ρ2 * sum(E_star(-G * Λ&#39; / ρ2))
+end
+function dual_obj_dict_grad!(∇, X, K, ε, Λ, G, ρ2)
+    return ∇ .= Dual.ot_entropic_semidual_grad(X, G, ε, K) - E_star_grad(-G * Λ&#39; / ρ2) * Λ
+end;</code></pre><p>The only remaining part of Wasserstein-NMF to implement is the conversion at optimality from the dual variable <span>$G$</span> to the primal variables <span>$D, \Lambda$</span>. From the results of Theorems 3 and 4 in Rolet et al., we have for <span>$\Lambda$</span>:</p><p class="math-container">\[\Lambda_i = \operatorname{softmax}((-D^\top G)_i / \rho_1),\]</p><p>and we have for <span>$D$</span>:</p><p class="math-container">\[D_i = \operatorname{softmax}((-G \Lambda^\top)_i / \rho_2).\]</p><pre><code class="language-julia hljs">function getprimal_weights(D, G, ρ1)
+    return NNlib.softmax(-D&#39; * G / ρ1; dims=1)
+end
+function getprimal_dict(Λ, G, ρ2)
+    return NNlib.softmax(-G * Λ&#39; / ρ2; dims=1)
+end;</code></pre><p>We can now implement functions <code>solve_weights</code> and <code>solve_dict</code> that solve the respective dual problems for the next iterates of <code>Λ</code> and <code>D</code>.</p><pre><code class="language-julia hljs">function solve_weights(X, K, ε, D, ρ1; alg, options)
+    opt = optimize(
+        g -&gt; dual_obj_weights(X, K, ε, D, g, ρ1),
+        (∇, g) -&gt; dual_obj_weights_grad!(∇, X, K, ε, D, g, ρ1),
+        zero.(X),
+        alg,
+        options,
+    )
+    return getprimal_weights(D, Optim.minimizer(opt), ρ1)
+end
+function solve_dict(X, K, ε, Λ, ρ2; alg, options)
+    opt = optimize(
+        g -&gt; dual_obj_dict(X, K, ε, Λ, g, ρ2),
+        (∇, g) -&gt; dual_obj_dict_grad!(∇, X, K, ε, Λ, g, ρ2),
+        zero.(X),
+        alg,
+        options,
+    )
+    return getprimal_dict(Λ, Optim.minimizer(opt), ρ2)
+end;</code></pre><h2 id="Example:-noisy-univariate-Gaussians"><a class="docs-heading-anchor" href="#Example:-noisy-univariate-Gaussians">Example: noisy univariate Gaussians</a><a id="Example:-noisy-univariate-Gaussians-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-noisy-univariate-Gaussians" title="Permalink"></a></h2><p>We set up each observation as a mixture of 3 Gaussians with means sampled from <code>N(6, σ), N(0, σ), N(-6, σ)</code> respectively, and mixture weights sampled uniformly from <code>[0, 1]</code>. The resulting mixture model is normalised to sum to 1 on the discrete domain <code>coord</code>.</p><pre><code class="language-julia hljs">f(x, μ, σ) = exp.(-(x .- μ) .^ 2)
+coord = range(-12, 12; length=100)
+N = 100
+σ = 1
+X = hcat(
+    [
+        rand() * f(coord, σ * randn() + 6, 1) +
+        rand() * f(coord, σ * randn(), 1) +
+        rand() * f(coord, σ * randn() - 6, 1) for _ in 1:N
+    ]...,
+)
+X = simplex_norm!(X);</code></pre><p>We visualise the  observations.</p><pre><code class="language-julia hljs">plot(coord, X; alpha=0.1, color=:blue, title=&quot;Input data&quot;, legend=nothing)</code></pre><p><img src="../3410663704.svg" alt/></p><p>We can apply NMF with a squared Frobenius loss using the NMF.jl package. We seek <code>k = 3</code> components.  This performs poorly, since the pointwise nature of the loss function cannot handle the translational noise in the data.</p><pre><code class="language-julia hljs">k = 3
+result = nnmf(X, k; alg=:multmse)
+plot(coord, result.W; title=&quot;NMF with Frobenius loss&quot;, palette=:Set1_3)</code></pre><p><img src="../2944845858.svg" alt/></p><p>We can now set up a cost matrix corresponding to the domain <code>coord</code>.</p><pre><code class="language-julia hljs">C = pairwise(SqEuclidean(), coord)
+C = C / mean(C);</code></pre><p>Specify parameters</p><pre><code class="language-julia hljs">ε = 0.025
+ρ1, ρ2 = (5e-2, 5e-2);</code></pre><p>Compute Gibbs kernel</p><pre><code class="language-julia hljs">K = exp.(-C / ε);</code></pre><p>Now we use a random initialisation, where columns of <code>D</code> and <code>Λ</code> are normalised to sum to 1.</p><pre><code class="language-julia hljs">D = rand(size(X, 1), k) # dictionary
+simplex_norm!(D; dims=1) # norm columnwise
+Λ = rand(k, size(X, 2)) # weights
+simplex_norm!(Λ; dims=1); # norm rowwise</code></pre><p>We now run 10 iterations of Wasserstein-NMF.</p><pre><code class="language-julia hljs">n_iter = 10
+for iter in 1:n_iter
+    @info &quot;Wasserstein-NMF: iteration $iter&quot;
+    D .= solve_dict(
+        X,
+        K,
+        ε,
+        Λ,
+        ρ2;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
+    Λ .= solve_weights(
+        X,
+        K,
+        ε,
+        D,
+        ρ1;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
+end</code></pre><pre><code class="nohighlight hljs">[ Info: Wasserstein-NMF: iteration 1
+[ Info: Wasserstein-NMF: iteration 2
+[ Info: Wasserstein-NMF: iteration 3
+[ Info: Wasserstein-NMF: iteration 4
+[ Info: Wasserstein-NMF: iteration 5
+[ Info: Wasserstein-NMF: iteration 6
+[ Info: Wasserstein-NMF: iteration 7
+[ Info: Wasserstein-NMF: iteration 8
+[ Info: Wasserstein-NMF: iteration 9
+[ Info: Wasserstein-NMF: iteration 10
+</code></pre><p>We observe that Wasserstein-NMF learns atoms (columns of <span>$D$</span>) corresponding to the three Gaussians used to generate the input data.</p><pre><code class="language-julia hljs">plot(coord, D; title=&quot;NMF with Wasserstein loss&quot;, palette=:Set1_3)</code></pre><p><img src="../4159558245.svg" alt/></p><h2 id="Example:-image-data-(MNIST)"><a class="docs-heading-anchor" href="#Example:-image-data-(MNIST)">Example: image data (MNIST)</a><a id="Example:-image-data-(MNIST)-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-image-data-(MNIST)" title="Permalink"></a></h2><p>Here we will download MNIST dataset using MLDatasets.jl and downscale each image to 14x14 to allow for faster runtime (since we are running on CPU).</p><pre><code class="language-julia hljs">sizex, sizey = 28, 28
+factor = 2 # downscale factor
+Σ = hcat([sum(I(sizex)[:, i:(i + factor - 1)]; dims=2) for i in 1:factor:sizex]...)
+sizex, sizey = sizex ÷ factor, sizey ÷ factor
+N = 256
+x, y = MLDatasets.MNIST.traindata(Float64, sample(1:60_000, N; replace=false))
+x = permutedims(x, (2, 1, 3))
+x = cat([Σ&#39; * x[:, :, i] * Σ for i in 1:N]...; dims=3)
+X = simplex_norm!(reshape(x, (sizex * sizey, :)));</code></pre><p>The columns of <code>X</code> now correspond to images &quot;flattened&quot; as vectors. We can preview a few images.</p><pre><code class="language-julia hljs">M = 25
+plot(
+    [
+        heatmap(
+            reshape(X[:, i], sizex, sizey);
+            legend=:none,
+            axis=nothing,
+            showaxis=false,
+            aspect_ratio=:equal,
+            c=:Blues,
+            yflip=true,
+        ) for i in 1:M
+    ]...;
+    layout=(5, M ÷ 5),
+    plot_title=&quot;Input images&quot;,
+)</code></pre><p><img src="../1758143007.svg" alt/></p><p>Now we can set up <code>coord</code>, cost matrix <code>C</code>, and specify parameters.</p><pre><code class="language-julia hljs">coord = reshape(collect(product(1:sizex, 1:sizey)), :)
+C = pairwise(SqEuclidean(), coord)
+C = C / mean(C);
+ε = 0.0025
+ρ1, ρ2 = (5e-3, 5e-3);</code></pre><p>We compute the Gibbs kernel from <code>C</code>:</p><pre><code class="language-julia hljs">K = exp.(-C / ε);</code></pre><p>Let us aim to learn <code>k = 25</code> atoms.</p><pre><code class="language-julia hljs">k = 25;</code></pre><p>Initialise again randomly</p><pre><code class="language-julia hljs">D = rand(size(X, 1), k) # dictionary
+simplex_norm!(D; dims=1) # norm columnwise
+Λ = rand(k, size(X, 2)) # weights
+simplex_norm!(Λ; dims=1); # norm rowwise</code></pre><p>We now run 15 iterations of Wasserstein-NMF.</p><pre><code class="language-julia hljs">n_iter = 15
+for iter in 1:n_iter
+    @info &quot;Wasserstein-NMF: iteration $iter&quot;
+    D .= solve_dict(
+        X,
+        K,
+        ε,
+        Λ,
+        ρ2;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
+    Λ .= solve_weights(
+        X,
+        K,
+        ε,
+        D,
+        ρ1;
+        alg=LBFGS(),
+        options=Optim.Options(;
+            iterations=250, g_tol=1e-4, show_trace=false, show_every=10
+        ),
+    )
+end</code></pre><pre><code class="nohighlight hljs">[ Info: Wasserstein-NMF: iteration 1
+[ Info: Wasserstein-NMF: iteration 2
+[ Info: Wasserstein-NMF: iteration 3
+[ Info: Wasserstein-NMF: iteration 4
+[ Info: Wasserstein-NMF: iteration 5
+[ Info: Wasserstein-NMF: iteration 6
+[ Info: Wasserstein-NMF: iteration 7
+[ Info: Wasserstein-NMF: iteration 8
+[ Info: Wasserstein-NMF: iteration 9
+[ Info: Wasserstein-NMF: iteration 10
+[ Info: Wasserstein-NMF: iteration 11
+[ Info: Wasserstein-NMF: iteration 12
+[ Info: Wasserstein-NMF: iteration 13
+[ Info: Wasserstein-NMF: iteration 14
+[ Info: Wasserstein-NMF: iteration 15
+</code></pre><p>We can inspect the atoms learned (columns of <code>D</code>):</p><pre><code class="language-julia hljs">plot(
+    [
+        heatmap(
+            reshape(D[:, i], sizex, sizey);
+            legend=:none,
+            axis=nothing,
+            showaxis=false,
+            aspect_ratio=:equal,
+            c=:Blues,
+            yflip=true,
+        ) for i in 1:k
+    ]...;
+    layout=(5, k ÷ 5),
+    plot_title=&quot;Learned atoms&quot;,
+)</code></pre><p><img src="../3830281417.svg" alt/></p><p>Finally, we can look at the images constructed by the low-rank approximation <code>DΛ</code> and compare to the original images that we previewed earlier.</p><pre><code class="language-julia hljs">X_hat = D * Λ
+plot(
+    [
+        heatmap(
+            reshape(X_hat[:, i], sizex, sizey);
+            legend=:none,
+            axis=nothing,
+            showaxis=false,
+            aspect_ratio=:equal,
+            c=:Blues,
+            yflip=true,
+        ) for i in 1:M
+    ]...;
+    layout=(5, M ÷ 5),
+    plot_title=&quot;Low rank approximation&quot;,
+)</code></pre><p><img src="../4253087030.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-RCP16"><a class="tag is-link" href="#citeref-RCP16">RCP16</a>Rolet, Antoine, Marco Cuturi, and Gabriel Peyré. <a href="https://marcocuturi.net/Papers/rolet16fast.pdf">&quot;Fast dictionary learning with a smoothed Wasserstein loss.&quot;</a> Artificial Intelligence and Statistics. PMLR, 2016.</li><li class="footnote" id="footnote-LS99"><a class="tag is-link" href="#citeref-LS99">LS99</a>Lee, Daniel D., and H. Sebastian Seung. &quot;Learning the parts of objects by non-negative matrix factorization.&quot; Nature 401.6755 (1999): 788-791.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../empirical_sinkhorn_div/">« Sinkhorn divergences</a><a class="docs-footer-nextpage" href="../variational/">Variational problems »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Sunday 22 May 2022 01:08">Sunday 22 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Variational problems · OptimalTransport.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://juliaoptimaltransport.github.io/OptimalTransport.jl/examples/variational/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><script src="../../../copy.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="OptimalTransport.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OptimalTransport.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../OneDimension/">One-Dimensional Cases</a></li><li><a class="tocitem" href="../basic/">Basics</a></li><li><a class="tocitem" href="../empirical_sinkhorn_div/">Sinkhorn divergences</a></li><li><a class="tocitem" href="../nmf/">Wasserstein non-negative matrix factorisation</a></li><li class="is-active"><a class="tocitem" href>Variational problems</a><ul class="internal"><li><a class="tocitem" href="#Fokker-Planck-equation-as-a-W_2-gradient-flow"><span>Fokker-Planck equation as a <span>$W_2$</span> gradient flow</span></a></li><li><a class="tocitem" href="#Implicit-schemes-for-gradient-flows"><span>Implicit schemes for gradient flows</span></a></li><li><a class="tocitem" href="#Wasserstein-gradient-flow"><span>Wasserstein gradient flow</span></a></li><li><a class="tocitem" href="#Problem-setup"><span>Problem setup</span></a></li><li><a class="tocitem" href="#Porous-medium-equation"><span>Porous medium equation</span></a></li><li><a class="tocitem" href="#Exploiting-duality"><span>Exploiting duality</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Variational problems</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Variational problems</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/master/examples/variational/script.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Variational-problems"><a class="docs-heading-anchor" href="#Variational-problems">Variational problems</a><a id="Variational-problems-1"></a><a class="docs-heading-anchor-permalink" href="#Variational-problems" title="Permalink"></a></h1><p><a href="https://nbviewer.jupyter.org/github/JuliaOptimalTransport/OptimalTransport.jl/blob/gh-pages/previews/PR168/examples/variational.ipynb"><img src="https://img.shields.io/badge/show-nbviewer-579ACA.svg" alt/></a></p><p><em>You are seeing the HTML output generated by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a> from the <a href="https://github.com/JuliaOptimalTransport/OptimalTransport.jl/blob/master/examples/variational/script.jl">Julia source file</a>. The corresponding notebook can be viewed in <a href="https://nbviewer.jupyter.org/github/JuliaOptimalTransport/OptimalTransport.jl/blob/gh-pages/previews/PR168/examples/variational.ipynb">nbviewer</a>.</em></p><p>In this example, we will numerically simulate an entropy-regularised Wasserstein gradient flow approximating the Fokker-Planck and porous medium equations.</p><p>The connection between Wasserstein gradient flows and (non)-linear PDEs is due to Jordan, Kinderlehrer and Otto <sup class="footnote-reference"><a id="citeref-JKO98" href="#footnote-JKO98">[JKO98]</a></sup>, and an easy-to-read overview of the topic is provided in Section 9.3 <sup class="footnote-reference"><a id="citeref-PC19" href="#footnote-PC19">[PC19]</a></sup></p><h2 id="Fokker-Planck-equation-as-a-W_2-gradient-flow"><a class="docs-heading-anchor" href="#Fokker-Planck-equation-as-a-W_2-gradient-flow">Fokker-Planck equation as a <span>$W_2$</span> gradient flow</a><a id="Fokker-Planck-equation-as-a-W_2-gradient-flow-1"></a><a class="docs-heading-anchor-permalink" href="#Fokker-Planck-equation-as-a-W_2-gradient-flow" title="Permalink"></a></h2><p>For a potential function <span>$\Psi$</span> and noise level <span>$\sigma^2$</span>, the Fokker-Planck equation (FPE) is</p><p class="math-container">\[\partial_t \rho_t = \nabla \cdot (\rho_t \nabla \Psi) + \frac{\sigma^2}{2} \Delta \rho_t,\]</p><p>and we take no-flux (Neumann) boundary conditions.</p><p>This describes the evolution of a massless particle undergoing both diffusion (with diffusivity <span>$\sigma^2$</span>) and drift (along potential <span>$\Psi$</span>) according to the stochastic differential equation</p><p class="math-container">\[dX_t = -\nabla \Psi(X_t) dt + \sigma dB_t.\]</p><p>The result of Jordan, Kinderlehrer and Otto (commonly referred to as the JKO theorem) states that <span>$\rho_t$</span> evolves following the 2-Wasserstein gradient flow of the Gibbs free energy functional</p><p class="math-container">\[  F(\rho) = \int \Psi d\rho + \int \log(\rho) d\rho.\]</p><h2 id="Implicit-schemes-for-gradient-flows"><a class="docs-heading-anchor" href="#Implicit-schemes-for-gradient-flows">Implicit schemes for gradient flows</a><a id="Implicit-schemes-for-gradient-flows-1"></a><a class="docs-heading-anchor-permalink" href="#Implicit-schemes-for-gradient-flows" title="Permalink"></a></h2><p>In an Euclidean space, the gradient flow of a functional <span>$F$</span> is simply the solution of an ordinary differential equation</p><p class="math-container">\[ \dfrac{dx(t)}{dt} = -\nabla F(x(t)).\]</p><p>Of course, there is a requirement that <span>$F$</span> is smooth. A more general formulation of a gradient flow that allows <span>$F$</span> to be non-smooth is the implicit scheme</p><p class="math-container">\[  x_{t+\tau} = \operatorname{argmin}_x \frac{1}{2} \| x - x_t \|_2^2 + \tau F(x).\]</p><p>As the timestep <span>$\tau$</span> shrinks, <span>$x_t$</span> becomes a better and better approximation to the gradient flow of <span>$F$</span>.</p><h2 id="Wasserstein-gradient-flow"><a class="docs-heading-anchor" href="#Wasserstein-gradient-flow">Wasserstein gradient flow</a><a id="Wasserstein-gradient-flow-1"></a><a class="docs-heading-anchor-permalink" href="#Wasserstein-gradient-flow" title="Permalink"></a></h2><p>In the context of the JKO theorem, we seek <span>$\rho_t$</span> that is the gradient flow of <span>$F$</span> with respect to the 2-Wasserstein distance. This can be achieved by choosing the <span>$W_2$</span> metric in the implicit step:</p><p class="math-container">\[  \rho_{t + \tau} = \operatorname{argmin}_{\rho} d_{W_2}^2(\rho_{t}, \rho) + \tau F(\rho).\]</p><p>Finally, a numerical scheme for computing this gradient flow can be developed by using the entropic regularisation of optimal transport on a discretised domain</p><p class="math-container">\[  \rho_{t + \tau} = \operatorname{argmin}_{\rho} \operatorname{OT}_\varepsilon(\rho_{t}, \rho) + \tau F(\rho),\]</p><p>where</p><p class="math-container">\[  \operatorname{OT}_\varepsilon(\alpha, \beta) = \min_{\gamma \in \Pi(\alpha, \beta)} \sum_{i,j} \frac{1}{2} \| x_i - x_j \|_2^2 \gamma_{ij} + \varepsilon \sum_{i, j} \gamma_{ij} \log(\gamma_{ij}).\]</p><p>Each step of this problem is a minimisation problem with respect to <span>$\rho$</span>. Since we use entropic optimal transport which is differentiable, this can be solved using gradient-based methods.</p><h2 id="Problem-setup"><a class="docs-heading-anchor" href="#Problem-setup">Problem setup</a><a id="Problem-setup-1"></a><a class="docs-heading-anchor-permalink" href="#Problem-setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using OptimalTransport
+using Distances
+using LogExpFunctions
+using Optim
+using Plots
+using StatsBase
+using ReverseDiff
+
+using LinearAlgebra
+using Logging</code></pre><p>Here, we set up the computational domain that we work on - we discretize the interval <span>$[-1, 1]$</span>. The natural boundary conditions to use will be Neumann (zero flux), see e.g. <sup class="footnote-reference"><a id="citeref-Santam2017" href="#footnote-Santam2017">[Santam2017]</a></sup></p><pre><code class="language-julia hljs">support = range(-1, 1; length=64)
+C = pairwise(SqEuclidean(), support&#39;);</code></pre><p>Now we set up various functionals that we will use.</p><p>We define the generalised entropy (Equation (4.4) of <sup class="footnote-reference"><a id="citeref-Peyre2015" href="#footnote-Peyre2015">[Peyre2015]</a></sup>) as follows. For <span>$m = 1$</span> this is just the &quot;regular&quot; entropy, and <span>$m = 2$</span> this is squared <span>$L_2$</span>.</p><pre><code class="language-julia hljs">function E(ρ; m=1)
+    if m == 1
+        return sum(xlogx.(ρ)) - sum(ρ)
+    elseif m &gt; 1
+        return dot(ρ, @. (ρ^(m - 1) - m) / (m - 1))
+    end
+end;</code></pre><p>Now define <span>$\psi(x)$</span> to be a potential energy function that has two potential wells at <span>$x = ± 0.5$</span>.</p><pre><code class="language-julia hljs">ψ(x) = 10 * (x - 0.5)^2 * (x + 0.5)^2;
+plot(support, ψ.(support); color=&quot;black&quot;, label=&quot;Scalar potential&quot;)</code></pre><p><img src="../2646497030.svg" alt/></p><p>Having defined <span>$\psi$</span>, this induces a potential energy functional <span>$\Psi$</span> on probability distributions <span>$\rho$</span>:</p><p class="math-container">\[   \Psi(\rho) = \int \psi(x) \rho(x) dx = \langle \psi, \rho \rangle .\]</p><pre><code class="language-julia hljs">Ψ = ψ.(support);</code></pre><p>Define the time step <span>$\tau$</span> and entropic regularisation level <span>$\varepsilon$</span>, and form the associated Gibbs kernel <span>$K = e^{-C/\varepsilon}$</span>.</p><pre><code class="language-julia hljs">τ = 0.05
+ε = 0.01
+K = @. exp(-C / ε);</code></pre><p>We define the (non-smooth) initial condition <span>$\rho_0$</span> in terms of step functions.</p><pre><code class="language-julia hljs">H(x) = x &gt; 0
+ρ0 = @. H(support + 0.25) - H(support - 0.25)
+ρ0 = ρ0 / sum(ρ0)
+plot(support, ρ0; label=&quot;Initial condition ρ0&quot;, color=&quot;blue&quot;)</code></pre><p><img src="../551837456.svg" alt/></p><p><code>G_fpe</code> is the objective function for the implicit step scheme</p><p class="math-container">\[G_\mathrm{fpe}(\rho) = \operatorname{OT}_\varepsilon(\rho_{t}, \rho) + \tau F(\rho),\]</p><p>and we seek to minimise in <span>$\rho$</span>.</p><pre><code class="language-julia hljs">function G_fpe(ρ, ρ0, τ, ε, C)
+    return sinkhorn2(ρ, ρ0, C, ε; regularization=true, maxiter=250) + τ * (dot(Ψ, ρ) + E(ρ))
+end;</code></pre><p><code>step</code> solves the implicit step problem to produce <span>$\rho_{t + \tau}$</span> from <span>$\rho_t$</span>.</p><pre><code class="language-julia hljs">function step(ρ0, τ, ε, C, G)
+    # only print error messages
+    obj = u -&gt; G(softmax(u), ρ0, τ, ε, C)
+    opt = with_logger(SimpleLogger(stderr, Logging.Error)) do
+        optimize(
+            obj,
+            ones(size(ρ0)),
+            LBFGS(),
+            Optim.Options(; iterations=50, g_tol=1e-6);
+            autodiff=:forward,
+        )
+    end
+    return softmax(Optim.minimizer(opt))
+end</code></pre><pre><code class="nohighlight hljs">step (generic function with 1 method)</code></pre><p>Now we simulate <code>N = 10</code> iterates of the gradient flow and plot the result.</p><pre><code class="language-julia hljs">N = 10
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+for i in 2:N
+    @info i
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_fpe)
+end
+colors = range(colorant&quot;red&quot;; stop=colorant&quot;blue&quot;, length=N)
+plot(
+    support,
+    ρ;
+    title=raw&quot;$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle$&quot;,
+    palette=colors,
+    legend=nothing,
+)</code></pre><p><img src="../3834351566.svg" alt/></p><h2 id="Porous-medium-equation"><a class="docs-heading-anchor" href="#Porous-medium-equation">Porous medium equation</a><a id="Porous-medium-equation-1"></a><a class="docs-heading-anchor-permalink" href="#Porous-medium-equation" title="Permalink"></a></h2><p>The porous medium equation (PME) is the nonlinear PDE</p><p class="math-container">\[\partial_t \rho = \nabla \cdot (\rho \nabla \Psi) + \Delta \rho^m,\]</p><p>again with Neumann boundary conditions. The value of <span>$m$</span> in the PME corresponds to picking <span>$m$</span> in the generalised entropy functional. Now, we will solve the PME with <span>$m = 2$</span> as a Wasserstein gradient flow.</p><pre><code class="language-julia hljs">function G_pme(ρ, ρ0, τ, ε, C)
+    return sinkhorn2(ρ, ρ0, C, ε; regularization=true, maxiter=250) +
+           τ * (dot(Ψ, ρ) + E(ρ; m=2))
+end;</code></pre><p>set up as previously</p><pre><code class="language-julia hljs">N = 10
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, C, G_pme)
+end
+plot(
+    support,
+    ρ;
+    title=raw&quot;$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle$&quot;,
+    palette=colors,
+    legend=nothing,
+)</code></pre><p><img src="../2626177732.svg" alt/></p><h2 id="Exploiting-duality"><a class="docs-heading-anchor" href="#Exploiting-duality">Exploiting duality</a><a id="Exploiting-duality-1"></a><a class="docs-heading-anchor-permalink" href="#Exploiting-duality" title="Permalink"></a></h2><p>The previous examples solved the minimisation problem for the implicit gradient flow step directly, involving automatic differentiation through the Sinkhorn iterations used to compute <span>$\operatorname{OT}_\varepsilon(\rho_t, \rho)$</span> each time a gradient needs to be evaluated. While this is straightforward to implement, it is computationally costly. An alternative approach for convex variational problems is to proceed via the <a href="https://en.wikipedia.org/wiki/Duality_(optimization)">dual problem</a>. The benefit of proceeding via the dual problem is that the part of the dual minimisation problem corresponding to the (entropy-regularised) optimal transport loss is typically available in closed form. This is in contrast to the primal problem, where evaluation of the objective and its gradients requires potentially many Sinkhorn iterations.</p><p>Consider a general convex and unconstrained problem. Under (usually satisfied) conditions for strong duality to hold, we have</p><p class="math-container">\[\begin{aligned}
+&amp;\min_{\rho} \operatorname{OT}_{\varepsilon}(\rho_0, \rho) + \mathcal{F}(\rho)  \\
+&amp;= \min_{\rho} \sup_{u}\left[\langle \rho, u \rangle - \operatorname{OT}^*_{\varepsilon}(\rho_0, u)\right] + \mathcal{F}(\rho)  \\
+&amp;= \sup_{u} \min_{\rho} \langle \rho, u \rangle - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \mathcal{F}(\rho) \\
+&amp;= \sup_{u} - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \min_{\rho} \langle \rho, u \rangle + \mathcal{F}(\rho) \\
+&amp;= \sup_{u} - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) - \sup_{\rho} \langle \rho, -u \rangle - \mathcal{F}(\rho) \\
+&amp;= \sup_{u} - \operatorname{OT}^*_{\varepsilon}(\rho_0, u) - \mathcal{F}^*(-u).
+\end{aligned}\]</p><p>Thus, the dual problem is</p><p class="math-container">\[\min_{u} \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \mathcal{F}^*(-u).\]</p><p>The upshot here is that <span>$u \mapsto \operatorname{OT}^*_{\varepsilon}(\rho_0, u)$</span> and its gradient is available in closed form. This is a known result in the literature <sup class="footnote-reference"><a id="citeref-CP18" href="#footnote-CP18">[CP18]</a></sup>.</p><p>The formulas we state below are lifted from statements in <sup class="footnote-reference"><a id="citeref-Z21" href="#footnote-Z21">[Z21]</a></sup>.</p><p class="math-container">\[\begin{aligned}
+\operatorname{OT}^*_{\varepsilon}(\rho_0, u) &amp;= -\varepsilon \left\langle \rho_0, \log\left( \dfrac{\rho_0}{K e^{u/\varepsilon}} \right) - 1\right\rangle, \\
+\nabla_u \operatorname{OT}^*_{\varepsilon}(\rho_0, u) &amp;= K^\top \left( \dfrac{\rho_0}{K e^{u/\varepsilon}} \right) \odot e^{u/\varepsilon}.
+\end{aligned}\]</p><p>At optimality, we can recover the primal optimal point <span>$\rho^\star$</span> from the dual optimal point <span>$u^\star$</span> following the formula</p><p class="math-container">\[\rho^\star = e^{u^\star/\varepsilon} \odot K^\top \dfrac{\rho_0}{K e^{u^\star/\varepsilon}}.\]</p><p>When <span>$\mathcal{F}^*(\cdot)$</span> is also available in closed form (this is not always the case), the dual problem has a closed form objective and can generally be solved much more efficiently than the primal problem.</p><p>In the setting of the Fokker-Planck and porous medium equations, the function <span>$\mathcal{F}$</span> can be identified with</p><p class="math-container">\[\mathcal{F}(\rho) = \tau \left[ \langle \psi, \rho \rangle + E_m(\rho) \right].\]</p><p>A straightforward computation shows that</p><p class="math-container">\[\mathcal{F}^*(u) = \tau E_m^*\left( \frac{u}{\tau}-\psi \right),\]</p><p>where</p><p class="math-container">\[    E_m^*(u) = \begin{cases}
+    \langle e^u, \mathbf{1} \rangle, &amp; m = 1 \\
+    \sum_i \left[ \left( u_i + \frac{m}{m-1} \right) \left( \frac{m-1}{m} u_i + 1 \right)^{\frac{1}{m-1}} - \frac{1}{m-1} \left( \frac{m-1}{m} u_i + 1 \right)^{\frac{m}{m-1}} \right], &amp; m &gt; 1.
+    \end{cases}\]</p><p>In particular, for <span>$m = 2$</span> we have a simpler formula</p><p class="math-container">\[E_2^*(u) = \left\| \frac{u}{2} + 1 \right\|_2^2\]</p><p>We now implement <span>$E_m^*$</span> for <span>$m = 1, 2$</span>.</p><pre><code class="language-julia hljs">E_dual(u, m::Val{1}) = sum(exp.(u))
+function E_dual(u, m::Val{2})
+    return dot(u / 2 .+ 1, u / 2 .+ 1)
+end;</code></pre><p>So, the dual problem we are dealing with reads</p><p class="math-container">\[\min_{u} \operatorname{OT}^*_{\varepsilon}(\rho_0, u) + \tau E_m^*\left( \frac{-u}{\tau}-\psi \right),\]</p><p>and we can thus set up <code>G_dual_fpe</code>, the dual objective.</p><pre><code class="language-julia hljs">function G_dual_fpe(u, ρ0, τ, ε, K)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
+           τ * E_dual(-u / τ - Ψ, Val(1))
+end;</code></pre><p>Now we set up <code>step</code> as previously, except this time we need to convert from the optimal dual variable <span>$u^\star$</span> to the primal variable <span>$\rho^\star$</span>. In the code, this is handled by <code>getprimal_ot_entropic_semidual</code>. We use <code>ReverseDiff</code> in this problem.</p><pre><code class="language-julia hljs">function step(ρ0, τ, ε, K, G)
+    obj = u -&gt; G(u, ρ0, τ, ε, K)
+    opt = optimize(
+        obj,
+        (∇, u) -&gt; ReverseDiff.gradient!(∇, obj, u),
+        zeros(size(ρ0)),
+        LBFGS(),
+        Optim.Options(; iterations=250, g_tol=1e-6),
+    )
+    return OptimalTransport.Dual.getprimal_ot_entropic_semidual(
+        ρ0, Optim.minimizer(opt), ε, K
+    )
+end;</code></pre><p>Now we can solve the dual problem as previously, and we note that the dual formulation is solved an order of magnitude faster than the primal formulation.</p><pre><code class="language-julia hljs">ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+for i in 2:N
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_fpe)
+end
+colors = range(colorant&quot;red&quot;; stop=colorant&quot;blue&quot;, length=N)
+plot(
+    support,
+    ρ;
+    title=raw&quot;$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \log(\rho) \rangle$&quot;,
+    palette=colors,
+    legend=nothing,
+)</code></pre><p><img src="../1470705924.svg" alt/></p><p>Setting <code>m = 2</code>, we can simulate instead the porous medium equation.</p><pre><code class="language-julia hljs">function G_dual_pme(u, ρ0, τ, ε, K)
+    return OptimalTransport.Dual.ot_entropic_semidual(ρ0, u, ε, K) +
+           τ * E_dual(-u / τ - Ψ, Val(2))
+end
+ρ = similar(ρ0, size(ρ0, 1), N)
+ρ[:, 1] = ρ0
+for i in 2:N
+    @info i
+    ρ[:, i] = step(ρ[:, i - 1], τ, ε, K, G_dual_pme)
+end
+colors = range(colorant&quot;red&quot;; stop=colorant&quot;blue&quot;, length=N)
+plot(
+    support,
+    ρ;
+    title=raw&quot;$F(\rho) = \langle \psi, \rho \rangle + \langle \rho, \rho - 1\rangle$&quot;,
+    palette=colors,
+    legend=nothing,
+)</code></pre><p><img src="../1866903834.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-JKO98"><a class="tag is-link" href="#citeref-JKO98">JKO98</a>Jordan, Richard, David Kinderlehrer, and Felix Otto. &quot;The variational formulation of the Fokker–Planck equation.&quot; SIAM journal on mathematical analysis 29.1 (1998): 1-17.</li><li class="footnote" id="footnote-PC19"><a class="tag is-link" href="#citeref-PC19">PC19</a>Peyré, Gabriel, and Marco Cuturi. &quot;Computational optimal transport: With applications to data science.&quot; Foundations and Trends® in Machine Learning 11.5-6 (2019): 355-607.</li><li class="footnote" id="footnote-Santam2017"><a class="tag is-link" href="#citeref-Santam2017">Santam2017</a>Santambrogio, Filippo. &quot;{Euclidean, metric, and Wasserstein} gradient flows: an overview.&quot; Bulletin of Mathematical Sciences 7.1 (2017): 87-154.</li><li class="footnote" id="footnote-Peyre2015"><a class="tag is-link" href="#citeref-Peyre2015">Peyre2015</a>Peyré, Gabriel. &quot;Entropic approximation of Wasserstein gradient flows.&quot; SIAM Journal on Imaging Sciences 8.4 (2015): 2323-2351.</li><li class="footnote" id="footnote-CP18"><a class="tag is-link" href="#citeref-CP18">CP18</a>Cuturi, Marco, and Gabriel Peyré. “Semi-Dual Regularized Optimal Transport.” ArXiv: Learning, 2018.</li><li class="footnote" id="footnote-Z21"><a class="tag is-link" href="#citeref-Z21">Z21</a>Zhang, Stephen Y. “A Unified Framework for Non-Negative Matrix and Tensor Factorisations with a Smoothed Wasserstein Loss.” ArXiv: Machine Learning, 2021.</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../nmf/">« Wasserstein non-negative matrix factorisation</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Sunday 22 May 2022 01:08">Sunday 22 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
