@@ -2,7 +2,7 @@
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaOptimalTransport.github.io/OptimalTransport.jl/dev)
-[![CI](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![CI](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaOptimalTransport/OptimalTransport.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![GPU tests](https://img.shields.io/buildkite/ec407153516cb9bc2a8b66105bc4a418d223ab9bba5f1cbe3a/master?label=GPU%20tests)](https://buildkite.com/julialang/optimaltransport-dot-jl/builds?branch=master)
 [![DOI](https://zenodo.org/badge/253333137.svg)](https://zenodo.org/badge/latestdoi/253333137)
 [![Codecov](https://codecov.io/gh/JuliaOptimalTransport/OptimalTransport.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaOptimalTransport/OptimalTransport.jl)
@@ -11,7 +11,7 @@
 
 This package provides some [Julia](https://julialang.org/) implementations of algorithms for computational [optimal transport](https://optimaltransport.github.io/), including the Earth-Mover's (Wasserstein) distance, Sinkhorn algorithm for entropically regularized optimal transport as well as some variants or extensions.
 
-Notably, OptimalTransport.jl provides GPU acceleration through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl/) and [NNlibCUDA.jl](https://github.com/FluxML/NNlibCUDA.jl).
+Notably, OptimalTransport.jl provides GPU acceleration through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl/).
 
 This package is inspired by the [Python Optimal Transport](https://pythonot.github.io/) package.
 
@@ -52,7 +52,7 @@ Contributions are more than welcome! Please feel free to submit an issue or pull
 Contributors include:
 
 - Tim Matsumoto (UBC)
-- David Widmann (Uppsala)
+- David Müller-Widmann (Uppsala)
 - Davi Barreira (FGV)
 - Stephen Zhang (UBC)
 
