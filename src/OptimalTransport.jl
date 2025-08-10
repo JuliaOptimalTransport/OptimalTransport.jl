@@ -13,6 +13,7 @@ using LinearAlgebra
 using IterativeSolvers
 using LogExpFunctions: LogExpFunctions
 using NNlib: NNlib
+using SparseArrays
 
 export SinkhornGibbs, SinkhornStabilized, SinkhornEpsilonScaling
 export SinkhornBarycenterGibbs
@@ -39,6 +40,7 @@ include("entropic/sinkhorn_solve.jl")
 
 include("quadratic.jl")
 include("quadratic_newton.jl")
+include("quadratic_newton_symm.jl")
 
 include("dual/entropic_dual.jl")
 
