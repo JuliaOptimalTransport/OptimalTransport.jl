@@ -6,8 +6,7 @@ steps:
       - JuliaCI/julia-test#v1:
           coverage: false
     agents:
-      queue: "juliagpu"
-      cuda: "*"
+      queue: "cuda"
     # Don't run Buildkite if the commit message includes the text [skip tests]
     if: build.message !~ /\[skip tests\]/
     timeout_in_minutes: 60
