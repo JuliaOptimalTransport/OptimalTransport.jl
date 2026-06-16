@@ -1,3 +1,7 @@
+# Trigger Python install if required. Required for Buildkite CI!
+using Conda: Conda
+Conda.list()
+
 using OptimalTransport
 using Pkg: Pkg
 using SafeTestsets
