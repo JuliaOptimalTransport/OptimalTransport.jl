@@ -36,6 +36,10 @@ const GROUP = get(ENV, "GROUP", "All")
         @safetestset "Quadratically regularized OT" begin
             include("quadratic.jl")
         end
+
+        @safetestset "Gromov-Wasserstein OT" begin
+            include("gromov.jl")
+        end
     end
 
     # CUDA requires Julia >= 1.6
