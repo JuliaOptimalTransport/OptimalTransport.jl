@@ -24,7 +24,12 @@ export sinkhorn_unbalanced, sinkhorn_unbalanced2
 export sinkhorn_divergence, sinkhorn_divergence_unbalanced
 export quadreg
 
+export bures_wasserstein_distance_hd, empirical_bures_wasserstein_distance_hd
+export bures_wasserstein_mapping_hd, empirical_bures_wasserstein_mapping_hd
+
 include("utils.jl")
+
+include("gaussian_hd.jl")
 
 include("entropic/sinkhorn.jl")
 include("entropic/sinkhorn_divergence.jl")

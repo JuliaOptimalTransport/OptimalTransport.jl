@@ -12,6 +12,10 @@ const GROUP = get(ENV, "GROUP", "All")
             include("utils.jl")
         end
 
+        @safetestset "Gaussian" begin
+            include("gaussian_hd.jl")
+        end
+
         @testset "Entropically regularized OT" begin
             @safetestset "Sinkhorn Gibbs" begin
                 include(joinpath("entropic", "sinkhorn_gibbs.jl"))
